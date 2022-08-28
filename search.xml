@@ -4,27 +4,23 @@
   
     
     <entry>
-      <title>再读提问的智慧</title>
+      <title>重读提问的智慧</title>
       <link href="/2022/08/27/%E5%86%8D%E8%AF%BB%E6%8F%90%E9%97%AE%E7%9A%84%E6%99%BA%E6%85%A7/"/>
       <url>/2022/08/27/%E5%86%8D%E8%AF%BB%E6%8F%90%E9%97%AE%E7%9A%84%E6%99%BA%E6%85%A7/</url>
       
-        <content type="html"><![CDATA[]]></content>
+        <content type="html"><![CDATA[<h1 id="重读提问的智慧">重读提问的智慧</h1><h2 id="0x00">0x00</h2><p>为什么叫”重读“呢…其实在这次读之前已经读过两三遍了…但是还是会在提问的时候被学长批评提的问题不好（</p><p><img src="https://pic.imgdb.cn/item/630a4e5b16f2c2beb1dd5154.jpg" alt=""></p><p><img src="https://pic.imgdb.cn/item/630a4f1a16f2c2beb1ddbdfb.jpg" alt=""></p><p>qwq…学长为了让我长记性，，属实是”煞费苦心“。</p><p>因此特地认认真真重读<a href="https://github.com/ryanhanwu/How-To-Ask-Questions-The-Smart-Way/blob/main/README-zh_CN.md">《提问的智慧》</a>，同时做一些摘要，以飨读者。</p><h2 id="0x01">0x01</h2><h3 id="简介部分">简介部分</h3><ul><li>大家都喜欢回答一个能激发思维、提高理解力、暴漏从未思考过的问题的”好问题“。</li><li>帮助那些不愿意帮助自己的人是没有效率的。无知没有关系，但装白痴就是不行。</li><li>不必在技术上很在行，但你必须表现出能引导你变得在行的特质 —— 机敏、有想法、善于观察、乐于主动参与解决问题。</li><li>能立刻得到快速并有效答案的最好方法，就是像赢家那样提问 —— 聪明、自信、有解决问题的思路，只是偶尔在特定的问题上需要获得一点帮助。</li></ul><h3 id="在提问之前">在提问之前</h3><ul><li>应仔细做到：<ul><li>尝试上网搜索以找到答案。</li><li>翻一翻 github 等知名网站的 issue 等。</li><li>尝试自己检查或试验以找到答案。</li><li>尝试阅读常见问题文件（FAQ）。</li><li>尝试阅读已有问题提示</li><li>尝试阅读源代码。</li></ul></li><li>不要将所有问题一股脑拋出。</li><li>准备好你的问题，再将问题仔细的思考过一遍，因为草率的发问只能得到草率的回答，或者根本得不到任何答案。</li><li>小心别问错了问题。</li><li>绝不要自以为够格得到答案，你没有；你并没有。</li></ul><h3 id="提问时">提问时</h3><h4 id="A">A.</h4><ul><li>不要妄想用自己的痛苦程度来打动他人，而应该是在这点空间中使用极简单扼要的描述方式来提出问题。</li><li>不能粗鲁傲慢，也不该低声下气。</li><li></li></ul><h4 id="B">B.</h4><ul><li>一个好标题范例是<code>目标 —— 差异式</code>的描述，许多技术支持组织就是这样做的。在<code>目标</code>部分指出是哪一个或哪一组东西有问题，在<code>差异</code>部分则描述与期望的行为不一致的地方。</li></ul><h4 id="C">C.</h4><ul><li>使问题容易回复，因此要求通过电子邮件回复是非常无礼的，除非你认为回复的信息可能比较敏感。</li></ul><h4 id="D">D.</h4><ul><li>使用清晰、正确、精准且合乎语法的语句。</li><li>正确的拼写、标点符号和大小写是很重要的。如果在使用非母语（英语）提问，可以犯点拼写和语法上的小错，但决不能在思考上马虎。</li><li>English is not my native language; please excuse typing errors.</li><li>使用易于读取且标准的文件格式发送问题，或者是截图（但尽量不要拍电脑屏幕）。</li></ul><h4 id="E">E.</h4><ul><li>精确地描述问题并言之有物，尽量去揣测一个黑客会怎样反问你，在你提问之前预先将黑客们可能提出的问题回答一遍。<strong>话不在多而在精</strong></li><li>描述提问的最根本原因（需求），而不是描述一个自己解决方案中的问题。因为自己的解决方案不一定是最优解。</li><li>要确信<strong>原原本本</strong>告诉了问题的症状</li><li>在开头就描述你的目标，然后才陈述重现你所卡住的特定步骤。</li></ul><h4 id="F">F.</h4>]]></content>
       
       
       <categories>
           
-          <category> C </category>
-          
-          <category> D </category>
+          <category> 杂谈 </category>
           
       </categories>
       
       
         <tags>
             
-            <tag> A </tag>
-            
-            <tag> B </tag>
+            <tag> 杂谈 </tag>
             
         </tags>
       
