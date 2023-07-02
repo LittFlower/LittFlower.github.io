@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Crypto on Little Flower.</title>
-    <link>http://littflower.github.io/tags/crypto/</link>
-    <description>Recent content in Crypto on Little Flower.</description>
+    <title>WriteUp on Little Flower.</title>
+    <link>http://littflower.github.io/categories/writeup/</link>
+    <description>Recent content in WriteUp on Little Flower.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 03 Feb 2023 21:27:43 +0000</lastBuildDate><atom:link href="http://littflower.github.io/tags/crypto/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 03 Feb 2023 21:27:43 +0000</lastBuildDate><atom:link href="http://littflower.github.io/categories/writeup/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>2022强网杯青少赛题解</title>
       <link>http://littflower.github.io/posts/2022%E5%BC%BA%E7%BD%91%E6%9D%AF%E9%9D%92%E5%B0%91%E8%B5%9B%E9%A2%98%E8%A7%A3/</link>
