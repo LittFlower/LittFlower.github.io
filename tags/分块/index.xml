@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>分块 on Little Flower.</title>
+    <link>http://littflower.github.io/tags/%E5%88%86%E5%9D%97/</link>
+    <description>Recent content in 分块 on Little Flower.</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 19 Nov 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://littflower.github.io/tags/%E5%88%86%E5%9D%97/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>分块思想</title>
+      <link>http://littflower.github.io/posts/%E5%88%86%E5%9D%97/</link>
+      <pubDate>Fri, 19 Nov 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://littflower.github.io/posts/%E5%88%86%E5%9D%97/</guid>
+      <description>分块思想 一、性质与证明 分块，故名思意，是将一个区间分成几个块，然后对于每个询问，整合一个或多个（甚至全部区间）的信息，但这种分块和整合是有技巧性de，否则很难有效的降低时间复杂度。
+先来看一道例题：
+老方有一个长度为 $n$ 的序列，被她的学生拜托完成以下三个操作：
+修改某位置的元素值 将一段区间的元素加上或减去一个值 求一个区间内的最大最小值 共有 $m$ 个这样的操作，保证 $n, m &amp;lt;= 50000​$
+考虑分块。
+我们考虑将整个序列划分为 $\sqrt n$ 块，因为这样可以使得总查询时间最短。
+证明如下：
+​	设这个序列的完整分块数是 $C$ 块，每一个完整个分块都包含 $S$ 个元素，那么显然可能存在一种情况即在区间 $[l, r]$ 的两端包含有不完整的分块。
+如图，蓝色部分即为不完整的分块。
+可以发现该序列内有 $C​$ 个完整分块和两个不完整分块，且这两个不完整分块内元素数量之和小于 $2S​$ ，则对于一个序列而言，我们要进行的查询总数的极限为 $C + 2S​$ ，则时间复杂度为 $O(C + 2S)​$ ，也就相当于 $O(max{ { C, S } } )​$.
+因此，由于 $C * S + 2 * S &amp;gt;= r - l + 1$ ，则可以近似的看作当且仅当 $S = C$ 时，时间复杂度可以取得最小上界， 此时 $C = S = \sqrt n $ .</description>
+    </item>
+    
+  </channel>
+</rss>
