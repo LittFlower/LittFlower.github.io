@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>GUI on 一只花盆.</title>
+    <link>http://littflower.github.io/tags/gui/</link>
+    <description>Recent content in GUI on 一只花盆.</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 22 Dec 2021 21:56:20 +0000</lastBuildDate><atom:link href="http://littflower.github.io/tags/gui/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>第一次面向对象编程</title>
+      <link>http://littflower.github.io/posts/%E7%AC%AC%E4%B8%80%E6%AC%A1%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%BC%96%E7%A8%8B/</link>
+      <pubDate>Wed, 22 Dec 2021 21:56:20 +0000</pubDate>
+      
+      <guid>http://littflower.github.io/posts/%E7%AC%AC%E4%B8%80%E6%AC%A1%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%BC%96%E7%A8%8B/</guid>
+      <description>题记 编程我都会，可是怎么对象怎么找呢？
+这篇博客一开始是部署在云剪切版里的。
+正文 咳咳&amp;hellip;不得不说，这是人生中第一次面向需求编程，所以写篇文章纪念下。
+起因是一位远在天边的“重要的友人”过生日，在一位同学的推荐下，突然发现 python 的 GUI 似乎很不错，大有可为，于是用了一周的时间（ $N$多个不眠之夜）终于学会并使用 tkinter 写了以下这个程序。
+不熟悉 tkinter 的同学可以看看本文下方参考文档里的《python 图形化界面设计》，里面讲的比较详细。
+从而可以实现一个用户登陆界面。
+然后往里面套娃了一些东西，有一说一应该蛮简单的。（除了参数比较难调
+$resource.py$
+from tkinter import * from tkinter.ttk import * from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk) from matplotlib.backend_bases import key_press_handler import numpy as np import matplotlib.pyplot as plt from matplotlib.patches import Polygon import tkinter.messagebox import turtle import random import time import ctypes import pygame # 清空日志文件 f = open( &amp;#39;.\\logs&amp;#39;, &amp;#39;w&amp;#39; ) f.close() # 登录界面 root = Tk() root.</description>
+    </item>
+    
+  </channel>
+</rss>
