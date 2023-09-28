@@ -9,10 +9,10 @@
     <lastBuildDate>Fri, 18 Jun 2021 18:04:39 +0000</lastBuildDate><atom:link href="http://littflower.github.io/categories/test/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>测试页面（数学公式）</title>
-      <link>http://littflower.github.io/posts/%E6%B5%8B%E8%AF%95%E9%A1%B5%E9%9D%A2%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/</link>
+      <link>http://littflower.github.io/posts/test-of-math/</link>
       <pubDate>Fri, 18 Jun 2021 18:04:39 +0000</pubDate>
       
-      <guid>http://littflower.github.io/posts/%E6%B5%8B%E8%AF%95%E9%A1%B5%E9%9D%A2%E6%95%B0%E5%AD%A6%E5%85%AC%E5%BC%8F/</guid>
+      <guid>http://littflower.github.io/posts/test-of-math/</guid>
       <description>质点运动学 圆周运动 角度 - 角速度 - 角加速度：$\theta -\omega -\alpha$
 切线加速度 $a_{t}=\alpha r$（角加速度 × 半径） 法线加速度 $a_{n}=\omega^{2}r$（角速度的方 × 半径） 运动建模及其方程 大部分的模型方程都是基于三角形的勾股定理
 牛顿定律及常见力 没什么好记的

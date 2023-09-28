@@ -9,10 +9,10 @@
     <lastBuildDate>Fri, 19 Nov 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://littflower.github.io/categories/oi/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>分块思想</title>
-      <link>http://littflower.github.io/posts/%E5%88%86%E5%9D%97/</link>
+      <link>http://littflower.github.io/posts/blocking-algorithm/</link>
       <pubDate>Fri, 19 Nov 2021 00:00:00 +0000</pubDate>
       
-      <guid>http://littflower.github.io/posts/%E5%88%86%E5%9D%97/</guid>
+      <guid>http://littflower.github.io/posts/blocking-algorithm/</guid>
       <description>分块思想 一、性质与证明 分块，故名思意，是将一个区间分成几个块，然后对于每个询问，整合一个或多个（甚至全部区间）的信息，但这种分块和整合是有技巧性de，否则很难有效的降低时间复杂度。
 先来看一道例题：
 老方有一个长度为 $n$ 的序列，被她的学生拜托完成以下三个操作：
@@ -28,10 +28,10 @@
     
     <item>
       <title>区间线段类问题合集</title>
-      <link>http://littflower.github.io/posts/%E5%8C%BA%E9%97%B4%E7%BA%BF%E6%AE%B5%E7%B1%BB%E9%97%AE%E9%A2%98%E5%90%88%E9%9B%86/</link>
+      <link>http://littflower.github.io/posts/collection-of-interval-segment-problems/</link>
       <pubDate>Fri, 12 Nov 2021 00:00:00 +0000</pubDate>
       
-      <guid>http://littflower.github.io/posts/%E5%8C%BA%E9%97%B4%E7%BA%BF%E6%AE%B5%E7%B1%BB%E9%97%AE%E9%A2%98%E5%90%88%E9%9B%86/</guid>
+      <guid>http://littflower.github.io/posts/collection-of-interval-segment-problems/</guid>
       <description>0x00.前言 近一个月以来，不管是在模拟赛中，还是在日常做题中，甚至是在CSP考试中，都遇到了各种各样的区间问题，其题目形式、背景多种多样，但其根本都可以归纳为一种区间线段模型，遂加以整理。
 0x01. 维护单一线段+选取部分区间 首先来看这一种较为基础的版本。
 题目链接：luogu P1803
