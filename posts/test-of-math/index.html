@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="Hugo 0.115.0">
+  <meta name="generator" content="Hugo 0.119.0">
 
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -216,19 +216,23 @@ $dJ=dm\cdot r^{2}=r^{2}\cdot \rho \cdot V_{0}$
 <ul>
 <li>
 <p>例1：定滑轮两边用 $F_{1}$ 、$F_{2}$ 两个力拉，求滑轮的切线加速度</p>
-<p>$\begin{cases}J=\dfrac{1}{2}mR^{2}\
+<p>$$
+\begin{cases}J=\dfrac{1}{2}mR^{2}\
 M=F_{2}R-F_{1}R\
-M=J\alpha \end{cases}$</p>
+M=J\alpha \end{cases}
+$$</p>
 <p>$\Rightarrow \alpha =\dfrac{F_{2}R-F_{1}R}{\dfrac{1}{2}mR^{2}}$</p>
 <p>$a_{t}=\alpha R=\dfrac{2F_{2}R-2F_{1}R}{mR^{2}}=\dfrac{2F_{2}-2F_{1}}{mR}$</p>
 </li>
 <li>
 <p>例2：定滑轮两边挂着 $m_{1}$ 、$m_{2}$ 两个物块，求释放后物块加速度</p>
-<p>$\begin{cases}T_{1}-m_{1}g=m_{1}a_{t}\
+<p>$$
+\begin{cases}T_{1}-m_{1}g=m_{1}a_{t}\
 m_{2}g-T_{2}=m_{2}a_{t}\
 M=\left( T_{2}-T_{1}\right) R=J\alpha \
 J=\dfrac{1}{2}mR^{2}\
-a_{t}=R\alpha \end{cases}$</p>
+a_{t}=R\alpha \end{cases}
+$$</p>
 </li>
 </ul>
 <h1 id="电场强度">电场强度</h1>
@@ -241,15 +245,20 @@ a_{t}=R\alpha \end{cases}$</p>
 <p>取线元 $dx$ ，带电 $dq=\eta dx$</p>
 <p>$dE=\dfrac{1}{4\pi \varepsilon _{0}}\dfrac{\eta dx}{r^{2}}$</p>
 <p>将 $dE$ 投影到两个坐标轴上</p>
-<p>$\begin{cases}dE_{x}=dE\cos \theta  \
-dEy=dE\sin\theta \end{cases}$</p>
+<p>$$
+\begin{cases}dE_{x}=dE\cos \theta  \
+dEy=dE\sin\theta \end{cases}
+$$</p>
 <p>把 $x$ 和 $r$ 都换成用 $\theta$ 和 $R$ 表示</p>
-<p>$\begin{cases}\dfrac{R}{x}=\tan \left( \pi -\theta \right) \
-r^{2}=R^{2}+x^{2}\end{cases}$</p>
+<p>$$
+\begin{cases}\dfrac{R}{x}=\tan \left( \pi -\theta \right) \
+r^{2}=R^{2}+x^{2}\end{cases}
+$$</p>
 <p>然后从 $0$ 到 $\pi$ 积分</p>
-<p>$\begin{cases}E_{x}=0\
-E_{y}=\dfrac{\eta }{2\pi \varepsilon _{0}R}\end{cases}$</p>
-<p><img src="https://pic-go-img.oss-cn-hangzhou.aliyuncs.com/202204151737942.jpg" alt=""></p>
+<p>$$
+\begin{cases}E_{x}=0\
+E_{y}=\dfrac{\eta }{2\pi \varepsilon _{0}R}\end{cases}
+$$</p>
 </li>
 </ul>
 <h1 id="核心词汇">核心词汇</h1>
@@ -477,42 +486,22 @@ E_{y}=\dfrac{\eta }{2\pi \varepsilon _{0}R}\end{cases}$</p>
         
 
         <link rel="shortcut icon" href="favicon.ico" />
-<script type="text/javascript" async
-    src="https://cdn.bootcss.com/mathjax/2.7.3/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-        MathJax.Hub.Config({
-            tex2jax: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
-                processEscapes: true,
-                processEnvironments: true,
-                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-                TeX: {
-                    equationNumbers: { autoNumber: "AMS" },
-                    extensions: ["AMSmath.js", "AMSsymbols.js"]
-                }
-            }
-        });
 
-        MathJax.Hub.Queue(function () {
-            
-            
-            
-            var all = MathJax.Hub.getAllJax(), i;
-            for (i = 0; i < all.length; i += 1) {
-                all[i].SourceElement().parentNode.className += ' has-jax';
-            }
-        });
-    </script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 
-<style>
-    code.has-jax {
-        font: inherit;
-        font-size: 100%;
-        background: inherit;
-        border: inherit;
-        color: #515151;
-    }
-</style>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
+    });
+</script>
       </div>
     </div>
   </article>
