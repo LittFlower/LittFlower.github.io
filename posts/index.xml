@@ -6,7 +6,24 @@
     <description>Recent content in Posts on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 07 Sep 2023 18:23:30 +0000</lastBuildDate><atom:link href="http://littflower.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 29 Sep 2023 10:54:01 +0800</lastBuildDate><atom:link href="http://littflower.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Windows x86 SEH 机制</title>
+      <link>http://littflower.github.io/posts/moectf2023-unwind-and-a-little-windows-she/</link>
+      <pubDate>Fri, 29 Sep 2023 10:54:01 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/moectf2023-unwind-and-a-little-windows-she/</guid>
+      <description>Windows x86 SEH 机制暨MoeCTF2023 Unwind 解题报告 前言 去年 MoeCTF 2022 的时候云姐姐出了个除零异常的题，当时在机房几个人七嘴八舌怼汇编还能勉强做出来&amp;hellip;.
+今年 MoeCTF 2023 的时候云姐姐又双出了这么一个题，我做的时候就比较坐牢了&amp;hellip;&amp;hellip;想了想还是从原理出发完全地了解一下这个知识点，再做做这么个题。
+高难警告
+SEH 学习 认识 SEH 使用 SEH，你可以确保在执行意外终止时，可以正确地释放资源（如内存块和文件）。 ——《Structured Exception Handling》
+所谓 SEH，全称即 &amp;ldquo;Structure Exception Handler&amp;rdquo; —— 结构化异常处理器。
+需要明确：SEH 是针对于异常的一种处理机制。首先，异常分为两方面来讲：硬件异常和软件异常。
+硬件异常：这里的“硬件”的定义十分狭隘 —— 仅限于 CPU 异常，例如除零异常，它就是 CPU 在执行除零操作时会自动触发的异常处理机制； 软件异常：由程序模拟的异常，软件异常可以既可以由操作系统触发，也可以由程序员随意触发。 SEH 并非专为 C/C++ 设计，它是 windows 给的一套通用性的解决方案，因此尽管我们可以在代码中随时使用它们，但是应当优先使用 c++ ISO 标准化的异常处理（try - catch）（也就是说不要把这东西往工程代码里写啊喂）
+SEH 也有两种处理机制：
+异常处理程序 __except 块：它基于 filter-expression 值响应或消除异常； 终止处理程序 __finally 块：无论异常是否终止都要继续调用之。 Windows x86 提供的异常处理机制其实只是一个简单的框架，在此基础上有各编译器提供的增强版异常处理机制。故我们将 windows SEH 机制分为系统实现的原始版本、编译器实现的增强版本 两方面来讲。</description>
+    </item>
+    
     <item>
       <title>写在入校前</title>
       <link>http://littflower.github.io/posts/written-before-enrollment/</link>
