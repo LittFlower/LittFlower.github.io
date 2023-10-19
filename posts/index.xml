@@ -6,7 +6,21 @@
     <description>Recent content in Posts on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 29 Sep 2023 10:54:01 +0800</lastBuildDate><atom:link href="http://littflower.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 19 Oct 2023 21:13:56 +0800</lastBuildDate><atom:link href="http://littflower.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>ArchLinux 体验日志与感悟</title>
+      <link>http://littflower.github.io/posts/the-taste-of-archlinux/</link>
+      <pubDate>Thu, 19 Oct 2023 21:13:56 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/the-taste-of-archlinux/</guid>
+      <description>在使用 ArchLinux 4 个月后 前言 高考前几个月和 Rx 聊天的时候，他给我摆拍了一张当时他使用的操作系统 / 生产环境，简洁、优雅的桌面深深吸引了我，自那时起，使用 ArchLinux 为主力生产/生活系统的种子便深深埋在了我心底。
+再就是高考结束一周后，连忙入手了一台华硕天选 4，问了两句 Rx 关于注意事项（他甩了 wiki 的链接给我），当时看见他给我发 wiki 的链接我还感觉有点不靠谱，现在想起来属实是应该给 wiki 磕一个 23333
+以下记录了一些我使用了 4 个月 Arch Linux 期间的一些体验，希望其中的一些经验及解决方案可以帮到看到这篇文章的友友。
+基础配置 基础的安装操作可以右转 Arch wiki，wiki 上写得很详细了，只需要按照这份说明一步一步执行就可以（注意不要跳步），以及不推荐使用 Arch Linux Wiki 提供的一键安装脚本，我认为如果是 Arch Linux 的 target 用户，应该秉持着 Arch Linux 的 &amp;ldquo;Keep It Simple&amp;rdquo; 的 Arch 之道，对自己的生产环境了如指掌，而不是选择一键梭哈。
+Arch Linux 的安装方式可以不准确地粗略概括为：通过 U 盘上烧录的 ISO 介质以 root 身份登陆进入一个虚拟控制台，然后对裸机安装基础软件（如 pacman、iptools、vim 等）然后 chroot 进主机的 root，所以不要干出来把东西都装在虚拟控制台里而主机什么都没装这种操作，重启之后全部都会消失（别问我为什么要写这一条
+关于安装之后的工作，请浏览 Arch wiki。这里主要说一说显示服务协议以及后续 window manager 或者 compositor 的选择。</description>
+    </item>
+    
     <item>
       <title>Windows x86 SEH 机制</title>
       <link>http://littflower.github.io/posts/moectf2023-unwind-and-a-little-windows-she/</link>
