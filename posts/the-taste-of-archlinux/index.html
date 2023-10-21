@@ -143,7 +143,7 @@ Arch Linux 的安装方式可以不准确地粗略概括为：通过 U 盘上烧
 <p>基础的安装操作可以右转 <a href="https://wiki.archlinux.org/title/Installation_guide">Arch wiki</a>，wiki 上写得很详细了，只需要按照这份说明一步一步执行就可以（<strong>注意不要跳步</strong>），以及不推荐使用 Arch Linux Wiki 提供的一键安装脚本，我认为如果是 Arch Linux 的 target 用户，应该秉持着 Arch Linux 的 &ldquo;Keep It Simple&rdquo; 的 Arch 之道，对自己的生产环境了如指掌，而不是选择一键梭哈。</p>
 <p>Arch Linux 的安装方式可以不准确地粗略概括为：通过 U 盘上烧录的 ISO 介质以 <code>root</code> 身份登陆进入一个虚拟控制台，然后对裸机安装基础软件（如 <code>pacman</code>、<code>iptools</code>、<code>vim</code> 等）然后 <code>chroot</code> 进主机的 <code>root</code>，所以不要干出来把东西都装在虚拟控制台里而主机什么都没装这种操作，重启之后全部都会消失（别问我为什么要写这一条</p>
 <p>关于安装之后的工作，请浏览 <a href="https://wiki.archlinux.org/title/General_recommendations">Arch wiki</a>。这里主要说一说显示服务协议以及后续 window manager 或者 compositor 的选择。</p>
-<p>在显示服务协议上，wiki 上很清楚地列举了两个现代标准：X11 和 Wayland <del>我 tm 一开始用的是 xfce 你敢信</del>。前者是老东西了，各种应用运行良好，但是由于服务端和客户端的设计问题经常出现屏幕撕裂这种及其抽象的 issue，体验了一段时间之后还是切换为了 Wayland。老实说，Wayland 虽然是个（相对的）新东西，支持的应用较 X11 少，但是真的香，并且我个人使用至今很少出现无法解决的问题（说的就是你腾讯会议）。</p>
+<p>在显示服务协议上，wiki 上很清楚地列举了两个现代标准：X11 和 Wayland <del>我 tm 一开始用的是 xfce 你敢信</del>。前者是老东西了，各种应用运行良好，但是由于服务端和客户端的设计问题经常出现屏幕撕裂这种极其抽象的 issue，体验了一段时间之后还是切换为了 Wayland。老实说，Wayland 虽然是个（相对的）新东西，支持的应用较 X11 少，但是真的香，并且我个人使用至今很少出现无法解决的问题（说的就是你腾讯会议）。</p>
 <p>如果使用 Wayland 的话，我选择的 compositor 是堆叠式的 Kwin，对标 WM 是：KDE Plasma，这东西支持高度自定义，有什么不舒服的地方都可以调，打造一个最适合自己的桌面环境。</p>
 <p>其他软件看着装就行，<code>vscode</code>、<code>Jetbrains</code> 全家桶、<code>docker</code> 这些在 wiki 或者 aur 上都能找到，可以解决绝大部分需求。</p>
 <p>可以说，只要熟读 wiki 并善于在 wiki 里搜索，Arch Linux 几乎不会出什么幺蛾子。</p>
