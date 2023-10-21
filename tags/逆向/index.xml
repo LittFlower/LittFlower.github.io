@@ -6,13 +6,13 @@
     <description>Recent content in 逆向 on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 29 Sep 2023 10:54:01 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/%E9%80%86%E5%90%91/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 13 Oct 2023 20:23:13 +0000</lastBuildDate><atom:link href="http://littflower.github.io/tags/%E9%80%86%E5%90%91/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Windows x86 SEH 机制</title>
-      <link>http://littflower.github.io/posts/moectf2023-unwind-and-a-little-windows-she/</link>
-      <pubDate>Fri, 29 Sep 2023 10:54:01 +0800</pubDate>
+      <link>http://littflower.github.io/posts/moectf2023-unwind-and-a-little-windows-seh/</link>
+      <pubDate>Fri, 13 Oct 2023 20:23:13 +0000</pubDate>
       
-      <guid>http://littflower.github.io/posts/moectf2023-unwind-and-a-little-windows-she/</guid>
+      <guid>http://littflower.github.io/posts/moectf2023-unwind-and-a-little-windows-seh/</guid>
       <description>Windows x86 SEH 机制暨MoeCTF2023 Unwind 解题报告 前言 去年 MoeCTF 2022 的时候云姐姐出了个除零异常的题，当时在机房几个人七嘴八舌怼汇编还能勉强做出来&amp;hellip;.
 今年 MoeCTF 2023 的时候云姐姐又双出了这么一个题，我做的时候就比较坐牢了&amp;hellip;&amp;hellip;想了想还是从原理出发完全地了解一下这个知识点，再做做这么个题。
 高难警告
