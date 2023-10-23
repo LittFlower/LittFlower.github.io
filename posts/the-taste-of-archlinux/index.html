@@ -148,6 +148,10 @@ Arch Linux 的安装方式可以不准确地粗略概括为：通过 U 盘上烧
 <p>其他软件看着装就行，<code>vscode</code>、<code>Jetbrains</code> 全家桶、<code>docker</code> 这些在 wiki 或者 aur 上都能找到，可以解决绝大部分需求。</p>
 <p>可以说，只要熟读 wiki 并善于在 wiki 里搜索，Arch Linux 几乎不会出什么幺蛾子。</p>
 <p>注意一下，别用各个语言对应的包管理器管理系统级别的包，比如什么 <code>pip3</code>、<code>npm</code> 之类的，<code>python</code> 的包可以在 aur 上找，npm 可以在 user dir 里安装。</p>
+<h2 id="display-manager">Display Manager</h2>
+<p>我选的 DM 是 SDDM，主题用的是在仓库里找的 NetLogin-userlist，算是一个比较 cool 的登陆界面，登陆时在 session 里可以切换 x11 or wayland，满足个人需求。</p>
+<p>值得一提的是，默认的 sddm 主题字体是 sans，比较丑陋，可以通过 patch 主题文件目录 <code>/usr/share/sddm/themes</code> 下的 qml 修改字体。</p>
+<p>可以写个 <code>patcher.sh</code> 简化操作，参考<a href="https://github.com/CommDServ/sddm-theme-font-patcher/blob/master/patcher.sh">这里</a>，当然直接搜索替换也是可以的。</p>
 <h2 id="内核和显卡驱动">内核和显卡驱动</h2>
 <p>其实还是看了 Rx 的<a href="https://blog.woooo.tech/posts/asus_linux_1/">这篇博客</a>，我最开始使用的是官方 Linux 内核（中间傻逼装了某个 aur 野鸡内核不算），由于高贵的 ASUS 属性，log 里小问题不断。看见 Rx 的文章后我也去试了试 <a href="https://asus-linux.org/">ASUS Linux</a>，安装了 <code>linux-g14</code> 内核以及配套的一系列工具。显卡驱动使用了 <code>nvidia-dkms</code>，显卡调度等功能使用了 ASUS Linux 提供的 <code>supergfxctl</code>，配合 arch linux 的 <code>prime-run</code> 可以完美解决双显卡笔记本下的显卡调度问题。</p>
 <p>默认混合显卡模式，不过并不是说你的电脑会按需调度两张显卡，默认还是使用 intel 的集成显卡，在命令前加 <code>prime-run</code> 可以强制其运行于 N 独立显卡。</p>
@@ -192,7 +196,7 @@ Arch Linux 的安装方式可以不准确地粗略概括为：通过 U 盘上烧
 <h3 id="炉石传说">炉石传说</h3>
 <p><del>炉石传说，启动！！</del></p>
 <p>你别说，这东西我还真能用 wine 无损跑。</p>
-<p>我目前的解决方案是这样的，先起一个 <code>lutris</code>，搜索炉石传说亚服，找一个<code>暴雪安装器.exe</code>，然后 lutris 里选择通过安装器安装，安装时记得选择英文模式，因为国服似了喵。在指定目录下做一个 Blizzard HearthStone 的专用 wine perfix ，如果这中间遇到了什么 VKD3D / DXVK 等等东西缺失，多半是 lutris 安装过程中寄了，删了重装一次（记得把 home 目录下 .config / .local 里的删干净）。</p>
+<p>我目前的解决方案是这样的，先起一个 <code>lutris</code>，搜索炉石传说亚服，找一个 <code>暴雪安装器.exe</code>，然后 lutris 里选择通过安装器安装，安装时记得选择英文模式，因为国服似了喵。在指定目录下做一个 Blizzard HearthStone 的专用 wine perfix ，如果这中间遇到了什么 VKD3D / DXVK 等等东西缺失，多半是 lutris 安装过程中寄了，删了重装一次（记得把 home 目录下 .config / .local 里的删干净）。</p>
 <p>然后把试着启动一次炉石，如果寄了，首先参考<a href="https://github.com/lutris/docs/blob/master/Battle.Net.md">这个</a>，如果报找不到游戏文件，在终端抄一下 <code>wine perfix</code> 启动命令，可以参考我的：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>env WINEPREFIX<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/</span>$HOME<span style="color:#e6db74">/Games/Blizzard&#34;</span> WINEDEBUG<span style="color:#f92672">=</span>-all prime-run wine <span style="color:#e6db74">&#39;/$HOME/Games/Blizzard/drive_c/Program Files (x86)/Battle.net/Battle.net Launcher.exe&#39;</span>
 </span></span></code></pre></div><p>其中 <code>prime-run</code> 是把炉石放在独立显卡上跑，实测发现用集成显卡很可能会卡。</p>

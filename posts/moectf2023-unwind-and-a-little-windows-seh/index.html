@@ -302,7 +302,7 @@ SEH 也有两种处理机制：
 </ul>
 </li>
 </ol>
-<p>开应用层异常不说，我们来看 <code>PreviousMode</code> 是 <code>KernelMode</code> 的情况，其重点是调用 <code>RtlDispatchException</code> 的操作。在<a href="https://github.com/mic101/windows/blob/master/WRK-v1.2/base/ntos/rtl/i386/exdsptch.c">这里</a>可以看到函数源代码，篇幅所限，<strong>非必要我不会贴上完整的源代码</strong>。</p>
+<p>抛开应用层异常不说，我们来看 <code>PreviousMode</code> 是 <code>KernelMode</code> 的情况，其重点是调用 <code>RtlDispatchException</code> 的操作。在<a href="https://github.com/mic101/windows/blob/master/WRK-v1.2/base/ntos/rtl/i386/exdsptch.c">这里</a>可以看到函数源代码，篇幅所限，<strong>非必要我不会贴上完整的源代码</strong>。</p>
 <p>首先是这个函数的简单介绍，通过读注释了解到：这个函数的功能是通过向后搜索 <code>EXCEPTION_REGISTRATION_RECORD</code> 来把异常分发给以调用 <code>EXCEPTION_REGISTRATION_RECORD</code> 为基础的处理函数，这个搜索开始于上下文初始时指定的 <code>EXCEPTION_REGISTRATION_RECORD</code> ，结束于异常被处理、对栈帧的搜索非法或者已经搜索完毕。</p>
 <p>定义：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span>BOOLEAN <span style="color:#a6e22e">RtlDispatchException</span> (
