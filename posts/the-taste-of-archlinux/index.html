@@ -186,6 +186,9 @@ Arch Linux 的安装方式可以不准确地粗略概括为：通过 U 盘上烧
 </span></span></code></pre></div><p>web、crypto 的工具基本上都有 linux 备份。</p>
 <p>所以实际折腾下来，我在 arch linux 做 re / pwn 题一般都是 konsole 开一个终端里放 4 个标签页，分别是：一键启动 <code>ida32</code> / <code>64</code>、一键启动 <code>ubuntu2204</code>、起一个 <code>ipython</code>、在题目文件目录下起一个 <code>shell</code> 备用。</p>
 <p>感觉效率比在 windows 上高得多。</p>
+<h2 id="办公">办公</h2>
+<p>办公套件用的是 <a href="https://wiki.archlinuxcn.org/wiki/WPS_Office">WPS office</a>&hellip;&hellip; 这东西虽然在 windows 平台上由于广告问题槽点过多，但是在我的 arch linux 平台上用着还算正常。</p>
+<p>不能开箱即用的是字体问题，wps office 文档里的加粗字体会显示成依托黑色的东西，影响使用，<a href="https://home.wps.cn/topic/3137">解决办法</a>是：下载<a href="https://mirrors.ustc.edu.cn/debian/pool/main/f/freetype/libfreetype6_2.12.1%2Bdfsg-5_amd64.deb">这个</a>，解压之后把里面的 /usr/lib/x86_64-linux-gnu 里的 libfreetype.so.6.18.3 <code>cp</code> 到 /usr/lib/office6 里，并 <code>ln -s libfreetype.so.6.18.3 libfreetype.so.6</code> 即可。</p>
 <h2 id="游戏">游戏</h2>
 <h3 id="steam">steam</h3>
 <p>我谔谔，我目前玩到的 steam 游戏没有不能在 linux 上跑的，v 社给 linux 用户出了一个兼容性选项，使得非 linux 游戏也可以通过 wine 的魔改版 proton 起。之前有人还怀疑性能问题，我寻思着这东西连 2077 都能无损跑，我还经常在宿舍跟舍友打究极风暴，还有什么带不起来的？</p>
