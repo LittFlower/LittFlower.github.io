@@ -6,7 +6,22 @@
     <description>Recent content on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 19 Oct 2023 21:13:56 +0800</lastBuildDate><atom:link href="http://littflower.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 12 Nov 2023 18:08:44 +0800</lastBuildDate><atom:link href="http://littflower.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>MoeCTF 2023 Pwn 题目复现</title>
+      <link>http://littflower.github.io/posts/moectf-2023-pwn-writeup/</link>
+      <pubDate>Sun, 12 Nov 2023 18:08:44 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/moectf-2023-pwn-writeup/</guid>
+      <description>MoeCTF2023 Pwn WriteUp 前言 今年暑假比较摆烂&amp;hellip; 最后也没做完 MoeCTF 的 pwn 题, 只能赛后抽时间复现一遍. 复现一遍之后还是复习了不少知识点, 写一篇 wp 以作笔记.
+题目复现 test_nc 连接即可.
+baby_calculator emmm 打一个交互就可以了.
+fd fd 即 file descripter, 又叫文件描述符, 它是一个抽象的指示符, 用一个非负整数表示.它指向了由系统内核维护的一个 file table 中的某个条目 ( entry ), 后者又指向储存文件真实地址的 inode table.
+一般来说操作系统会为每个用户进程预留三个默认的 fd: stdin, stdout, stderr. 它们对应的非负整数值分别为 0, 1, 2. 之后的 fd 从 3 开始分配.
+反编译得到核心代码:
+fd = open(&amp;#34;./flag&amp;#34;, 0, 0LL); new_fd = (4 * fd) | 0x29A; dup2(fd, new_fd); // 将 new_fd 重定向到 fd close(fd); puts(&amp;#34;Which file do you want to read?</description>
+    </item>
+    
     <item>
       <title>ArchLinux 体验日志与感悟</title>
       <link>http://littflower.github.io/posts/the-taste-of-archlinux/</link>
