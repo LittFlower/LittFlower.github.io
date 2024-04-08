@@ -6,7 +6,22 @@
     <description>Recent content in Posts on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 23 Jan 2024 00:25:35 +0800</lastBuildDate><atom:link href="http://littflower.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 08 Apr 2024 22:33:57 +0800</lastBuildDate><atom:link href="http://littflower.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>UnbreakableCTF2024题解及反思</title>
+      <link>http://littflower.github.io/posts/unbreakablectf2024-writeup/</link>
+      <pubDate>Mon, 08 Apr 2024 22:33:57 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/unbreakablectf2024-writeup/</guid>
+      <description>Unbreakable CTF 2024 Pwn WriteUps 和 NAN 的队友一起打了 UnbreakableCTF 2024 的二进制方向，动手做了两道题，口胡了一道堆题，有一些感悟和反思放在这里。
+harder_assembly 思路 一道 x64 的shellcode 题，难点是禁止在 shellcode 里使用 syscall 以及shellcode 长度只有 15 字节。
+后者比较好解决，可以考虑直接调用 read 构造二次输入，这样二次输入的时候就没有长度限制了，构造 orw 即可。
+这里我遇到的知识盲区主要是禁用了 syscall，解决方法是使用 int 0x80（即继续使用 x32 API）
+翻了一下 stackoverflow，注意到这样一段话：
+When called from a 64-bit program it behaves the same way it would behave like if it has been called from a 32-bit program (using the 32-bit calling convention).
+This also means that the parameters for &amp;ldquo;int 0x80&amp;rdquo; will be passed in 32-bit registers and the upper 32 bits of the 64-bit registers are ignored.</description>
+    </item>
+    
     <item>
       <title>AsisCTF2016 b00ks 复现笔记</title>
       <link>http://littflower.github.io/posts/asisctf2016-b00ks/</link>
