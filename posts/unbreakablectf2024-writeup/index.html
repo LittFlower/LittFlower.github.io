@@ -19,8 +19,8 @@
            "@id": "http:\/\/littflower.github.io"
       },
       "articleSection" : "posts",
-      "name" : "UnbreakableCTF2024题解及反思",
-      "headline" : "UnbreakableCTF2024题解及反思",
+      "name" : "Unbreakable CTF 2024题解及反思",
+      "headline" : "Unbreakable CTF 2024题解及反思",
       "description" : "Unbreakable CTF 2024 Pwn WriteUps 和 NAN 的队友一起打了 UnbreakableCTF 2024 的二进制方向，动手做了两道题，口胡了一道堆题，有一些感悟和反思放在这里。\nharder_assembly 思路 一道 x64 的shellcode 题，难点是禁止在 shellcode 里使用 syscall 以及shellcode 长度只有 15 字节。\n后者比较好解决，可以考虑直接调用 read 构造二次输入，这样二次输入的时候就没有长度限制了，构造 orw 即可。\n这里我遇到的知识盲区主要是禁用了 syscall，解决方法是使用 int 0x80（即继续使用 x32 API）\n翻了一下 stackoverflow，注意到这样一段话：\nWhen called from a 64-bit program it behaves the same way it would behave like if it has been called from a 32-bit program (using the 32-bit calling convention).\nThis also means that the parameters for \u0026ldquo;int 0x80\u0026rdquo; will be passed in 32-bit registers and the upper 32 bits of the 64-bit registers are ignored.",
       "inLanguage" : "en-US",
       "author" : "LittFlower.",
@@ -35,8 +35,8 @@
       "keywords" : [ "Pwn","UnbreakableCTF2024", ]
   }
 </script>
-<title>UnbreakableCTF2024题解及反思</title>
-  <meta property="og:title" content="UnbreakableCTF2024题解及反思" />
+<title>Unbreakable CTF 2024题解及反思</title>
+  <meta property="og:title" content="Unbreakable CTF 2024题解及反思" />
   <meta property="og:type" content="article" />
   <meta property="og:description" content="Unbreakable CTF 2024 Pwn WriteUps 和 NAN 的队友一起打了 UnbreakableCTF 2024 的二进制方向，动手做了两道题，口胡了一道堆题，有一些感悟和反思放在这里。
 harder_assembly 思路 一道 x64 的shellcode 题，难点是禁止在 shellcode 里使用 syscall 以及shellcode 长度只有 15 字节。
@@ -113,7 +113,7 @@ This also means that the parameters for &amp;ldquo;int 0x80&amp;rdquo; will be p
 
         </div>
         <header class="post-header">
-          <h1 class="post-title">UnbreakableCTF2024题解及反思</h1>
+          <h1 class="post-title">Unbreakable CTF 2024题解及反思</h1>
           
           <div class="row post-desc">
             <div class="col-xs-6">
