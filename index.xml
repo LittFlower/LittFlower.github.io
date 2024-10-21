@@ -6,7 +6,24 @@
     <description>Recent content on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 09 Apr 2024 18:49:09 +0800</lastBuildDate><atom:link href="http://littflower.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 21 Oct 2024 19:14:44 +0800</lastBuildDate><atom:link href="http://littflower.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>论文笔记《AddressSanitizer: A Fast Address Sanity Checker》</title>
+      <link>http://littflower.github.io/posts/paper-notes-of-addresssanitizer-a-fast-address-sanity-checker/</link>
+      <pubDate>Mon, 21 Oct 2024 19:14:44 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/paper-notes-of-addresssanitizer-a-fast-address-sanity-checker/</guid>
+      <description>0x00. Abstract 对于 C 和 C++ 等编程语言来说，内存访问错误（包括缓冲区溢出和 use after free）仍然是一个严重问题。存在许多内存错误检测器，但大多数检测器要么速度慢，要么局限于有限的错误集，或者两者兼而有之。本文介绍了 AddressSanitizer，一种新的内存错误检测器。这个工具可以查找对堆、堆栈和全局变量的越界访问，以及 use after free。它采用专门的内存分配器和代码工具，足够简单，可以在任何编译器、二进制翻译系统甚至硬件中实现。AddressSanitizer 在不牺牲全面性的情况下实现了效率。它的平均速度仅为 73%，但它可以在错误发生时准确地检测到错误。它在 Chromium 浏览器中发现了 300 多个以前未知的错误，以及其他软件中的许多错误。
+0x01. Introduction AddressSanitizer 由两部分组成：检测模块和运行时库。检测模块修改代码以检查每次内存访问的影子态 (shadow state)，并在堆栈和全局对象周围创建中毒红区以检测向上或向下溢出。当前的实现基于 LLVM 编译器基础设施。运行时库替换了 malloc、free 和相关函数，在分配的堆区域周围创建中毒红区，延迟已释放堆区域的重用，并进行错误报告。
+总的来说，这篇文章做了以下几件事：
+说明了内存错误检测器可以利用影子内存 shadow memory的全面性，并且开销比传统方法低得多； 提出一种新颖的影子态编码方式，可实现紧凑的影子内存（高达 128-to-1），用于检测越界和 use-after-free 错误； 描述一个针对新实现的影子编码的专用内存分配器； 评估一个新的公开可用的工具，该工具可以有效地识别内存错误。 0x02. Related work 影子内存（shadow memory） 总的来说，按照对应用程序地址的处理可以把现有的工具分为两种：
+通过直接缩放和偏移（其中完整应用程序地址空间映射到单个影子地址空间）； 通过涉及查表的额外转换来映射到影子地址空间。 直接缩放和偏移的例子有：
+TaintTrace LIFT 使用多级转换的例子有：
+Valgrind Dr.Memory 还有一些比较 trick 的工具：
+Umbra：兼顾布局灵活性和效率，使用可动态调整的缩放和偏移来直接映射地址而非使用查表的方式； BoundLess：利用 64 位寄存器的高 16 位来做到内存复用，但是在慢速路径下会退化； LBC：使用存储在应用程序内存中的特殊值执行快速路径的检查，并在慢速路径上依赖于两级影子内存。 实现 大部分内存检测工具都基于二进制文件，这些工具可以发现堆内存的越界和 UAF，还可以识别未初始化的读取，不过没办法识别堆栈和全局变量的越界错误，好消息是基本不会误报。例如：Valgrind，Dr.Memory，Discover，BoundsChecker 等等
+而使用编译时检测的工具虽然可以检测堆栈对象的越界访问，但是无法检测所有的堆栈缓冲区溢出错误，而且可能误报，例如 Mudflap。</description>
+    </item>
+    
     <item>
       <title>foolctf 2024 WriteUp 和一些关于 shellcode 的反思</title>
       <link>http://littflower.github.io/posts/t1d_foolctf-2024-writeups/</link>
