@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Reverse on 一只花盆.</title>
-    <link>http://littflower.github.io/tags/reverse/</link>
-    <description>Recent content in Reverse on 一只花盆.</description>
+    <title>Notes on 一只花盆.</title>
+    <link>http://littflower.github.io/categories/notes/</link>
+    <description>Recent content in Notes on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 15 May 2024 14:35:41 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/reverse/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 15 May 2024 14:35:41 +0800</lastBuildDate><atom:link href="http://littflower.github.io/categories/notes/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>如何计算结构体字节数</title>
       <link>http://littflower.github.io/posts/how-to-calc-the-bytes-of-struct/</link>
@@ -29,22 +29,6 @@ struct node { char a; // 1 字节，但会填充至 4 字节 int b; // 4 字节�
 0x01. 数组 最简单的一种就是逆向数组，因为数组的形式在经过反编译之后会呈现出指针偏移的形式，e.g. *(p + offset)。
 比如说下面这份代码：
 int __fastcall main(int argc, const char **argv, const char **envp) { int i; // [rsp+4h] [rbp-Ch] __int64 v5; // [rsp+8h] [rbp-8h] for ( i = 0; i &amp;lt;= 9; ++i ) { *(4LL * i + v5) *= i * i; printf(&amp;#34;%d\n&amp;#34;, *(4LL * i + v5)); } return 0; } 看到这种 *(p + index * offset) 的形式，大概率这里的 v5 是个数组指针，稍微尝试一下，发现可以恢复成如下形式：</description>
-    </item>
-    
-    <item>
-      <title>2022强网杯青少赛题解</title>
-      <link>http://littflower.github.io/posts/2022-qwbqs-writeup/</link>
-      <pubDate>Fri, 03 Feb 2023 21:27:43 +0000</pubDate>
-      
-      <guid>http://littflower.github.io/posts/2022-qwbqs-writeup/</guid>
-      <description>Qwb-青少赛-2022-WP 前言 蒟蒻来写 WP 了&amp;hellip;&amp;hellip; 本来应该是可以进线下的&amp;hellip;奈何工具太老旧&amp;hellip;明年再努力吧.
-顺带一提，没补 pwn 题（（（
-别问我为什么现在才发
-Misc misc题实在是做麻了
-misc 题思路都是对的&amp;hellip;脚本假了&amp;hellip;
-Misc1 题目链接：Link
-首先拿到一个 png 图片，用 010 editor 查看，根据文件头可以发现它是交换了奇偶数位顺序后的加密图片。
-50 89 47 4E 0A 0D 0A 1A 00 00 0D 00 48 49 52 44 00 00 BD 02 00 00 6D 02 06 08 00 00 3B 00 C8 1A 00 F7 00 01 49 00 41 44 78 54 EC 9C D9 FD 1C 93 于是第一步解密：</description>
     </item>
     
   </channel>

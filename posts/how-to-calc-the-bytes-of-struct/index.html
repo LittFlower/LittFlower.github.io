@@ -7,8 +7,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="LittFlower." />
-  <meta property="og:url" content="http://littflower.github.io/tags/reverse/" />
-  <link rel="canonical" href="http://littflower.github.io/tags/reverse/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
+  <meta property="og:url" content="http://littflower.github.io/posts/how-to-calc-the-bytes-of-struct/" />
+  <link rel="canonical" href="http://littflower.github.io/posts/how-to-calc-the-bytes-of-struct/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
 
   <script type="application/ld+json">
   {
@@ -18,10 +18,10 @@
            "@type": "WebPage",
            "@id": "http:\/\/littflower.github.io"
       },
-      "articleSection" : "tags",
-      "name" : "Reverse",
-      "headline" : "Reverse",
-      "description" : "",
+      "articleSection" : "posts",
+      "name" : "如何计算结构体字节数",
+      "headline" : "如何计算结构体字节数",
+      "description" : "计算结构体字节数的关键是搞明白字节对齐。\n字节对齐是为了提高内存访问的效率与速度，它的细节和编译器实现有关，但一般而言，遵循以下规则：\n结构体变量的首地址是结构体中最宽基本类型成员的大小的倍数； 结构体每个成员相对于结构体首地址的偏移量都是该成员内存大小的整数倍，也就是说相邻的两个不同类型的成员之间可能需要填充字节，填充至相邻两成员的最小公倍数； 结构体所占的总内存大小应为结构体中最宽基本类型成员的倍数，也就是可能在最后一个成员之后填充字节。 注意：结构体不算作基本类型成员。 按照这个规则，可以得出以下结构体所占的内存为 24 字节：\nstruct node { char a; \/\/ 1 字节，但会填充至 4 字节 int b; \/\/ 4 字节，至此共 8 字节，与 long long 相同，不需要填充 long long c; \/\/ 8 字节，至此共 16 字节 char d; \/\/ 1 字节，至此共 17 字节 \/\/ 结构体总大小必须为 8 的整数倍，所以填充至 24 字节 }; ",
       "inLanguage" : "en-US",
       "author" : "LittFlower.",
       "creator" : "LittFlower.",
@@ -31,15 +31,21 @@
       "copyrightYear" : "2024",
       "datePublished": "2024-05-15 14:35:41 \u002b0800 CST",
       "dateModified" : "2024-05-15 14:35:41 \u002b0800 CST",
-      "url" : "http:\/\/littflower.github.io\/tags\/reverse\/",
-      "keywords" : [  ]
+      "url" : "http:\/\/littflower.github.io\/posts\/how-to-calc-the-bytes-of-struct\/",
+      "keywords" : [ "Reverse", ]
   }
 </script>
-<title>Reverse</title>
-  <meta property="og:title" content="Reverse" />
+<title>如何计算结构体字节数</title>
+  <meta property="og:title" content="如何计算结构体字节数" />
   <meta property="og:type" content="article" />
-  <meta property="og:description" content="" />
-  <meta name="description" content="" />
+  <meta property="og:description" content="计算结构体字节数的关键是搞明白字节对齐。
+字节对齐是为了提高内存访问的效率与速度，它的细节和编译器实现有关，但一般而言，遵循以下规则：
+结构体变量的首地址是结构体中最宽基本类型成员的大小的倍数； 结构体每个成员相对于结构体首地址的偏移量都是该成员内存大小的整数倍，也就是说相邻的两个不同类型的成员之间可能需要填充字节，填充至相邻两成员的最小公倍数； 结构体所占的总内存大小应为结构体中最宽基本类型成员的倍数，也就是可能在最后一个成员之后填充字节。 注意：结构体不算作基本类型成员。 按照这个规则，可以得出以下结构体所占的内存为 24 字节：
+struct node { char a; // 1 字节，但会填充至 4 字节 int b; // 4 字节，至此共 8 字节，与 long long 相同，不需要填充 long long c; // 8 字节，至此共 16 字节 char d; // 1 字节，至此共 17 字节 // 结构体总大小必须为 8 的整数倍，所以填充至 24 字节 }; " />
+  <meta name="description" content="计算结构体字节数的关键是搞明白字节对齐。
+字节对齐是为了提高内存访问的效率与速度，它的细节和编译器实现有关，但一般而言，遵循以下规则：
+结构体变量的首地址是结构体中最宽基本类型成员的大小的倍数； 结构体每个成员相对于结构体首地址的偏移量都是该成员内存大小的整数倍，也就是说相邻的两个不同类型的成员之间可能需要填充字节，填充至相邻两成员的最小公倍数； 结构体所占的总内存大小应为结构体中最宽基本类型成员的倍数，也就是可能在最后一个成员之后填充字节。 注意：结构体不算作基本类型成员。 按照这个规则，可以得出以下结构体所占的内存为 24 字节：
+struct node { char a; // 1 字节，但会填充至 4 字节 int b; // 4 字节，至此共 8 字节，与 long long 相同，不需要填充 long long c; // 8 字节，至此共 16 字节 char d; // 1 字节，至此共 17 字节 // 结构体总大小必须为 8 的整数倍，所以填充至 24 字节 }; " />
   <meta property="og:locale" content="en-us" /><meta property="og:image" content="" />
   
 
@@ -66,10 +72,11 @@
 
 
 <body>
-  <article class="posts">
+  <article class="post " id="article">
     <div class="row">
       <div class="col-xs-12">
-        
+        <div class="site-header">
+          
 <header>
   <div class="header-title">
     <a href="/"
@@ -98,60 +105,88 @@
 </div>
 <div class="header-line"></div>
 
-
-        <h1 class="taxonomy-term">Reverse</h1>
-        <div id="posts-list">
-          <section>
-            <h1 class="site-date-catalog">2024</h1>
-
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2024-05-15 14:35:41 CST">May 15</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/how-to-calc-the-bytes-of-struct/">如何计算结构体字节数</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2024-05-14 14:43:08 CST">May 14</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/the-experience-of-reverse-struct/">逆向结构体的经验</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-          </section>
-          <section>
-            <h1 class="site-date-catalog">2023</h1>
-
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2023-02-03 21:27:43 UTC">Feb 03</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/2022-qwbqs-writeup/">2022强网杯青少赛题解</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-          </section>
-          
         </div>
+        <header class="post-header">
+          <h1 class="post-title">如何计算结构体字节数</h1>
+          
+          <div class="row post-desc">
+            <div class="col-xs-6">
+              
+              <time class="post-date" datetime="2024-05-15 14:35:41 CST">
+                15 May 2024
+              </time>
+              
+            </div>
+            <div class="col-xs-6">
+              
+              <div class="post-author">
+                <a target="_blank" href="https://blog.littflower.top">@LittFlower.</a>
+              </div>
+              
+            </div>
+          </div>
+          
+        </header>
+
+        <div class="post-content markdown-body">
+          
+          <p>计算结构体字节数的关键是搞明白字节对齐。</p>
+<p>字节对齐是为了提高内存访问的效率与速度，它的细节和编译器实现有关，但一般而言，遵循以下规则：</p>
+<ul>
+<li>结构体变量的首地址是结构体中最宽基本类型成员的大小的倍数；</li>
+<li>结构体每个成员相对于结构体首地址的偏移量都是该成员内存大小的整数倍，也就是说相邻的两个不同类型的成员之间可能需要填充字节，填充至相邻两成员的最小公倍数；</li>
+<li>结构体所占的总内存大小应为结构体中最宽基本类型成员的倍数，也就是可能在最后一个成员之后填充字节。</li>
+<li>注意：结构体不算作基本类型成员。</li>
+</ul>
+<p>按照这个规则，可以得出以下结构体所占的内存为 24 字节：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> node {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> a; <span style="color:#75715e">// 1 字节，但会填充至 4 字节
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> b; <span style="color:#75715e">// 4 字节，至此共 8 字节，与 long long 相同，不需要填充
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">long</span> c; <span style="color:#75715e">// 8 字节，至此共 16 字节
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">char</span> d; <span style="color:#75715e">// 1 字节，至此共 17 字节
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// 结构体总大小必须为 8 的整数倍，所以填充至 24 字节
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>};
+</span></span></code></pre></div>
+        </div>
+
+        <div class="row middle-xs">
+          <div class="col-xs-12">
+            
+            <div class="post-tags">
+              <a href="/tags/reverse/">
+                Reverse
+              </a>
+            </div>
+            
+          </div>
+        </div>
+        
+          <div class="row">
+            <div class="col-xs-12">
+              
+            </div>
+          </div>
+
+          
+
+<div class="related-content">
+  <h3>Related Posts</h3>
+  <ul>
+    
+    <li><a href="/posts/the-experience-of-reverse-struct/">逆向结构体的经验</a></li>
+    
+    <li><a href="/posts/2022-qwbqs-writeup/">2022强网杯青少赛题解</a></li>
+    
+  </ul>
+</div>
+
+
+
+          
+          
+          <div style="height: 50px;"></div>
+          
+        
 
         
 
@@ -209,6 +244,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
   
 </script>
+
+  
 
 </body>
 
