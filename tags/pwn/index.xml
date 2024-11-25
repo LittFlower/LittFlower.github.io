@@ -6,7 +6,26 @@
     <description>Recent content in Pwn on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 21 Oct 2024 19:14:44 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 25 Nov 2024 16:55:35 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>2024 强网杯青少赛题解</title>
+      <link>http://littflower.github.io/posts/2024-qwbqs-writeup/</link>
+      <pubDate>Mon, 25 Nov 2024 16:55:35 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/2024-qwbqs-writeup/</guid>
+      <description>前言 战队名：crazyNAN
+战队排名：6
+战队整体答题情况：除 web 方向 cyberboard mysqlprobe 外均解出。
+这辈子最后一次打强网杯青少赛了，因为我今年刚满 18 岁（（（
+一开始把这事情都忘了，还是 Aura 师傅拉我我才想起来，打着玩玩，话又说回来初赛和这 b Aura 有个🥚的关系啊（（
+全靠 👴 和 🌳 带飞（
+杂鱼 Aura
+Wp 赛时开了个飞书云文档，边打边写 wp，感觉确实不错，不用赛后专门整理 wp 了。
+我这里就把我做的 pwn 题发一下，剩下的可以戳这个链接看 exp
+Pwn clock_in 板子 ret2libc，exp:
+from pwn import * from sys import argv proc = &amp;#34;./clock_in&amp;#34; context.log_level = &amp;#34;debug&amp;#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(&amp;#34;./libc.so.6&amp;#34;) io = remote(&amp;#34;101.200.61.16&amp;#34;, 34841) if argv[1] == &amp;#39;r&amp;#39; else process(proc) if args.</description>
+    </item>
+    
     <item>
       <title>论文笔记《AddressSanitizer: A Fast Address Sanity Checker》</title>
       <link>http://littflower.github.io/posts/paper-notes-of-addresssanitizer-a-fast-address-sanity-checker/</link>
