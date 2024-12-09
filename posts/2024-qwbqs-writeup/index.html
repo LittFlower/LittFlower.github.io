@@ -19,8 +19,8 @@
            "@id": "http:\/\/littflower.github.io"
       },
       "articleSection" : "posts",
-      "name" : "2024 强网杯青少赛题解",
-      "headline" : "2024 强网杯青少赛题解",
+      "name" : "2024 强网杯青少赛线上赛题解",
+      "headline" : "2024 强网杯青少赛线上赛题解",
       "description" : "前言 战队名：crazyNAN\n战队排名：6\n战队整体答题情况：除 web 方向 cyberboard mysqlprobe 外均解出。\n这辈子最后一次打强网杯青少赛了，因为我今年刚满 18 岁（（（\n一开始把这事情都忘了，还是 Aura 师傅拉我我才想起来，打着玩玩，话又说回来初赛和这 b Aura 有个🥚的关系啊（（\n全靠 👴 和 🌳 带飞（\n杂鱼 Aura\nWp 赛时开了个飞书云文档，边打边写 wp，感觉确实不错，不用赛后专门整理 wp 了。\n我这里就把我做的 pwn 题发一下，剩下的可以戳这个链接看 exp\nPwn clock_in 板子 ret2libc，exp:\nfrom pwn import * from sys import argv proc = \u0026#34;.\/clock_in\u0026#34; context.log_level = \u0026#34;debug\u0026#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(\u0026#34;.\/libc.so.6\u0026#34;) io = remote(\u0026#34;101.200.61.16\u0026#34;, 34841) if argv[1] == \u0026#39;r\u0026#39; else process(proc) if args.",
       "inLanguage" : "en-US",
       "author" : "LittFlower.",
@@ -35,8 +35,8 @@
       "keywords" : [ "Pwn", ]
   }
 </script>
-<title>2024 强网杯青少赛题解</title>
-  <meta property="og:title" content="2024 强网杯青少赛题解" />
+<title>2024 强网杯青少赛线上赛题解</title>
+  <meta property="og:title" content="2024 强网杯青少赛线上赛题解" />
   <meta property="og:type" content="article" />
   <meta property="og:description" content="前言 战队名：crazyNAN
 战队排名：6
@@ -121,7 +121,7 @@ from pwn import * from sys import argv proc = &amp;#34;./clock_in&amp;#34; conte
 
         </div>
         <header class="post-header">
-          <h1 class="post-title">2024 强网杯青少赛题解</h1>
+          <h1 class="post-title">2024 强网杯青少赛线上赛题解</h1>
           
           <div class="row post-desc">
             <div class="col-xs-6">
