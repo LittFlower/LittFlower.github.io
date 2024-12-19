@@ -6,7 +6,24 @@
     <description>Recent content in Pwn on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 09 Dec 2024 16:23:39 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 14 Dec 2024 18:09:23 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Pwn 随机数攻击</title>
+      <link>http://littflower.github.io/posts/pwn-random-attack/</link>
+      <pubDate>Sat, 14 Dec 2024 18:09:23 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/pwn-random-attack/</guid>
+      <description>介绍 随机数攻击
+主要阅读了 glibc rand 相关的源代码，总结一下 CTF 中常见随机数攻击手法，主要还是打伪随机数预测。
+常见写法 以 C 语言的 rand() 为例，主要写法如下：
+#include &amp;lt;stdlib.h&amp;gt; #include &amp;lt;stdio.h&amp;gt; #include &amp;lt;time.h&amp;gt; void gen_random_plus() { srand(time(0)); printf(&amp;#34;%d\n&amp;#34;, rand()); return; } int main() { int seed; srand(seed); printf(&amp;#34;%d\n&amp;#34;, rand()); return 0; } 调用 rand() 函数会返回一个 [0,RAND_MAX] 中的随机非负整数，其中 RAND_MAX 是标准库中的一个宏，在 Linux 系统下 RAND_MAX 等于 $2^{31}-1$。可以用取模来限制所生成的数的大小。
+使用 rand() 需要一个随机数种子，可以使用 srand(seed) 函数来将随机种子更改为 seed，当然不初始化也是可以的。
+同一程序使用相同的 seed 两次运行，在同一机器、同一编译器下，随机出的结果将会是相同的。
+有一个选择是使用当前系统时间来作为随机种子：srand(time(0))。
+还有用 linux 的 random 和 urandom 设备的，写法大概如下：
+#include &amp;lt;sys/types.h&amp;gt; #include &amp;lt;sys/stat.</description>
+    </item>
+    
     <item>
       <title>2024 强网杯青少赛线下游记</title>
       <link>http://littflower.github.io/posts/2024-qwbqs-final-travels/</link>

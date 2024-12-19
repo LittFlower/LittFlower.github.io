@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Hugo 0.119.0">
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="LittFlower." />
+  <meta property="og:url" content="http://littflower.github.io/posts/pwn-random-attack/" />
+  <link rel="canonical" href="http://littflower.github.io/posts/pwn-random-attack/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
+
+  <script type="application/ld+json">
+  {
+      "@context" : "http://schema.org",
+      "@type" : "BlogPosting",
+      "mainEntityOfPage": {
+           "@type": "WebPage",
+           "@id": "http:\/\/littflower.github.io"
+      },
+      "articleSection" : "posts",
+      "name" : "Pwn 随机数攻击",
+      "headline" : "Pwn 随机数攻击",
+      "description" : "介绍 随机数攻击\n主要阅读了 glibc rand 相关的源代码，总结一下 CTF 中常见随机数攻击手法，主要还是打伪随机数预测。\n常见写法 以 C 语言的 rand() 为例，主要写法如下：\n#include \u0026lt;stdlib.h\u0026gt; #include \u0026lt;stdio.h\u0026gt; #include \u0026lt;time.h\u0026gt; void gen_random_plus() { srand(time(0)); printf(\u0026#34;%d\\n\u0026#34;, rand()); return; } int main() { int seed; srand(seed); printf(\u0026#34;%d\\n\u0026#34;, rand()); return 0; } 调用 rand() 函数会返回一个 [0,RAND_MAX] 中的随机非负整数，其中 RAND_MAX 是标准库中的一个宏，在 Linux 系统下 RAND_MAX 等于 $2^{31}-1$。可以用取模来限制所生成的数的大小。\n使用 rand() 需要一个随机数种子，可以使用 srand(seed) 函数来将随机种子更改为 seed，当然不初始化也是可以的。\n同一程序使用相同的 seed 两次运行，在同一机器、同一编译器下，随机出的结果将会是相同的。\n有一个选择是使用当前系统时间来作为随机种子：srand(time(0))。\n还有用 linux 的 random 和 urandom 设备的，写法大概如下：\n#include \u0026lt;sys\/types.h\u0026gt; #include \u0026lt;sys\/stat.",
+      "inLanguage" : "en-US",
+      "author" : "LittFlower.",
+      "creator" : "LittFlower.",
+      "publisher": "LittFlower.",
+      "accountablePerson" : "LittFlower.",
+      "copyrightHolder" : "LittFlower.",
+      "copyrightYear" : "2024",
+      "datePublished": "2024-12-14 18:09:23 \u002b0800 CST",
+      "dateModified" : "2024-12-14 18:09:23 \u002b0800 CST",
+      "url" : "http:\/\/littflower.github.io\/posts\/pwn-random-attack\/",
+      "keywords" : [ "Pwn", ]
+  }
+</script>
+<title>Pwn 随机数攻击</title>
+  <meta property="og:title" content="Pwn 随机数攻击" />
+  <meta property="og:type" content="article" />
+  <meta property="og:description" content="介绍 随机数攻击
+主要阅读了 glibc rand 相关的源代码，总结一下 CTF 中常见随机数攻击手法，主要还是打伪随机数预测。
+常见写法 以 C 语言的 rand() 为例，主要写法如下：
+#include &amp;lt;stdlib.h&amp;gt; #include &amp;lt;stdio.h&amp;gt; #include &amp;lt;time.h&amp;gt; void gen_random_plus() { srand(time(0)); printf(&amp;#34;%d\n&amp;#34;, rand()); return; } int main() { int seed; srand(seed); printf(&amp;#34;%d\n&amp;#34;, rand()); return 0; } 调用 rand() 函数会返回一个 [0,RAND_MAX] 中的随机非负整数，其中 RAND_MAX 是标准库中的一个宏，在 Linux 系统下 RAND_MAX 等于 $2^{31}-1$。可以用取模来限制所生成的数的大小。
+使用 rand() 需要一个随机数种子，可以使用 srand(seed) 函数来将随机种子更改为 seed，当然不初始化也是可以的。
+同一程序使用相同的 seed 两次运行，在同一机器、同一编译器下，随机出的结果将会是相同的。
+有一个选择是使用当前系统时间来作为随机种子：srand(time(0))。
+还有用 linux 的 random 和 urandom 设备的，写法大概如下：
+#include &amp;lt;sys/types.h&amp;gt; #include &amp;lt;sys/stat." />
+  <meta name="description" content="介绍 随机数攻击
+主要阅读了 glibc rand 相关的源代码，总结一下 CTF 中常见随机数攻击手法，主要还是打伪随机数预测。
+常见写法 以 C 语言的 rand() 为例，主要写法如下：
+#include &amp;lt;stdlib.h&amp;gt; #include &amp;lt;stdio.h&amp;gt; #include &amp;lt;time.h&amp;gt; void gen_random_plus() { srand(time(0)); printf(&amp;#34;%d\n&amp;#34;, rand()); return; } int main() { int seed; srand(seed); printf(&amp;#34;%d\n&amp;#34;, rand()); return 0; } 调用 rand() 函数会返回一个 [0,RAND_MAX] 中的随机非负整数，其中 RAND_MAX 是标准库中的一个宏，在 Linux 系统下 RAND_MAX 等于 $2^{31}-1$。可以用取模来限制所生成的数的大小。
+使用 rand() 需要一个随机数种子，可以使用 srand(seed) 函数来将随机种子更改为 seed，当然不初始化也是可以的。
+同一程序使用相同的 seed 两次运行，在同一机器、同一编译器下，随机出的结果将会是相同的。
+有一个选择是使用当前系统时间来作为随机种子：srand(time(0))。
+还有用 linux 的 random 和 urandom 设备的，写法大概如下：
+#include &amp;lt;sys/types.h&amp;gt; #include &amp;lt;sys/stat." />
+  <meta property="og:locale" content="en-us" /><meta property="og:image" content="" />
+  
+
+  
+    <style>body{font-family:sarasa-fixed-sc,sans-serif;-webkit-font-smoothing:antialiased;src:url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/ttf/FiraCode-Light.ttf)format('ttf');margin:0 20px}article{max-width:1100px;margin-left:auto;margin-right:auto}a{color:#000;text-decoration:none}a:hover{font-weight:700;text-decoration:underline}.post-ads{margin:50px 0}.markdown-body{font-size:17.5px;max-width:100%}.markdown-body a{text-decoration:underline;text-decoration-color:#4005f3}.markdown-body blockquote{margin:0;padding:0 1em;color:#494d53;border-left:.25em solid #0b79e7}.markdown-body pre{padding:12px;overflow:auto;border-radius:10px}.markdown-body code{padding:.1em 0;font-size:100%;background-color:#eef1f3;border-radius:6px}.markdown-body pre>code{padding:0;font-size:95%;background-color:inherit;border:0}.markdown-body pre{background-color:#272822}.hljs{font-size:17.2px;color:#eef1f3}ul,ol{margin:.25em 0;line-height:1.6}ul ul,ul ol,ol ul,ol ol{margin:.25em 0}li{padding:.25em 0}h1{font-size:1.83rem}h2{font-size:1.74rem}h3{font-size:1.45rem}h4{font-size:1.28rem}h5{font-size:1.16rem}h6{font-size:1.21rem}.Chinese .markdown-body{line-height:200%}.site-date-catalog{font-size:2rem}.header-title{font-size:2rem;font-weight:700;margin-top:32px;font-family:source code pro,sans-serif;src:url(https://cdn.jsdelivr.net/npm/source-code-pro@2.38.0/WOFF/TTF/SourceCodePro-Bold.ttf.woff)format("woff")}.header-title a{text-decoration:none}.header-subtitle{color:#666}.header-items{margin:10px 0}.header-item{margin:0 5px}.header-line{width:100%;border-width:2px;border-color:#482936;border-style:solid none none none}.lang-switch{font-weight:700}#posts-list{min-height:600px}.posts-line{font-size:1.2rem;margin:12px 0}.posts-categories{font-size:.8rem;margin:auto;text-align:center}.posts-category{padding:3px 0;border:#000 2px solid;border-radius:5px}.site-footer{margin-top:50px}.site-footer-item{margin-right:12px}.post-content img{max-width:100%;display:block;margin-right:auto;margin-top:12px}.post-header{margin-bottom:50px}.post-title{font-size:2rem;font-weight:600}.post-tags{display:inline;font-weight:600;padding:2px 5px;margin-right:6px;border:#000 2px solid;border-radius:5px}.post-date{font-weight:800;font-style:italic}.post-author{float:right;font-weight:600}.page-content{min-height:60%}.post-content{margin-bottom:50px}.post-content p{hyphens:auto;line-height:1.8;text-justify:ideographic;margin-bottom:1em}.related-content{border-width:3px;border-style:solid;border-color:#000;padding:0 10px;margin-bottom:50px;margin-top:100px}.related-content li{margin:5px 0}.taxonomy-term{font-size:3rem}.gallery-img{text-align:center}.gallery-img span{text-align:center}.gallery-img-desc{font-size:.8em;font-weight:800}#disqus_thread{position:relative}#disqus_thread:after{content:"";display:block;height:55px;width:100%;position:absolute;bottom:0;background:#fff}@media screen and (max-width:600px){.header-title,.header-subtitle,.header-items{text-align:center}.posts-line{font-size:16px}.markdown-body{font-size:16px}.post-title{font-size:2rem}.post-content p{letter-spacing:.05em}}@media screen and (max-width:48em){.posts-category{display:none}}:root{--nav-width:1380px;--article-width:650px;--toc-width:300px}.toc{margin:0 2px 40px;border:1px solid var(--border);background:var(--entry);border-radius:var(--radius);padding:.4em}.toc-container.wide{position:absolute;height:100%;border-right:1px solid var(--border);left:calc((var(--toc-width) + var(--gap)) * -1);top:calc(var(--gap) * 2);width:var(--toc-width)}.wide .toc{position:sticky;top:var(--gap);border:unset;background:unset;border-radius:unset;width:100%;margin:0 2px 40px}.toc details summary{cursor:zoom-in;margin-inline-start:20px;padding:12px 0}.toc details[open] summary{font-weight:500}.toc-container.wide .toc .inner{margin:0}.active{font-size:110%;font-weight:600}.toc ul{list-style-type:circle}.toc .inner{margin:0 0 0 20px;padding:0 15px 15px 20px;font-size:16px;max-height:83vh;overflow-y:auto}.toc .inner::-webkit-scrollbar-thumb{background:var(--border);border:7px solid var(--theme);border-radius:var(--radius)}.toc li ul{margin-inline-start:calc(var(--gap) * .5);list-style-type:none}.toc li{list-style:none;font-size:.95rem;padding-bottom:5px}.toc li a:hover{color:var(--secondary)}</style>
+  
+  
+    <style>.container,.container-fluid{margin-right:auto;margin-left:auto}.container-fluid{padding-right:2rem;padding-left:2rem}.row{box-sizing:border-box;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-flex:0;-ms-flex:0 1 auto;flex:initial;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-ms-flex-direction:row;flex-direction:row;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-.5rem;margin-left:-.5rem}.row.reverse{-webkit-box-orient:horizontal;-webkit-box-direction:reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.col.reverse{-webkit-box-orient:vertical;-webkit-box-direction:reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.col-xs,.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9,.col-xs-offset-0,.col-xs-offset-1,.col-xs-offset-10,.col-xs-offset-11,.col-xs-offset-12,.col-xs-offset-2,.col-xs-offset-3,.col-xs-offset-4,.col-xs-offset-5,.col-xs-offset-6,.col-xs-offset-7,.col-xs-offset-8,.col-xs-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-xs{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-xs-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-xs-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-xs-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-xs-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-xs-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-xs-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-xs-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-xs-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-xs-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-xs-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-xs-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-xs-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-xs-offset-0{margin-left:0}.col-xs-offset-1{margin-left:8.33333333%}.col-xs-offset-2{margin-left:16.66666667%}.col-xs-offset-3{margin-left:25%}.col-xs-offset-4{margin-left:33.33333333%}.col-xs-offset-5{margin-left:41.66666667%}.col-xs-offset-6{margin-left:50%}.col-xs-offset-7{margin-left:58.33333333%}.col-xs-offset-8{margin-left:66.66666667%}.col-xs-offset-9{margin-left:75%}.col-xs-offset-10{margin-left:83.33333333%}.col-xs-offset-11{margin-left:91.66666667%}.start-xs{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-xs{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-xs{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-xs{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-xs{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-xs{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-xs{-ms-flex-pack:distribute;justify-content:space-around}.between-xs{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-xs{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-xs{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}@media only screen and (min-width:48em){.container{width:49rem}.col-sm,.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-offset-0,.col-sm-offset-1,.col-sm-offset-10,.col-sm-offset-11,.col-sm-offset-12,.col-sm-offset-2,.col-sm-offset-3,.col-sm-offset-4,.col-sm-offset-5,.col-sm-offset-6,.col-sm-offset-7,.col-sm-offset-8,.col-sm-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-sm{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-sm-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-sm-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-sm-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-sm-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-sm-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-sm-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-sm-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-sm-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-sm-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-sm-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-sm-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-sm-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-sm-offset-0{margin-left:0}.col-sm-offset-1{margin-left:8.33333333%}.col-sm-offset-2{margin-left:16.66666667%}.col-sm-offset-3{margin-left:25%}.col-sm-offset-4{margin-left:33.33333333%}.col-sm-offset-5{margin-left:41.66666667%}.col-sm-offset-6{margin-left:50%}.col-sm-offset-7{margin-left:58.33333333%}.col-sm-offset-8{margin-left:66.66666667%}.col-sm-offset-9{margin-left:75%}.col-sm-offset-10{margin-left:83.33333333%}.col-sm-offset-11{margin-left:91.66666667%}.start-sm{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-sm{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-sm{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-sm{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-sm{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-sm{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-sm{-ms-flex-pack:distribute;justify-content:space-around}.between-sm{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-sm{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-sm{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:64em){.container{width:65rem}.col-md,.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9,.col-md-offset-0,.col-md-offset-1,.col-md-offset-10,.col-md-offset-11,.col-md-offset-12,.col-md-offset-2,.col-md-offset-3,.col-md-offset-4,.col-md-offset-5,.col-md-offset-6,.col-md-offset-7,.col-md-offset-8,.col-md-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-md{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-md-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-md-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-md-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-md-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-md-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-md-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-md-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-md-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-md-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-md-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-md-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-md-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-md-offset-0{margin-left:0}.col-md-offset-1{margin-left:8.33333333%}.col-md-offset-2{margin-left:16.66666667%}.col-md-offset-3{margin-left:25%}.col-md-offset-4{margin-left:33.33333333%}.col-md-offset-5{margin-left:41.66666667%}.col-md-offset-6{margin-left:50%}.col-md-offset-7{margin-left:58.33333333%}.col-md-offset-8{margin-left:66.66666667%}.col-md-offset-9{margin-left:75%}.col-md-offset-10{margin-left:83.33333333%}.col-md-offset-11{margin-left:91.66666667%}.start-md{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-md{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-md{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-md{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-md{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-md{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-md{-ms-flex-pack:distribute;justify-content:space-around}.between-md{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-md{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-md{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:75em){.container{width:76rem}.col-lg,.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9,.col-lg-offset-0,.col-lg-offset-1,.col-lg-offset-10,.col-lg-offset-11,.col-lg-offset-12,.col-lg-offset-2,.col-lg-offset-3,.col-lg-offset-4,.col-lg-offset-5,.col-lg-offset-6,.col-lg-offset-7,.col-lg-offset-8,.col-lg-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-lg{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-lg-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-lg-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-lg-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-lg-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-lg-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-lg-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-lg-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-lg-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-lg-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-lg-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-lg-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-lg-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-lg-offset-0{margin-left:0}.col-lg-offset-1{margin-left:8.33333333%}.col-lg-offset-2{margin-left:16.66666667%}.col-lg-offset-3{margin-left:25%}.col-lg-offset-4{margin-left:33.33333333%}.col-lg-offset-5{margin-left:41.66666667%}.col-lg-offset-6{margin-left:50%}.col-lg-offset-7{margin-left:58.33333333%}.col-lg-offset-8{margin-left:66.66666667%}.col-lg-offset-9{margin-left:75%}.col-lg-offset-10{margin-left:83.33333333%}.col-lg-offset-11{margin-left:91.66666667%}.start-lg{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-lg{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-lg{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-lg{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-lg{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-lg{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-lg{-ms-flex-pack:distribute;justify-content:space-around}.between-lg{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-lg{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-lg{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}</style>
+  
+
+  
+
+  <link href="/index.xml" rel="alternate" type="application/rss+xml"
+    title="一只花盆.">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Bree+Serif|Bungee+Shade" rel="stylesheet">
+  
+  
+
+  
+  
+</head>
+
+
+<body>
+  <article class="post " id="article">
+    <div class="row">
+      <div class="col-xs-12">
+        <div class="site-header">
+          
+<header>
+  <div class="header-title">
+    <a href="/"
+      >小花ฅ.</a
+    >
+  </div>
+  <div class="header-subtitle"></div>
+</header>
+<div class="row end-md center-xs header-items">
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/aboutme" target="_blank">AboutMe</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://github.com/LittFlower" target="_blank">Github</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/friends" target="_blank">Friends</a>
+  </div>
+  
+</div>
+<div class="row end-xs">
+   
+</div>
+<div class="header-line"></div>
+
+        </div>
+        <header class="post-header">
+          <h1 class="post-title">Pwn 随机数攻击</h1>
+          
+          <div class="row post-desc">
+            <div class="col-xs-6">
+              
+              <time class="post-date" datetime="2024-12-14 18:09:23 CST">
+                14 Dec 2024
+              </time>
+              
+            </div>
+            <div class="col-xs-6">
+              
+              <div class="post-author">
+                <a target="_blank" href="https://blog.littflower.top">@LittFlower.</a>
+              </div>
+              
+            </div>
+          </div>
+          
+        </header>
+
+        <div class="post-content markdown-body">
+          
+          <h2 id="介绍">介绍</h2>
+<p>随机数攻击</p>
+<p>主要阅读了 glibc <code>rand</code> 相关的源代码，总结一下 CTF 中常见随机数攻击手法，主要还是打伪随机数预测。</p>
+<h2 id="常见写法">常见写法</h2>
+<p>以 C 语言的 <code>rand()</code> 为例，主要写法如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdlib.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;time.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">gen_random_plus</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">srand</span>(<span style="color:#a6e22e">time</span>(<span style="color:#ae81ff">0</span>));
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">printf</span>(<span style="color:#e6db74">&#34;%d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, <span style="color:#a6e22e">rand</span>());
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">int</span> seed;
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">srand</span>(seed);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">printf</span>(<span style="color:#e6db74">&#34;%d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, <span style="color:#a6e22e">rand</span>());
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>调用 <code>rand()</code> 函数会返回一个 <code>[0,RAND_MAX]</code> 中的随机非负整数，其中 <code>RAND_MAX</code> 是标准库中的一个宏，在 Linux 系统下 <code>RAND_MAX</code> 等于 $2^{31}-1$。可以用取模来限制所生成的数的大小。</p>
+<p>使用 <code>rand()</code> 需要一个随机数种子，可以使用 <code>srand(seed)</code> 函数来将随机种子更改为 <code>seed</code>，当然不初始化也是可以的。</p>
+<p>同一程序使用相同的 <code>seed</code> 两次运行，在同一机器、同一编译器下，随机出的结果将会是相同的。</p>
+<p>有一个选择是使用当前系统时间来作为随机种子：<code>srand(time(0))</code>。</p>
+<p>还有用 linux 的 <code>random</code> 和 <code>urandom</code> 设备的，写法大概如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/types.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/stat.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;fcntl.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;unistd.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> fd <span style="color:#f92672">=</span> <span style="color:#a6e22e">open</span>(<span style="color:#e6db74">&#34;/dev/urandom&#34;</span>, O_RDONLY, S_IRUSR);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> seed <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">read</span>(fd, <span style="color:#f92672">&amp;</span>seed, <span style="color:#ae81ff">4</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="源码分析">源码分析</h2>
+<p><code>./stdlib/rand.c</code> 中定义了 <code>rand()</code> 函数</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">/* Return a random integer between 0 and RAND_MAX.  */</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rand</span> (<span style="color:#66d9ef">void</span>)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> (<span style="color:#66d9ef">int</span>) <span style="color:#a6e22e">__random</span> ();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>跟进去看 <code>__random()</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">long</span> <span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">__random</span> (<span style="color:#66d9ef">void</span>)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int32_t</span> retval;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">__libc_lock_lock</span> (lock);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  (<span style="color:#66d9ef">void</span>) <span style="color:#a6e22e">__random_r</span> (<span style="color:#f92672">&amp;</span>unsafe_state, <span style="color:#f92672">&amp;</span>retval);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">__libc_lock_unlock</span> (lock);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> retval;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>发现它调用了 <code>__random_r</code>，它的第一个参数 <code>unsafe_state</code> 是一个自定义的结构体：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">struct</span> random_data unsafe_state <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/* FPTR and RPTR are two pointers into the state info, a front and a rear
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   pointer.  These two pointers are always rand_sep places aparts, as they
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   cycle through the state information.  (Yes, this does mean we could get
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   away with just one pointer, but the code for random is more efficient
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   this way).  The pointers are left positioned as they would be from the call:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    initstate(1, randtbl, 128);
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   (The position of the rear pointer, rptr, is really 0 (as explained above
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   in the initialization of randtbl) because the state table pointer is set
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   to point to randtbl[1] (as explained below).)  */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    fptr : <span style="color:#f92672">&amp;</span>randtbl[SEP_3 <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>],
+</span></span><span style="display:flex;"><span>    rptr : <span style="color:#f92672">&amp;</span>randtbl[<span style="color:#ae81ff">1</span>],
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/* The following things are the pointer to the state information table,
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   the type of the current generator, the degree of the current polynomial
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   being used, and the separation between the two pointers.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   Note that for efficiency of random, we remember the first location of
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   the state information, not the zeroth.  Hence it is valid to access
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   state[-1], which is used to store the type of the R.N.G.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   Also, we remember the last location, since this is more efficient than
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   indexing every time to find the address of the last element to see if
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   the front and rear pointers have wrapped.  */</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    state : <span style="color:#f92672">&amp;</span>randtbl[<span style="color:#ae81ff">1</span>],
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    rand_type : TYPE_3,
+</span></span><span style="display:flex;"><span>    rand_deg : DEG_3,
+</span></span><span style="display:flex;"><span>    rand_sep : SEP_3,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    end_ptr : <span style="color:#f92672">&amp;</span>randtbl[<span style="color:#66d9ef">sizeof</span> (randtbl) <span style="color:#f92672">/</span> <span style="color:#66d9ef">sizeof</span> (randtbl[<span style="color:#ae81ff">0</span>])]
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>其中：</p>
+<ul>
+<li>fptr 是循环队列的头指针，初始位置为4</li>
+<li>rptr 是循环队列的尾指针，初始位置为1</li>
+<li>endptr：指向数组末尾，以指示队列的循环</li>
+</ul>
+<p>这里又涉及到一个 randtbl 数组，它的定义如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int32_t</span> randtbl[DEG_3 <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    TYPE_3,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">-</span><span style="color:#ae81ff">1726662223</span>, <span style="color:#ae81ff">379960547</span>, <span style="color:#ae81ff">1735697613</span>, <span style="color:#ae81ff">1040273694</span>, <span style="color:#ae81ff">1313901226</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">1627687941</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">179304937</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">2073333483</span>, <span style="color:#ae81ff">1780058412</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1989503057</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">-</span><span style="color:#ae81ff">615974602</span>, <span style="color:#ae81ff">344556628</span>, <span style="color:#ae81ff">939512070</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1249116260</span>, <span style="color:#ae81ff">1507946756</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">-</span><span style="color:#ae81ff">812545463</span>, <span style="color:#ae81ff">154635395</span>, <span style="color:#ae81ff">1388815473</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1926676823</span>, <span style="color:#ae81ff">525320961</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">-</span><span style="color:#ae81ff">1009028674</span>, <span style="color:#ae81ff">968117788</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">123449607</span>, <span style="color:#ae81ff">1284210865</span>, <span style="color:#ae81ff">435012392</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">-</span><span style="color:#ae81ff">2017506339</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">911064859</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">370259173</span>, <span style="color:#ae81ff">1132637927</span>, <span style="color:#ae81ff">1398500161</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">-</span><span style="color:#ae81ff">205601318</span>,
+</span></span><span style="display:flex;"><span>  };
+</span></span></code></pre></div><p>这个时候再看一下 <code>__random_r</code> 的算法流程：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">__random_r</span> (<span style="color:#66d9ef">struct</span> random_data <span style="color:#f92672">*</span>buf, <span style="color:#66d9ef">int32_t</span> <span style="color:#f92672">*</span>result)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int32_t</span> <span style="color:#f92672">*</span>state;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (buf <span style="color:#f92672">==</span> NULL <span style="color:#f92672">||</span> result <span style="color:#f92672">==</span> NULL)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">goto</span> fail;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  state <span style="color:#f92672">=</span> buf<span style="color:#f92672">-&gt;</span>state;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (buf<span style="color:#f92672">-&gt;</span>rand_type <span style="color:#f92672">==</span> TYPE_0)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">int32_t</span> val <span style="color:#f92672">=</span> state[<span style="color:#ae81ff">0</span>];
+</span></span><span style="display:flex;"><span>      val <span style="color:#f92672">=</span> ((state[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">*</span> <span style="color:#ae81ff">1103515245</span>) <span style="color:#f92672">+</span> <span style="color:#ae81ff">12345</span>) <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">0x7fffffff</span>;
+</span></span><span style="display:flex;"><span>      state[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> val;
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">*</span>result <span style="color:#f92672">=</span> val;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">int32_t</span> <span style="color:#f92672">*</span>fptr <span style="color:#f92672">=</span> buf<span style="color:#f92672">-&gt;</span>fptr;
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">int32_t</span> <span style="color:#f92672">*</span>rptr <span style="color:#f92672">=</span> buf<span style="color:#f92672">-&gt;</span>rptr;
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">int32_t</span> <span style="color:#f92672">*</span>end_ptr <span style="color:#f92672">=</span> buf<span style="color:#f92672">-&gt;</span>end_ptr;
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">int32_t</span> val;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      val <span style="color:#f92672">=</span> <span style="color:#f92672">*</span>fptr <span style="color:#f92672">+=</span> <span style="color:#f92672">*</span>rptr;
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">/* Chucking least random bit.  */</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">*</span>result <span style="color:#f92672">=</span> (val <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">0x7fffffff</span>;
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">++</span>fptr;
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">if</span> (fptr <span style="color:#f92672">&gt;=</span> end_ptr)
+</span></span><span style="display:flex;"><span>	{
+</span></span><span style="display:flex;"><span>	  fptr <span style="color:#f92672">=</span> state;
+</span></span><span style="display:flex;"><span>	  <span style="color:#f92672">++</span>rptr;
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>	{
+</span></span><span style="display:flex;"><span>	  <span style="color:#f92672">++</span>rptr;
+</span></span><span style="display:flex;"><span>	  <span style="color:#66d9ef">if</span> (rptr <span style="color:#f92672">&gt;=</span> end_ptr)
+</span></span><span style="display:flex;"><span>	    rptr <span style="color:#f92672">=</span> state;
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>      buf<span style="color:#f92672">-&gt;</span>fptr <span style="color:#f92672">=</span> fptr;
+</span></span><span style="display:flex;"><span>      buf<span style="color:#f92672">-&gt;</span>rptr <span style="color:#f92672">=</span> rptr;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> fail:
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">__set_errno</span> (EINVAL);
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>注意到这个算法主要有两个流程：</p>
+<ul>
+<li>如果 <code>buf-&gt;rand_type == TYPE_0</code>，那么就是一个非常白给的 LCG，可以随便逆向预测</li>
+<li>否则，队头自加队尾值，将此值保存为结果，然后队头队尾统一后移一项，再将结果作为生成的随机数返回。</li>
+</ul>
+<p>最后来看看 <code>srand</code> 函数，</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">__srandom_r</span> (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> seed, <span style="color:#66d9ef">struct</span> random_data <span style="color:#f92672">*</span>buf)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int</span> type;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int32_t</span> <span style="color:#f92672">*</span>state;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">int</span> i;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int32_t</span> word;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int32_t</span> <span style="color:#f92672">*</span>dst;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int</span> kc;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (buf <span style="color:#f92672">==</span> NULL)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">goto</span> fail;
+</span></span><span style="display:flex;"><span>  type <span style="color:#f92672">=</span> buf<span style="color:#f92672">-&gt;</span>rand_type;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> ((<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span>) type <span style="color:#f92672">&gt;=</span> MAX_TYPES)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">goto</span> fail;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  state <span style="color:#f92672">=</span> buf<span style="color:#f92672">-&gt;</span>state;
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">/* We must make sure the seed is not 0.  Take arbitrarily 1 in this case.  */</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (seed <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>    seed <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>  state[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> seed;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (type <span style="color:#f92672">==</span> TYPE_0)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">goto</span> done;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  dst <span style="color:#f92672">=</span> state;
+</span></span><span style="display:flex;"><span>  word <span style="color:#f92672">=</span> seed;
+</span></span><span style="display:flex;"><span>  kc <span style="color:#f92672">=</span> buf<span style="color:#f92672">-&gt;</span>rand_deg;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&lt;</span> kc; <span style="color:#f92672">++</span>i)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">/* This does:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	   state[i] = (16807 * state[i - 1]) % 2147483647;
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 but avoids overflowing 31 bits.  */</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">int</span> hi <span style="color:#f92672">=</span> word <span style="color:#f92672">/</span> <span style="color:#ae81ff">127773</span>;
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">long</span> <span style="color:#66d9ef">int</span> lo <span style="color:#f92672">=</span> word <span style="color:#f92672">%</span> <span style="color:#ae81ff">127773</span>;
+</span></span><span style="display:flex;"><span>      word <span style="color:#f92672">=</span> <span style="color:#ae81ff">16807</span> <span style="color:#f92672">*</span> lo <span style="color:#f92672">-</span> <span style="color:#ae81ff">2836</span> <span style="color:#f92672">*</span> hi;
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">if</span> (word <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>	word <span style="color:#f92672">+=</span> <span style="color:#ae81ff">2147483647</span>;
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">*++</span>dst <span style="color:#f92672">=</span> word;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  buf<span style="color:#f92672">-&gt;</span>fptr <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>state[buf<span style="color:#f92672">-&gt;</span>rand_sep];
+</span></span><span style="display:flex;"><span>  buf<span style="color:#f92672">-&gt;</span>rptr <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>state[<span style="color:#ae81ff">0</span>];
+</span></span><span style="display:flex;"><span>  kc <span style="color:#f92672">*=</span> <span style="color:#ae81ff">10</span>;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">while</span> (<span style="color:#f92672">--</span>kc <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">int32_t</span> discard;
+</span></span><span style="display:flex;"><span>      (<span style="color:#66d9ef">void</span>) <span style="color:#a6e22e">__random_r</span> (buf, <span style="color:#f92672">&amp;</span>discard);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> done:
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> fail:
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>可以看出来 <code>srand(0)</code> 和 <code>srand(1)</code> 是一样的。</p>
+<p>这个算法会根据 LCG 打乱 state 数组。</p>
+<h2 id="攻击手法">攻击手法</h2>
+<h3 id="随机数校验逻辑漏洞">随机数校验逻辑漏洞</h3>
+<p>随机数本身无法预测，例如通过 /dev/urandom 设备读入 16 字节，和预测的数字对比，可能在这个对比处存在漏洞点，例如使用了 <code>strcmp()</code> 等可能被 <code>\x00</code> 截断的函数。</p>
+<p>这是因为通过 /dev/urandom 读入的字节完全存在第一个字节就是 <code>\x00</code> 的可能（1/255），爆破概率是比较高的。</p>
+<p>也有存在栈溢出，把 seed 覆盖掉的打法。</p>
+<p>还有使用随机数只加密了部分 shellcode，可以利用 jmp 短跳转跳掉。</p>
+<h3 id="伪随机数预测">伪随机数预测</h3>
+<p>显然，<code>rand()</code> 生成的随机数都跟 <code>seed</code> 有强相关性，如果题目里用的 seed 是已知常数，那么可以直接做到预测随机数。</p>
+<p>可以写一个 poc <code>gen_random_number.c</code>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdlib.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">gen_rand</span>(<span style="color:#66d9ef">int</span> seed) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">srand</span>(seed);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">rand</span>();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>然后编译为动态链接库，然后 python 调用动态链接库。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ gcc A.c -share -o A.so
+</span></span></code></pre></div><p>模板如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> ctypes <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span>poc <span style="color:#f92672">=</span> cdll<span style="color:#f92672">.</span>LoadLibrary(<span style="color:#e6db74">&#34;./B.so&#34;</span>)
+</span></span><span style="display:flex;"><span>libc <span style="color:#f92672">=</span> cdll<span style="color:#f92672">.</span>LoadLibrary(<span style="color:#e6db74">&#39;/usr/lib/libc.so.6&#39;</span>)
+</span></span><span style="display:flex;"><span>seed <span style="color:#f92672">=</span> poc<span style="color:#f92672">.</span>find(num)
+</span></span></code></pre></div><p>注意，这个 .so 里的 <code>find</code> 函数不能是 void，如果想接受返回值的话。</p>
+<p>在 find 函数里的 printf 输出会晚于 pwntools 的交互。</p>
+<h3 id="基于时间的预测">基于时间的预测</h3>
+<p>这个也可以打，因为时间是已知的（把 poc 和题目文件同时运行不就好了）</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;time.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">gen_rand</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">int</span> seed <span style="color:#f92672">=</span> <span style="color:#a6e22e">time</span>(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">srand</span>(seed);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">rand</span>();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>同样的用法。</p>
+<h3 id="已知一个随机数">已知一个随机数</h3>
+<p>对于一个随机的 seed（例如从 /dev/random 或者 /dev/urandom 里读取的），也不是完全不能打。假如题目已经告诉了一个该种子生成的随机数，可以尝试检查 <code>buf-&gt;rand_type == TYPE_0</code> 是否成立，而这个要怎么设置呢？可以看 <code>initstate</code> 函数。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">__initstate_r</span> (<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span> seed, <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>arg_state, <span style="color:#66d9ef">size_t</span> n,
+</span></span><span style="display:flex;"><span>	       <span style="color:#66d9ef">struct</span> random_data <span style="color:#f92672">*</span>buf)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (buf <span style="color:#f92672">==</span> NULL)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">goto</span> fail;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int32_t</span> <span style="color:#f92672">*</span>old_state <span style="color:#f92672">=</span> buf<span style="color:#f92672">-&gt;</span>state;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (old_state <span style="color:#f92672">!=</span> NULL)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">int</span> old_type <span style="color:#f92672">=</span> buf<span style="color:#f92672">-&gt;</span>rand_type;
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">if</span> (old_type <span style="color:#f92672">==</span> TYPE_0)
+</span></span><span style="display:flex;"><span>	old_state[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> TYPE_0;
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>	old_state[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> (MAX_TYPES <span style="color:#f92672">*</span> (buf<span style="color:#f92672">-&gt;</span>rptr <span style="color:#f92672">-</span> old_state)) <span style="color:#f92672">+</span> old_type;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int</span> type;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">&gt;=</span> BREAK_3) <span style="color:#75715e">// break 3 是 128
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    type <span style="color:#f92672">=</span> n <span style="color:#f92672">&lt;</span> BREAK_4 <span style="color:#f92672">?</span> TYPE_3 : TYPE_4;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">&lt;</span> BREAK_1) <span style="color:#75715e">// break 1 是 32
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">if</span> (n <span style="color:#f92672">&lt;</span> BREAK_0) <span style="color:#75715e">// break 0 是 0
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">goto</span> fail;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      type <span style="color:#f92672">=</span> TYPE_0;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    type <span style="color:#f92672">=</span> n <span style="color:#f92672">&lt;</span> BREAK_2 <span style="color:#f92672">?</span> TYPE_1 : TYPE_2;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int</span> degree <span style="color:#f92672">=</span> random_poly_info.degrees[type];
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int</span> separation <span style="color:#f92672">=</span> random_poly_info.seps[type];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  buf<span style="color:#f92672">-&gt;</span>rand_type <span style="color:#f92672">=</span> type;
+</span></span><span style="display:flex;"><span>  buf<span style="color:#f92672">-&gt;</span>rand_sep <span style="color:#f92672">=</span> separation;
+</span></span><span style="display:flex;"><span>  buf<span style="color:#f92672">-&gt;</span>rand_deg <span style="color:#f92672">=</span> degree;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int32_t</span> <span style="color:#f92672">*</span>state <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>((<span style="color:#66d9ef">int32_t</span> <span style="color:#f92672">*</span>) arg_state)[<span style="color:#ae81ff">1</span>];	<span style="color:#75715e">/* First location.  */</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">/* Must set END_PTR before srandom.  */</span>
+</span></span><span style="display:flex;"><span>  buf<span style="color:#f92672">-&gt;</span>end_ptr <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>state[degree];
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  buf<span style="color:#f92672">-&gt;</span>state <span style="color:#f92672">=</span> state;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">__srandom_r</span> (seed, buf);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  state[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> TYPE_0;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (type <span style="color:#f92672">!=</span> TYPE_0)
+</span></span><span style="display:flex;"><span>    state[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">=</span> (buf<span style="color:#f92672">-&gt;</span>rptr <span style="color:#f92672">-</span> state) <span style="color:#f92672">*</span> MAX_TYPES <span style="color:#f92672">+</span> type;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span> fail:
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">__set_errno</span> (EINVAL);
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>所以只要调用 <code>initstate(seed, arg_state, 8)</code> 之类的就可以设置了。</p>
+<h3 id="已知多个随机数">已知多个随机数</h3>
+<p>这个攻击方式的原理是，对于一个给定的种子，其后续生成的随机数序列都是唯一确定的。</p>
+<p>在<a href="https://www.mscs.dal.ca/~selinger/random/">这篇文章</a>中，详细介绍了 GLIBC 随机数生成器的 LCG 原理。基于此，可以写出一个简单的 rand 复现：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#define MAX 1000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">myrand</span>(<span style="color:#66d9ef">int</span> seed) {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int</span> r[MAX];
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">int</span> i;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  r[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> seed;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> (i<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>; i<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">31</span>; i<span style="color:#f92672">++</span>) {
+</span></span><span style="display:flex;"><span>    r[i] <span style="color:#f92672">=</span> (<span style="color:#ae81ff">16807LL</span> <span style="color:#f92672">*</span> r[i<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]) <span style="color:#f92672">%</span> <span style="color:#ae81ff">2147483647</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (r[i] <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>) {
+</span></span><span style="display:flex;"><span>      r[i] <span style="color:#f92672">+=</span> <span style="color:#ae81ff">2147483647</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> (i<span style="color:#f92672">=</span><span style="color:#ae81ff">31</span>; i<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">34</span>; i<span style="color:#f92672">++</span>) {
+</span></span><span style="display:flex;"><span>    r[i] <span style="color:#f92672">=</span> r[i<span style="color:#f92672">-</span><span style="color:#ae81ff">31</span>];
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> (i<span style="color:#f92672">=</span><span style="color:#ae81ff">34</span>; i<span style="color:#f92672">&lt;</span><span style="color:#ae81ff">344</span>; i<span style="color:#f92672">++</span>) {
+</span></span><span style="display:flex;"><span>    r[i] <span style="color:#f92672">=</span> r[i<span style="color:#f92672">-</span><span style="color:#ae81ff">31</span>] <span style="color:#f92672">+</span> r[i<span style="color:#f92672">-</span><span style="color:#ae81ff">3</span>];
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> (i<span style="color:#f92672">=</span><span style="color:#ae81ff">344</span>; i<span style="color:#f92672">&lt;</span>MAX; i<span style="color:#f92672">++</span>) {
+</span></span><span style="display:flex;"><span>    r[i] <span style="color:#f92672">=</span> r[i<span style="color:#f92672">-</span><span style="color:#ae81ff">31</span>] <span style="color:#f92672">+</span> r[i<span style="color:#f92672">-</span><span style="color:#ae81ff">3</span>];
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">printf</span>(<span style="color:#e6db74">&#34;%d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, ((<span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">int</span>)r[i]) <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>由此可知，在一个确定的随机种子下的序列中，下一个随机数的生成公式为：</p>
+<p>$randlist_l = (randlist_{l-3}+randlist_{l-31}) % 2147483648$</p>
+<p>于是，如果题目中可以泄漏多个给定种子的随机数，那么可以预测出在某个随机数后的所有随机数。</p>
+
+        </div>
+
+        <div class="row middle-xs">
+          <div class="col-xs-12">
+            
+            <div class="post-tags">
+              <a href="/tags/pwn/">
+                Pwn
+              </a>
+            </div>
+            
+          </div>
+        </div>
+        
+          <div class="row">
+            <div class="col-xs-12">
+              
+            </div>
+          </div>
+
+          
+
+<div class="related-content">
+  <h3>Related Posts</h3>
+  <ul>
+    
+    <li><a href="/posts/2024-qwbqs-final-travels/">2024 强网杯青少赛线下游记</a></li>
+    
+    <li><a href="/posts/qemu-pwn-debug-trick/">Qemu Pwn 入门与调试</a></li>
+    
+    <li><a href="/posts/2024-qwbqs-writeup/">2024 强网杯青少赛线上赛题解</a></li>
+    
+  </ul>
+</div>
+
+
+
+          
+          
+          <div style="height: 50px;"></div>
+          
+        
+
+        
+
+<link rel="shortcut icon" href="favicon.ico" />
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
+    });
+</script>
+
+
+
+
+<link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/x86asm.min.js"></script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+  document.querySelectorAll('pre code').forEach((el) => {
+    hljs.highlightElement(el);
+  });
+});
+</script>
+
+
+
+
+      </div>
+    </div>
+  </article>
+
+  
+
+<script>
+  
+  
+    
+    
+  
+</script>
+
+  
+
+</body>
+
+</html>
