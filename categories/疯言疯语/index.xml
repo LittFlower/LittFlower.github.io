@@ -6,7 +6,40 @@
     <description>Recent content in 疯言疯语 on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 09 Dec 2024 16:23:39 +0800</lastBuildDate><atom:link href="http://littflower.github.io/categories/%E7%96%AF%E8%A8%80%E7%96%AF%E8%AF%AD/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 13 Jan 2025 18:29:39 +0800</lastBuildDate><atom:link href="http://littflower.github.io/categories/%E7%96%AF%E8%A8%80%E7%96%AF%E8%AF%AD/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>2024年度小结</title>
+      <link>http://littflower.github.io/posts/2024%E5%B9%B4%E5%BA%A6%E5%B0%8F%E7%BB%93/</link>
+      <pubDate>Mon, 13 Jan 2025 18:29:39 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/2024%E5%B9%B4%E5%BA%A6%E5%B0%8F%E7%BB%93/</guid>
+      <description>日子过得好快（终于放寒假了嘻嘻
+一转眼今年又结束了，今天坐在回家的高铁上，掀开笔记本开始写这个文档。
+时间线上的往事 按照时间线捋一捋今年吧，流水账了说是（
+1 月 基本上在准备期末考试，20 号才放假。
+期间写了份简历，投给了 NAN，Tplus 和 Nightu 师傅人很好，教了我很多。
+回家休息了几天，看了几场新国辩，看哲理辩论，看肖磊 vs 黄执中。
+2 月 打了几场 CTF，继续看堆。把新生赛的题复现了一遍，然后开心跨年。
+和女朋友一起在西安周边转了转，去了游乐园，玩了很多好玩的项目。
+对于小学生来说有点幼稚，对大学生来说刚刚好（（
+3 月 返校之后看了很久，终于入了一台胶卷相机，买了个比机身贵的镜头，搞了几个胶卷库库拍。
+Arch Linux 时不时冒一些小问题，不过也有特别抽象的时候（
+打了几场线上赛，摸鱼ing
+把编辑器从 vscode 换成了 emacs.
+4 月 炉石要回归了，很开心。
+开始准备转专业的事情，按理来说应该不需要准备什么，但是因为英语实在不是很能过关，还好专业能力过硬，也是轻松通过了。
+其实很焦虑，晚上会睡不着。感觉精神状态越来越不好了。但是我这人不太喜欢跟别人大倒苦水，负能量太多也不好。心里的情绪只能自己消化。现在变成 24 级小登了。
+很多事情既然已经发生了，就只能接受它。我只能尽量弥补以前犯的错。
+“往者不可谏，来着犹可追。已而已而！”
+跟着 NAN 打了几场 CTF 比赛，师傅们好厉害。
+5 月 Rx 来了一趟 scu，和他面基了一趟，带他在江安转了一圈，去看了网络靶场和网安楼，基础设施还是蛮不错的。
+打了 SCU 校赛，做了 re 和 pwn，pwn 出了两个题，感觉还是不太行，主要是我的问题吧，师傅让我再沉淀沉淀。
+读了一些论文，CTF 先放一放，看看别的吧。
+6 月 跟同学搞选修课的大作业，写了个 8000+ 字的推理剧本，手法带点抽象，拍摄水平也不行，演员数量也不够，但总体来说效果还行。对得起这个大作业，对得起我小学/初中很迷恋的推理。
+然后开始复习期末，英语又爆炸了。真学不会。
+报了 ospp，接到了项目，但是完全不会写 qml，然后 wayland 协议也还没读，人机交互也一点不会（</description>
+    </item>
+    
     <item>
       <title>2024 强网杯青少赛线下游记</title>
       <link>http://littflower.github.io/posts/2024-qwbqs-final-travels/</link>
