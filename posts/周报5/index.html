@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Hugo 0.119.0">
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="LittFlower." />
+  <meta property="og:url" content="http://littflower.github.io/posts/%E5%91%A8%E6%8A%A55/" />
+  <link rel="canonical" href="http://littflower.github.io/posts/%E5%91%A8%E6%8A%A55/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
+
+  <script type="application/ld+json">
+  {
+      "@context" : "http://schema.org",
+      "@type" : "BlogPosting",
+      "mainEntityOfPage": {
+           "@type": "WebPage",
+           "@id": "http:\/\/littflower.github.io"
+      },
+      "articleSection" : "posts",
+      "name" : "",
+      "headline" : "",
+      "description" : "2025 寒假第三次周报 按理来说上周其实应该也写一份周报，但是上周 7 天有 4 天都在过年，另外几天也没学什么东西，就没写，打算和这周的合并在一起。\n1.27\/1.28 把 t1d 的 rustsignout 做完之后，t1d 又发了一道很 trick 的题，考察两个知识点：\nseccomp 开的沙箱只和开沙箱时的进程有关，和其他（父）子进程无关； \/proc\/$pid\/mem 可以对进程的虚拟内存空间任意地址写，哪怕这个地址在 gdb 等用户态调试器查看时是不可写的。 后者的原因是 \/proc\/$pid\/mem 文件走的是内核的 mem_write，最后走到 get_xxx_page.\n过年啦～ 过年没带笔记本回去，带了个平板坐车上随便翻了一下 glibc \/ procfs 的源码。\n2.4 好，👴回家了，好。\n先帮 t1d 测了一道题，题目考察了一些比较不常见的 syscall __NR_copy_file_range，这玩意比较有意思，可以从文件到文件零拷贝；还有一个 splice，这个可以从文件到管道 \/ 从管道到文件，支持偏移。\n做这种题主要还是靠读文档，翻 syscall，问 ai，，，不然根本不知道这些乱七八糟的 syscall。\n还考察了之前周报写过的 使用 initstate 令 n=8 时 rand 的 trick，这种东西见过一次基本上就印象深刻了。\n还有和 rustsignout 比较像的 shellcode 构造，不过应该没那个难，我乱杀了，26 字节，比 t1d 短太多，花又 win！\n然后研究了一下 execve 与 system 的区别，整理在下面了：",
+      "inLanguage" : "en-US",
+      "author" : "LittFlower.",
+      "creator" : "LittFlower.",
+      "publisher": "LittFlower.",
+      "accountablePerson" : "LittFlower.",
+      "copyrightHolder" : "LittFlower.",
+      "copyrightYear" : "0001",
+      "datePublished": "0001-01-01 00:00:00 \u002b0000 UTC",
+      "dateModified" : "0001-01-01 00:00:00 \u002b0000 UTC",
+      "url" : "http:\/\/littflower.github.io\/posts\/%E5%91%A8%E6%8A%A55\/",
+      "keywords" : [  ]
+  }
+</script>
+<title></title>
+  <meta property="og:title" content="" />
+  <meta property="og:type" content="article" />
+  <meta property="og:description" content="2025 寒假第三次周报 按理来说上周其实应该也写一份周报，但是上周 7 天有 4 天都在过年，另外几天也没学什么东西，就没写，打算和这周的合并在一起。
+1.27/1.28 把 t1d 的 rustsignout 做完之后，t1d 又发了一道很 trick 的题，考察两个知识点：
+seccomp 开的沙箱只和开沙箱时的进程有关，和其他（父）子进程无关； /proc/$pid/mem 可以对进程的虚拟内存空间任意地址写，哪怕这个地址在 gdb 等用户态调试器查看时是不可写的。 后者的原因是 /proc/$pid/mem 文件走的是内核的 mem_write，最后走到 get_xxx_page.
+过年啦～ 过年没带笔记本回去，带了个平板坐车上随便翻了一下 glibc / procfs 的源码。
+2.4 好，👴回家了，好。
+先帮 t1d 测了一道题，题目考察了一些比较不常见的 syscall __NR_copy_file_range，这玩意比较有意思，可以从文件到文件零拷贝；还有一个 splice，这个可以从文件到管道 / 从管道到文件，支持偏移。
+做这种题主要还是靠读文档，翻 syscall，问 ai，，，不然根本不知道这些乱七八糟的 syscall。
+还考察了之前周报写过的 使用 initstate 令 n=8 时 rand 的 trick，这种东西见过一次基本上就印象深刻了。
+还有和 rustsignout 比较像的 shellcode 构造，不过应该没那个难，我乱杀了，26 字节，比 t1d 短太多，花又 win！
+然后研究了一下 execve 与 system 的区别，整理在下面了：" />
+  <meta name="description" content="2025 寒假第三次周报 按理来说上周其实应该也写一份周报，但是上周 7 天有 4 天都在过年，另外几天也没学什么东西，就没写，打算和这周的合并在一起。
+1.27/1.28 把 t1d 的 rustsignout 做完之后，t1d 又发了一道很 trick 的题，考察两个知识点：
+seccomp 开的沙箱只和开沙箱时的进程有关，和其他（父）子进程无关； /proc/$pid/mem 可以对进程的虚拟内存空间任意地址写，哪怕这个地址在 gdb 等用户态调试器查看时是不可写的。 后者的原因是 /proc/$pid/mem 文件走的是内核的 mem_write，最后走到 get_xxx_page.
+过年啦～ 过年没带笔记本回去，带了个平板坐车上随便翻了一下 glibc / procfs 的源码。
+2.4 好，👴回家了，好。
+先帮 t1d 测了一道题，题目考察了一些比较不常见的 syscall __NR_copy_file_range，这玩意比较有意思，可以从文件到文件零拷贝；还有一个 splice，这个可以从文件到管道 / 从管道到文件，支持偏移。
+做这种题主要还是靠读文档，翻 syscall，问 ai，，，不然根本不知道这些乱七八糟的 syscall。
+还考察了之前周报写过的 使用 initstate 令 n=8 时 rand 的 trick，这种东西见过一次基本上就印象深刻了。
+还有和 rustsignout 比较像的 shellcode 构造，不过应该没那个难，我乱杀了，26 字节，比 t1d 短太多，花又 win！
+然后研究了一下 execve 与 system 的区别，整理在下面了：" />
+  <meta property="og:locale" content="en-us" /><meta property="og:image" content="" />
+  
+
+  
+    <style>body{font-family:sarasa-fixed-sc,sans-serif;-webkit-font-smoothing:antialiased;src:url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/ttf/FiraCode-Light.ttf)format('ttf');margin:0 20px}article{max-width:1100px;margin-left:auto;margin-right:auto}a{color:#000;text-decoration:none}a:hover{font-weight:700;text-decoration:underline}.post-ads{margin:50px 0}.markdown-body{font-size:17.5px;max-width:100%}.markdown-body a{text-decoration:underline;text-decoration-color:#4005f3}.markdown-body blockquote{margin:0;padding:0 1em;color:#494d53;border-left:.25em solid #0b79e7}.markdown-body pre{padding:12px;overflow:auto;border-radius:10px}.markdown-body code{padding:.1em 0;font-size:100%;background-color:#eef1f3;border-radius:6px}.markdown-body pre>code{padding:0;font-size:95%;background-color:inherit;border:0}.markdown-body pre{background-color:#272822}.hljs{font-size:17.2px;color:#eef1f3}ul,ol{margin:.25em 0;line-height:1.6}ul ul,ul ol,ol ul,ol ol{margin:.25em 0}li{padding:.25em 0}h1{font-size:1.83rem}h2{font-size:1.74rem}h3{font-size:1.45rem}h4{font-size:1.28rem}h5{font-size:1.16rem}h6{font-size:1.21rem}.Chinese .markdown-body{line-height:200%}.site-date-catalog{font-size:2rem}.header-title{font-size:2rem;font-weight:700;margin-top:32px;font-family:source code pro,sans-serif;src:url(https://cdn.jsdelivr.net/npm/source-code-pro@2.38.0/WOFF/TTF/SourceCodePro-Bold.ttf.woff)format("woff")}.header-title a{text-decoration:none}.header-subtitle{color:#666}.header-items{margin:10px 0}.header-item{margin:0 5px}.header-line{width:100%;border-width:2px;border-color:#482936;border-style:solid none none none}.lang-switch{font-weight:700}#posts-list{min-height:600px}.posts-line{font-size:1.2rem;margin:12px 0}.posts-categories{font-size:.8rem;margin:auto;text-align:center}.posts-category{padding:3px 0;border:#000 2px solid;border-radius:5px}.site-footer{margin-top:50px}.site-footer-item{margin-right:12px}.post-content img{max-width:100%;display:block;margin-right:auto;margin-top:12px}.post-header{margin-bottom:50px}.post-title{font-size:2rem;font-weight:600}.post-tags{display:inline;font-weight:600;padding:2px 5px;margin-right:6px;border:#000 2px solid;border-radius:5px}.post-date{font-weight:800;font-style:italic}.post-author{float:right;font-weight:600}.page-content{min-height:60%}.post-content{margin-bottom:50px}.post-content p{hyphens:auto;line-height:1.8;text-justify:ideographic;margin-bottom:1em}.related-content{border-width:3px;border-style:solid;border-color:#000;padding:0 10px;margin-bottom:50px;margin-top:100px}.related-content li{margin:5px 0}.taxonomy-term{font-size:3rem}.gallery-img{text-align:center}.gallery-img span{text-align:center}.gallery-img-desc{font-size:.8em;font-weight:800}#disqus_thread{position:relative}#disqus_thread:after{content:"";display:block;height:55px;width:100%;position:absolute;bottom:0;background:#fff}@media screen and (max-width:600px){.header-title,.header-subtitle,.header-items{text-align:center}.posts-line{font-size:16px}.markdown-body{font-size:16px}.post-title{font-size:2rem}.post-content p{letter-spacing:.05em}}@media screen and (max-width:48em){.posts-category{display:none}}:root{--nav-width:1380px;--article-width:650px;--toc-width:300px}.toc{margin:0 2px 40px;border:1px solid var(--border);background:var(--entry);border-radius:var(--radius);padding:.4em}.toc-container.wide{position:absolute;height:100%;border-right:1px solid var(--border);left:calc((var(--toc-width) + var(--gap)) * -1);top:calc(var(--gap) * 2);width:var(--toc-width)}.wide .toc{position:sticky;top:var(--gap);border:unset;background:unset;border-radius:unset;width:100%;margin:0 2px 40px}.toc details summary{cursor:zoom-in;margin-inline-start:20px;padding:12px 0}.toc details[open] summary{font-weight:500}.toc-container.wide .toc .inner{margin:0}.active{font-size:110%;font-weight:600}.toc ul{list-style-type:circle}.toc .inner{margin:0 0 0 20px;padding:0 15px 15px 20px;font-size:16px;max-height:83vh;overflow-y:auto}.toc .inner::-webkit-scrollbar-thumb{background:var(--border);border:7px solid var(--theme);border-radius:var(--radius)}.toc li ul{margin-inline-start:calc(var(--gap) * .5);list-style-type:none}.toc li{list-style:none;font-size:.95rem;padding-bottom:5px}.toc li a:hover{color:var(--secondary)}</style>
+  
+  
+    <style>.container,.container-fluid{margin-right:auto;margin-left:auto}.container-fluid{padding-right:2rem;padding-left:2rem}.row{box-sizing:border-box;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-flex:0;-ms-flex:0 1 auto;flex:initial;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-ms-flex-direction:row;flex-direction:row;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-.5rem;margin-left:-.5rem}.row.reverse{-webkit-box-orient:horizontal;-webkit-box-direction:reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.col.reverse{-webkit-box-orient:vertical;-webkit-box-direction:reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.col-xs,.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9,.col-xs-offset-0,.col-xs-offset-1,.col-xs-offset-10,.col-xs-offset-11,.col-xs-offset-12,.col-xs-offset-2,.col-xs-offset-3,.col-xs-offset-4,.col-xs-offset-5,.col-xs-offset-6,.col-xs-offset-7,.col-xs-offset-8,.col-xs-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-xs{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-xs-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-xs-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-xs-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-xs-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-xs-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-xs-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-xs-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-xs-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-xs-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-xs-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-xs-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-xs-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-xs-offset-0{margin-left:0}.col-xs-offset-1{margin-left:8.33333333%}.col-xs-offset-2{margin-left:16.66666667%}.col-xs-offset-3{margin-left:25%}.col-xs-offset-4{margin-left:33.33333333%}.col-xs-offset-5{margin-left:41.66666667%}.col-xs-offset-6{margin-left:50%}.col-xs-offset-7{margin-left:58.33333333%}.col-xs-offset-8{margin-left:66.66666667%}.col-xs-offset-9{margin-left:75%}.col-xs-offset-10{margin-left:83.33333333%}.col-xs-offset-11{margin-left:91.66666667%}.start-xs{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-xs{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-xs{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-xs{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-xs{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-xs{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-xs{-ms-flex-pack:distribute;justify-content:space-around}.between-xs{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-xs{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-xs{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}@media only screen and (min-width:48em){.container{width:49rem}.col-sm,.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-offset-0,.col-sm-offset-1,.col-sm-offset-10,.col-sm-offset-11,.col-sm-offset-12,.col-sm-offset-2,.col-sm-offset-3,.col-sm-offset-4,.col-sm-offset-5,.col-sm-offset-6,.col-sm-offset-7,.col-sm-offset-8,.col-sm-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-sm{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-sm-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-sm-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-sm-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-sm-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-sm-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-sm-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-sm-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-sm-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-sm-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-sm-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-sm-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-sm-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-sm-offset-0{margin-left:0}.col-sm-offset-1{margin-left:8.33333333%}.col-sm-offset-2{margin-left:16.66666667%}.col-sm-offset-3{margin-left:25%}.col-sm-offset-4{margin-left:33.33333333%}.col-sm-offset-5{margin-left:41.66666667%}.col-sm-offset-6{margin-left:50%}.col-sm-offset-7{margin-left:58.33333333%}.col-sm-offset-8{margin-left:66.66666667%}.col-sm-offset-9{margin-left:75%}.col-sm-offset-10{margin-left:83.33333333%}.col-sm-offset-11{margin-left:91.66666667%}.start-sm{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-sm{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-sm{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-sm{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-sm{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-sm{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-sm{-ms-flex-pack:distribute;justify-content:space-around}.between-sm{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-sm{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-sm{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:64em){.container{width:65rem}.col-md,.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9,.col-md-offset-0,.col-md-offset-1,.col-md-offset-10,.col-md-offset-11,.col-md-offset-12,.col-md-offset-2,.col-md-offset-3,.col-md-offset-4,.col-md-offset-5,.col-md-offset-6,.col-md-offset-7,.col-md-offset-8,.col-md-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-md{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-md-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-md-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-md-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-md-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-md-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-md-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-md-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-md-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-md-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-md-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-md-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-md-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-md-offset-0{margin-left:0}.col-md-offset-1{margin-left:8.33333333%}.col-md-offset-2{margin-left:16.66666667%}.col-md-offset-3{margin-left:25%}.col-md-offset-4{margin-left:33.33333333%}.col-md-offset-5{margin-left:41.66666667%}.col-md-offset-6{margin-left:50%}.col-md-offset-7{margin-left:58.33333333%}.col-md-offset-8{margin-left:66.66666667%}.col-md-offset-9{margin-left:75%}.col-md-offset-10{margin-left:83.33333333%}.col-md-offset-11{margin-left:91.66666667%}.start-md{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-md{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-md{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-md{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-md{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-md{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-md{-ms-flex-pack:distribute;justify-content:space-around}.between-md{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-md{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-md{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:75em){.container{width:76rem}.col-lg,.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9,.col-lg-offset-0,.col-lg-offset-1,.col-lg-offset-10,.col-lg-offset-11,.col-lg-offset-12,.col-lg-offset-2,.col-lg-offset-3,.col-lg-offset-4,.col-lg-offset-5,.col-lg-offset-6,.col-lg-offset-7,.col-lg-offset-8,.col-lg-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-lg{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-lg-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-lg-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-lg-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-lg-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-lg-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-lg-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-lg-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-lg-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-lg-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-lg-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-lg-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-lg-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-lg-offset-0{margin-left:0}.col-lg-offset-1{margin-left:8.33333333%}.col-lg-offset-2{margin-left:16.66666667%}.col-lg-offset-3{margin-left:25%}.col-lg-offset-4{margin-left:33.33333333%}.col-lg-offset-5{margin-left:41.66666667%}.col-lg-offset-6{margin-left:50%}.col-lg-offset-7{margin-left:58.33333333%}.col-lg-offset-8{margin-left:66.66666667%}.col-lg-offset-9{margin-left:75%}.col-lg-offset-10{margin-left:83.33333333%}.col-lg-offset-11{margin-left:91.66666667%}.start-lg{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-lg{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-lg{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-lg{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-lg{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-lg{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-lg{-ms-flex-pack:distribute;justify-content:space-around}.between-lg{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-lg{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-lg{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}</style>
+  
+
+  
+
+  <link href="/index.xml" rel="alternate" type="application/rss+xml"
+    title="一只花盆.">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Bree+Serif|Bungee+Shade" rel="stylesheet">
+  
+  
+
+  
+  
+</head>
+
+
+<body>
+  <article class="post " id="article">
+    <div class="row">
+      <div class="col-xs-12">
+        <div class="site-header">
+          
+<header>
+  <div class="header-title">
+    <a href="/"
+      >小花ฅ.</a
+    >
+  </div>
+  <div class="header-subtitle"></div>
+</header>
+<div class="row end-md center-xs header-items">
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/aboutme" target="_blank">AboutMe</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://github.com/LittFlower" target="_blank">Github</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/friends" target="_blank">Friends</a>
+  </div>
+  
+</div>
+<div class="row end-xs">
+   
+</div>
+<div class="header-line"></div>
+
+        </div>
+        <header class="post-header">
+          <h1 class="post-title"></h1>
+          
+          <div class="row post-desc">
+            <div class="col-xs-6">
+              
+            </div>
+            <div class="col-xs-6">
+              
+              <div class="post-author">
+                <a target="_blank" href="https://blog.littflower.top">@LittFlower.</a>
+              </div>
+              
+            </div>
+          </div>
+          
+        </header>
+
+        <div class="post-content markdown-body">
+          
+          <h2 id="2025-寒假第三次周报">2025 寒假第三次周报</h2>
+<p>按理来说上周其实应该也写一份周报，但是上周 7 天有 4 天都在过年，另外几天也没学什么东西，就没写，打算和这周的合并在一起。</p>
+<h3 id="127128">1.27/1.28</h3>
+<p>把 t1d 的 rustsignout 做完之后，t1d 又发了一道很 trick 的题，考察两个知识点：</p>
+<ul>
+<li><code>seccomp</code> 开的沙箱只和开沙箱时的进程有关，和其他（父）子进程无关；</li>
+<li><code>/proc/$pid/mem</code> 可以对进程的虚拟内存空间任意地址写，哪怕这个地址在 gdb 等用户态调试器查看时是不可写的。</li>
+</ul>
+<p>后者的原因是 /proc/$pid/mem 文件走的是内核的 mem_write，最后走到 get_xxx_page.</p>
+<p>过年啦～ 过年没带笔记本回去，带了个平板坐车上随便翻了一下 glibc / procfs 的源码。</p>
+<h3 id="24">2.4</h3>
+<p>好，👴回家了，好。</p>
+<p>先帮 t1d 测了一道题，题目考察了一些比较不常见的 syscall <code>__NR_copy_file_range</code>，这玩意比较有意思，可以从文件到文件零拷贝；还有一个 <code>splice</code>，这个可以从文件到管道 / 从管道到文件，支持偏移。</p>
+<p>做这种题主要还是靠读文档，翻 syscall，问 ai，，，不然根本不知道这些乱七八糟的 syscall。</p>
+<p>还考察了之前周报写过的 使用 <code>initstate</code> 令 n=8 时 <code>rand</code> 的 trick，这种东西见过一次基本上就印象深刻了。</p>
+<p>还有和 rustsignout 比较像的 shellcode 构造，不过应该没那个难，我乱杀了，26 字节，比 t1d 短太多，花又 win！</p>
+<p>然后研究了一下 execve 与 system 的区别，整理在下面了：</p>
+<h4 id="简介">简介</h4>
+<p>关于 execve 和 system，在 Pwn 的时候经常作为题目 exp 的终端，前者经常用在 onegadget 或者 shellcode 里，后者则在 ROP 里见得更多一点。</p>
+<p>这篇笔记主要关注 execve 和 system 在调用后的进程状态。</p>
+<h4 id="execve">execve</h4>
+<h5 id="理论">理论</h5>
+<p>execve() 调用成功后不会返回, 其进程的正文(text), 数据(data), bss 和堆栈 (stack) 段被调入程序覆盖。调入程序继承了调用程序的 PID 和所有打开的文件描述符, 他们不会因为 exec 过程而关闭. 父进程的未决信号被清除. 所有被调用进程设置过的信号重置为缺省行为.</p>
+<h5 id="检验">检验</h5>
+<p>写一个 poc：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">// gcc execve.c -g -o execve
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;unistd.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>path <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;/bin/sh&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>argv[] <span style="color:#f92672">=</span> {path, NULL};
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>envp[] <span style="color:#f92672">=</span> {NULL};
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> a <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">scanf</span>(<span style="color:#e6db74">&#34;%d&#34;</span>, <span style="color:#f92672">&amp;</span>a); <span style="color:#75715e">// 起一个打断点的作用
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">execve</span>(path, argv, envp) <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">perror</span>(<span style="color:#e6db74">&#34;execve&#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 如果execve调用成功，下面的代码不会执行
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">printf</span>(<span style="color:#e6db74">&#34;execve 调用成功！&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>然后编译运行这个 poc，在输入任意数字之前，<code>ps -ax | grep execve</code> 可以看到：</p>
+<pre tabindex="0"><code>$ ps -ax | grep execve
+PID TTY      STAT   TIME COMMAND
+70102 pts/6    S+     0:00 ./execve
+</code></pre><p>然后输入任意数据，再看 70102 这个 pid：</p>
+<pre tabindex="0"><code>$ ps -ax | grep execve
+PID TTY      STAT   TIME COMMAND
+70102 pts/6    S+     0:00 /bin/sh
+</code></pre><p>显然，<code>execve</code> 执行的沙箱操作是替换当前进程，会保留 execve 之前的沙箱。</p>
+<p>如何解读 STAT 字段呢？可以看 [[解读 ps 的 STAT 字段]]。</p>
+<h4 id="system">system</h4>
+<h5 id="理论-1">理论</h5>
+<p>The system() library function behaves as if it used fork(2) to create a child process that executed the shell command specified in command using execl(3) as follows:
+﻿
+execl(&quot;/bin/sh&quot;, &ldquo;sh&rdquo;, &ldquo;-c&rdquo;, command, (char *) NULL);
+﻿
+system() returns after the command has been completed.</p>
+<h5 id="检验-1">检验</h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdlib.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> a;
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">scanf</span>(<span style="color:#e6db74">&#34;%d&#34;</span>, <span style="color:#f92672">&amp;</span>a);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> status <span style="color:#f92672">=</span> <span style="color:#a6e22e">system</span>(<span style="color:#e6db74">&#34;/bin/sh&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (status <span style="color:#f92672">==</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">perror</span>(<span style="color:#e6db74">&#34;system&#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> EXIT_FAILURE;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">printf</span>(<span style="color:#e6db74">&#34;The shell exited with status %d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, status);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> EXIT_SUCCESS;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>编译运行后，同样可以查看：</p>
+<pre tabindex="0"><code>70781 pts/6    S+     0:00 ./system
+</code></pre><p>输入任意数据后：</p>
+<pre tabindex="0"><code>70781 pts/6    S      0:00 ./system
+70920 pts/6    S+     0:00 /bin/sh
+</code></pre><p><code>ps -ef --forest</code> 可以看到</p>
+<pre tabindex="0"><code>flower     57139    2577  0 2月03 pts/6   00:00:00  |   \_ /usr/bin/zsh
+flower     70781   57139  0 00:00 pts/6    00:00:00  |   |   \_ ./system
+flower     70920   70781  0 00:01 pts/6    00:00:00  |   |       \_ /bin/sh
+</code></pre><p>注意到它另起了一个子进程来执行 sh，而子进程显然是不会被沙箱约束的。</p>
+<h4 id="25">2.5</h4>
+<p>继续调了一下 execveat 与 openat 的关系。</p>
+<p>当沙箱禁用系统调用 execve，往往会想到去用 execveat，但是有的时候会发现 execveat 也无法调用，这是为什么呢？</p>
+<p>execveat 源码：</p>
+<p>首先在 <code>fs/exec.c</code> 里</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">do_execveat</span>(<span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">struct</span> filename <span style="color:#f92672">*</span>filename,
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> __user <span style="color:#f92672">*</span><span style="color:#66d9ef">const</span> __user <span style="color:#f92672">*</span>__argv,
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> __user <span style="color:#f92672">*</span><span style="color:#66d9ef">const</span> __user <span style="color:#f92672">*</span>__envp,
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">int</span> flags)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> user_arg_ptr argv <span style="color:#f92672">=</span> { .ptr.native <span style="color:#f92672">=</span> __argv };
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> user_arg_ptr envp <span style="color:#f92672">=</span> { .ptr.native <span style="color:#f92672">=</span> __envp };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">do_execveat_common</span>(fd, filename, argv, envp, flags);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>调用了 <code>do_execveat_common()</code>，跟进去看：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">do_execveat_common</span>(<span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">struct</span> filename <span style="color:#f92672">*</span>filename,
+</span></span><span style="display:flex;"><span>			      <span style="color:#66d9ef">struct</span> user_arg_ptr argv,
+</span></span><span style="display:flex;"><span>			      <span style="color:#66d9ef">struct</span> user_arg_ptr envp,
+</span></span><span style="display:flex;"><span>			      <span style="color:#66d9ef">int</span> flags)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> linux_binprm <span style="color:#f92672">*</span>bprm;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">int</span> retval;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">IS_ERR</span>(filename))
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">PTR_ERR</span>(filename);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * We move the actual failure in case of RLIMIT_NPROC excess from
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * set*uid() to execve() because too many poorly written programs
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * don&#39;t check setuid() return code.  Here we additionally recheck
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * whether NPROC limit is still exceeded.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 */</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> ((current<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;</span> PF_NPROC_EXCEEDED) <span style="color:#f92672">&amp;&amp;</span>
+</span></span><span style="display:flex;"><span>	    <span style="color:#a6e22e">is_rlimit_overlimit</span>(<span style="color:#a6e22e">current_ucounts</span>(), UCOUNT_RLIMIT_NPROC, <span style="color:#a6e22e">rlimit</span>(RLIMIT_NPROC))) {
+</span></span><span style="display:flex;"><span>		retval <span style="color:#f92672">=</span> <span style="color:#f92672">-</span>EAGAIN;
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">goto</span> out_ret;
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">/* We&#39;re below the limit (still or again), so we don&#39;t want to make
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * further execve() calls fail. */</span>
+</span></span><span style="display:flex;"><span>	current<span style="color:#f92672">-&gt;</span>flags <span style="color:#f92672">&amp;=</span> <span style="color:#f92672">~</span>PF_NPROC_EXCEEDED;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	bprm <span style="color:#f92672">=</span> <span style="color:#a6e22e">alloc_bprm</span>(fd, filename, flags);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">IS_ERR</span>(bprm)) {
+</span></span><span style="display:flex;"><span>		retval <span style="color:#f92672">=</span> <span style="color:#a6e22e">PTR_ERR</span>(bprm);
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">goto</span> out_ret;
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	retval <span style="color:#f92672">=</span> <span style="color:#a6e22e">count</span>(argv, MAX_ARG_STRINGS);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (retval <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">pr_warn_once</span>(<span style="color:#e6db74">&#34;process &#39;%s&#39; launched &#39;%s&#39; with NULL argv: empty string added</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,
+</span></span><span style="display:flex;"><span>			     current<span style="color:#f92672">-&gt;</span>comm, bprm<span style="color:#f92672">-&gt;</span>filename);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (retval <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">goto</span> out_free;
+</span></span><span style="display:flex;"><span>	bprm<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">=</span> retval;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	retval <span style="color:#f92672">=</span> <span style="color:#a6e22e">count</span>(envp, MAX_ARG_STRINGS);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (retval <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">goto</span> out_free;
+</span></span><span style="display:flex;"><span>	bprm<span style="color:#f92672">-&gt;</span>envc <span style="color:#f92672">=</span> retval;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	retval <span style="color:#f92672">=</span> <span style="color:#a6e22e">bprm_stack_limits</span>(bprm);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (retval <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">goto</span> out_free;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	retval <span style="color:#f92672">=</span> <span style="color:#a6e22e">copy_string_kernel</span>(bprm<span style="color:#f92672">-&gt;</span>filename, bprm);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (retval <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">goto</span> out_free;
+</span></span><span style="display:flex;"><span>	bprm<span style="color:#f92672">-&gt;</span>exec <span style="color:#f92672">=</span> bprm<span style="color:#f92672">-&gt;</span>p;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	retval <span style="color:#f92672">=</span> <span style="color:#a6e22e">copy_strings</span>(bprm<span style="color:#f92672">-&gt;</span>envc, envp, bprm);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (retval <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">goto</span> out_free;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	retval <span style="color:#f92672">=</span> <span style="color:#a6e22e">copy_strings</span>(bprm<span style="color:#f92672">-&gt;</span>argc, argv, bprm);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (retval <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">goto</span> out_free;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * When argv is empty, add an empty string (&#34;&#34;) as argv[0] to
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * ensure confused userspace programs that start processing
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * from argv[1] won&#39;t end up walking envp. See also
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * bprm_stack_limits().
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 */</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (bprm<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>) {
+</span></span><span style="display:flex;"><span>		retval <span style="color:#f92672">=</span> <span style="color:#a6e22e">copy_string_kernel</span>(<span style="color:#e6db74">&#34;&#34;</span>, bprm);
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> (retval <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">goto</span> out_free;
+</span></span><span style="display:flex;"><span>		bprm<span style="color:#f92672">-&gt;</span>argc <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	retval <span style="color:#f92672">=</span> <span style="color:#a6e22e">bprm_execve</span>(bprm);
+</span></span><span style="display:flex;"><span>out_free:
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">free_bprm</span>(bprm);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>out_ret:
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">putname</span>(filename);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> retval;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>看 <code>alloc_bprm</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">struct</span> linux_binprm <span style="color:#f92672">*</span><span style="color:#a6e22e">alloc_bprm</span>(<span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">struct</span> filename <span style="color:#f92672">*</span>filename, <span style="color:#66d9ef">int</span> flags)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> linux_binprm <span style="color:#f92672">*</span>bprm;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> file <span style="color:#f92672">*</span>file;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">int</span> retval <span style="color:#f92672">=</span> <span style="color:#f92672">-</span>ENOMEM;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	file <span style="color:#f92672">=</span> <span style="color:#a6e22e">do_open_execat</span>(fd, filename, flags);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">IS_ERR</span>(file))
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ERR_CAST</span>(file);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	bprm <span style="color:#f92672">=</span> <span style="color:#a6e22e">kzalloc</span>(<span style="color:#66d9ef">sizeof</span>(<span style="color:#f92672">*</span>bprm), GFP_KERNEL);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>bprm) {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">do_close_execat</span>(file);
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ERR_PTR</span>(<span style="color:#f92672">-</span>ENOMEM);
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	bprm<span style="color:#f92672">-&gt;</span>file <span style="color:#f92672">=</span> file;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (fd <span style="color:#f92672">==</span> AT_FDCWD <span style="color:#f92672">||</span> filename<span style="color:#f92672">-&gt;</span>name[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;/&#39;</span>) {
+</span></span><span style="display:flex;"><span>		bprm<span style="color:#f92672">-&gt;</span>filename <span style="color:#f92672">=</span> filename<span style="color:#f92672">-&gt;</span>name;
+</span></span><span style="display:flex;"><span>	} <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> (filename<span style="color:#f92672">-&gt;</span>name[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;\0&#39;</span>)
+</span></span><span style="display:flex;"><span>			bprm<span style="color:#f92672">-&gt;</span>fdpath <span style="color:#f92672">=</span> <span style="color:#a6e22e">kasprintf</span>(GFP_KERNEL, <span style="color:#e6db74">&#34;/dev/fd/%d&#34;</span>, fd);
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>			bprm<span style="color:#f92672">-&gt;</span>fdpath <span style="color:#f92672">=</span> <span style="color:#a6e22e">kasprintf</span>(GFP_KERNEL, <span style="color:#e6db74">&#34;/dev/fd/%d/%s&#34;</span>,
+</span></span><span style="display:flex;"><span>						  fd, filename<span style="color:#f92672">-&gt;</span>name);
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>bprm<span style="color:#f92672">-&gt;</span>fdpath)
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">goto</span> out_free;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">		 * Record that a name derived from an O_CLOEXEC fd will be
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">		 * inaccessible after exec.  This allows the code in exec to
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">		 * choose to fail when the executable is not mmaped into the
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">		 * interpreter and an open file descriptor is not passed to
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">		 * the interpreter.  This makes for a better user experience
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">		 * than having the interpreter start and then immediately fail
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">		 * when it finds the executable is inaccessible.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">		 */</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">get_close_on_exec</span>(fd))
+</span></span><span style="display:flex;"><span>			bprm<span style="color:#f92672">-&gt;</span>interp_flags <span style="color:#f92672">|=</span> BINPRM_FLAGS_PATH_INACCESSIBLE;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		bprm<span style="color:#f92672">-&gt;</span>filename <span style="color:#f92672">=</span> bprm<span style="color:#f92672">-&gt;</span>fdpath;
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	bprm<span style="color:#f92672">-&gt;</span>interp <span style="color:#f92672">=</span> bprm<span style="color:#f92672">-&gt;</span>filename;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	retval <span style="color:#f92672">=</span> <span style="color:#a6e22e">bprm_mm_init</span>(bprm);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>retval)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> bprm;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>out_free:
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">free_bprm</span>(bprm);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ERR_PTR</span>(retval);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>跟入 <code>do_open_execat</code> 函数</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">struct</span> file <span style="color:#f92672">*</span><span style="color:#a6e22e">do_open_execat</span>(<span style="color:#66d9ef">int</span> fd, <span style="color:#66d9ef">struct</span> filename <span style="color:#f92672">*</span>name, <span style="color:#66d9ef">int</span> flags)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">int</span> err;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> file <span style="color:#f92672">*</span>file <span style="color:#a6e22e">__free</span>(fput) <span style="color:#f92672">=</span> NULL;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> open_flags open_exec_flags <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>		.open_flag <span style="color:#f92672">=</span> O_LARGEFILE <span style="color:#f92672">|</span> O_RDONLY <span style="color:#f92672">|</span> __FMODE_EXEC,
+</span></span><span style="display:flex;"><span>		.acc_mode <span style="color:#f92672">=</span> MAY_EXEC,
+</span></span><span style="display:flex;"><span>		.intent <span style="color:#f92672">=</span> LOOKUP_OPEN,
+</span></span><span style="display:flex;"><span>		.lookup_flags <span style="color:#f92672">=</span> LOOKUP_FOLLOW,
+</span></span><span style="display:flex;"><span>	};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> ((flags <span style="color:#f92672">&amp;</span> <span style="color:#f92672">~</span>(AT_SYMLINK_NOFOLLOW <span style="color:#f92672">|</span> AT_EMPTY_PATH)) <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ERR_PTR</span>(<span style="color:#f92672">-</span>EINVAL);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> AT_SYMLINK_NOFOLLOW)
+</span></span><span style="display:flex;"><span>		open_exec_flags.lookup_flags <span style="color:#f92672">&amp;=</span> <span style="color:#f92672">~</span>LOOKUP_FOLLOW;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (flags <span style="color:#f92672">&amp;</span> AT_EMPTY_PATH)
+</span></span><span style="display:flex;"><span>		open_exec_flags.lookup_flags <span style="color:#f92672">|=</span> LOOKUP_EMPTY;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	file <span style="color:#f92672">=</span> <span style="color:#a6e22e">do_filp_open</span>(fd, name, <span style="color:#f92672">&amp;</span>open_exec_flags);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">IS_ERR</span>(file))
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> file;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * In the past the regular type check was here. It moved to may_open() in
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * 633fb6ac3980 (&#34;exec: move S_ISREG() check earlier&#34;). Since then it is
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 * an invariant that all non-regular files error out before we get here.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	 */</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">WARN_ON_ONCE</span>(<span style="color:#f92672">!</span><span style="color:#a6e22e">S_ISREG</span>(<span style="color:#a6e22e">file_inode</span>(file)<span style="color:#f92672">-&gt;</span>i_mode)) <span style="color:#f92672">||</span>
+</span></span><span style="display:flex;"><span>	    <span style="color:#a6e22e">path_noexec</span>(<span style="color:#f92672">&amp;</span>file<span style="color:#f92672">-&gt;</span>f_path))
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ERR_PTR</span>(<span style="color:#f92672">-</span>EACCES);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	err <span style="color:#f92672">=</span> <span style="color:#a6e22e">deny_write_access</span>(file);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (err)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ERR_PTR</span>(err);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">no_free_ptr</span>(file);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>这里会调用 <code>do_filp_open()</code></strong>。</p>
+<p>接下来看 <code>openat</code> 和 <code>openat2</code>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#a6e22e">SYSCALL_DEFINE4</span>(openat, <span style="color:#66d9ef">int</span>, dfd, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> __user <span style="color:#f92672">*</span>, filename, <span style="color:#66d9ef">int</span>, flags,
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">umode_t</span>, mode)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">force_o_largefile</span>())
+</span></span><span style="display:flex;"><span>		flags <span style="color:#f92672">|=</span> O_LARGEFILE;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">do_sys_open</span>(dfd, filename, flags, mode);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">SYSCALL_DEFINE4</span>(openat2, <span style="color:#66d9ef">int</span>, dfd, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> __user <span style="color:#f92672">*</span>, filename,
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">struct</span> open_how __user <span style="color:#f92672">*</span>, how, <span style="color:#66d9ef">size_t</span>, usize)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">int</span> err;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> open_how tmp;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">BUILD_BUG_ON</span>(<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">struct</span> open_how) <span style="color:#f92672">&lt;</span> OPEN_HOW_SIZE_VER0);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">BUILD_BUG_ON</span>(<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">struct</span> open_how) <span style="color:#f92672">!=</span> OPEN_HOW_SIZE_LATEST);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">unlikely</span>(usize <span style="color:#f92672">&lt;</span> OPEN_HOW_SIZE_VER0))
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span>EINVAL;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">unlikely</span>(usize <span style="color:#f92672">&gt;</span> PAGE_SIZE))
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span>E2BIG;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	err <span style="color:#f92672">=</span> <span style="color:#a6e22e">copy_struct_from_user</span>(<span style="color:#f92672">&amp;</span>tmp, <span style="color:#66d9ef">sizeof</span>(tmp), how, usize);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (err)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> err;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">audit_openat2_how</span>(<span style="color:#f92672">&amp;</span>tmp);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">/* O_LARGEFILE is only allowed for non-O_PATH. */</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>(tmp.flags <span style="color:#f92672">&amp;</span> O_PATH) <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">force_o_largefile</span>())
+</span></span><span style="display:flex;"><span>		tmp.flags <span style="color:#f92672">|=</span> O_LARGEFILE;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">do_sys_openat2</span>(dfd, filename, <span style="color:#f92672">&amp;</span>tmp);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>看 <code>do_sys_open()</code>，跟进去，发现会调用 <code>do_sys_openat2</code>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">do_sys_openat2</span>(<span style="color:#66d9ef">int</span> dfd, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> __user <span style="color:#f92672">*</span>filename,
+</span></span><span style="display:flex;"><span>			   <span style="color:#66d9ef">struct</span> open_how <span style="color:#f92672">*</span>how)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> open_flags op;
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">int</span> fd <span style="color:#f92672">=</span> <span style="color:#a6e22e">build_open_flags</span>(how, <span style="color:#f92672">&amp;</span>op);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> filename <span style="color:#f92672">*</span>tmp;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (fd)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> fd;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	tmp <span style="color:#f92672">=</span> <span style="color:#a6e22e">getname</span>(filename);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">IS_ERR</span>(tmp))
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">PTR_ERR</span>(tmp);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	fd <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_unused_fd_flags</span>(how<span style="color:#f92672">-&gt;</span>flags);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> (fd <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>) {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">struct</span> file <span style="color:#f92672">*</span>f <span style="color:#f92672">=</span> <span style="color:#a6e22e">do_filp_open</span>(dfd, tmp, <span style="color:#f92672">&amp;</span>op);
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">IS_ERR</span>(f)) {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">put_unused_fd</span>(fd);
+</span></span><span style="display:flex;"><span>			fd <span style="color:#f92672">=</span> <span style="color:#a6e22e">PTR_ERR</span>(f);
+</span></span><span style="display:flex;"><span>		} <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">fd_install</span>(fd, f);
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">putname</span>(tmp);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> fd;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">long</span> <span style="color:#a6e22e">do_sys_open</span>(<span style="color:#66d9ef">int</span> dfd, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> __user <span style="color:#f92672">*</span>filename, <span style="color:#66d9ef">int</span> flags, <span style="color:#66d9ef">umode_t</span> mode)
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">struct</span> open_how how <span style="color:#f92672">=</span> <span style="color:#a6e22e">build_open_how</span>(flags, mode);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">do_sys_openat2</span>(dfd, filename, <span style="color:#f92672">&amp;</span>how);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>注意到 <code>do_sys_openat2()</code> <strong>也会调用 <code>do_filp_open()</code></strong>。</p>
+<p>综上，<code>execveat</code> 会调用 <code>openat</code> <code>openat2</code> 调用到的函数，所以下面这个 poc 运行后会 core dump:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdlib.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;seccomp.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;unistd.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;fcntl.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">sandbox</span>() {
+</span></span><span style="display:flex;"><span>    scmp_filter_ctx ctx;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> rc;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ctx <span style="color:#f92672">=</span> <span style="color:#a6e22e">seccomp_init</span>(SCMP_ACT_ALLOW);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (ctx <span style="color:#f92672">==</span> NULL) {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">perror</span>(<span style="color:#e6db74">&#34;seccomp_init&#34;</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    rc <span style="color:#f92672">=</span> <span style="color:#a6e22e">seccomp_rule_add</span>(ctx, SCMP_ACT_KILL, <span style="color:#a6e22e">SCMP_SYS</span>(openat), <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// seccomp_release(ctx);
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">seccomp_load</span>(ctx);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">sandbox</span>();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> buffer[<span style="color:#ae81ff">100</span>];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>filename <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;/bin/sh&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>argv[] <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;/bin/sh&#34;</span>, NULL};
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>envp[] <span style="color:#f92672">=</span> {NULL};
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// syscall(59, filename, argv, envp);
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">syscall</span>(<span style="color:#ae81ff">322</span>, AT_FDCWD, filename, argv, envp, <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>execve</code> 同理。</p>
+<p>省流：ban <code>openat</code> 会把 execveat 一起 ban 了。</p>
+<h3 id="26">2.6</h3>
+<p>打了一下 HGame week1，做了几道题，感觉难度尚可，主要是这几天比赛撞一起了，有点难绷。</p>
+<p>上号看了一会，感觉还好。</p>
+<h3 id="27">2.7</h3>
+<p>继续看 HGAME，晚秋教我了一个格式化字符串 <code>%*p</code>，可以往栈上填满空格，然后用 %s 泄漏 libc。</p>
+<p>晚秋的这个思路我没打，我用的栈迁移也能出。</p>
+<p>栈迁移学得真不行。</p>
+<p>ida 静态审代码的时候别手贱隐藏强制类型转换信息，md 没看见整数溢出闹麻了。</p>
+<p><code>scanf</code> 的格式化字符串里写 <code>\n</code> 的都是 sb，此 <code>\n</code> 非彼 <code>\n</code>，在这里面写 <code>\n</code> 不会复合预期中过滤换行符的，所以说出题人纯 sb，测题的也是 sb。</p>
+<blockquote>
+<p>可能令人吃惊，\n在scanf格式串中不表示等待换行符，而是读取并放弃连续的空白字符。（事实上，scanf格式串中的任何空白字符都表示读取并放弃空白字符。而且，诸如%d这样的格式也会扔掉前边的空白，因此你通常根本不需要在scanf格式串中加入显式的空白。） —— 《你必须知道的495个C语言问题》- 第12章标准输入输出库</p>
+</blockquote>
+<p>如上。</p>
+<blockquote>
+<p>晚秋：你空洞骑士五门过了吗？</p>
+<p>👴：？</p>
+</blockquote>
+<h3 id="28">2.8</h3>
+<p>好，早上随便讲了讲 ret2text，z3 说回学校请我吃饭，有点意思。</p>
+<p>然后打 VNCTF，签到题是比较白给的 shellcode，拿下了。</p>
+<p>然后下午开始坐牢，先是调那个莫名其妙的高通环境，本地调不出来，t1d 说可以打远程，ok那直接打。</p>
+<blockquote>
+<p>👴：感觉应该是这么打的。
+写、打、寄了
+👴：草
+t1d：草
+晚秋：出了
+👴：？</p>
+</blockquote>
+<p>原来能搭本地调试环境啊，有点意思。但是我真搞不定栈迁移，调了一会也没啥名堂，寄了。</p>
+<p>然后上了个新的堆题，看了一通口胡了一个打法感觉拿下了，正好这时候晚秋已经拿下了：</p>
+<blockquote>
+<p>晚秋：白给题
+👴：确实</p>
+</blockquote>
+<p>我是 sb，上手打了一会发现根本不是这么回事，坐了会儿牢，晚秋爷爷看不下去了，告诉我这题是 house of muney。</p>
+<p>还真是哈，学了之后就是板子题，秒了。</p>
+<h3 id="29-210">2.9 2.10</h3>
+<p>ok，开始坐牢。</p>
+<p>首先来到战场的是 N1CTF junor，上来就是两个 fmt，第一个是堆上的 fmt，其实打过一两次，但是这次打的是 ld，我之前没打过，卡了一会。</p>
+<p>然后是另一个 fmt，这个就比较白给了，库库打 got 表，大概是这样：</p>
+<ul>
+<li>先泄漏 got 表拿到 libc base</li>
+<li>把 stack_chk_fail@got 改成 puts，这样可以绕过 canary</li>
+<li>把 atoi 改成 gets，无限栈溢出。</li>
+</ul>
+<p>然后题目把 onegadget ban 了，所以打 openat + read + write，先用一次 <code>read</code> 把 flag 读到 bss 附近去。</p>
+<p>这个时候前面那个 fmt 已经有点眉目了，但是我正在打 2.23 fastbin double free + 无 edit + chunk &lt; 0x50 了.</p>
+<p>坐牢坐麻了，调了很久的堆风水，总算是通过伪造一个能进 ub 的 fake chunk 泄漏 libc 了，问题来了，double free 打的 fake chunk 的 size 都是 0x70+，而我最大只能申请出 0x60 的，怎么办呢？</p>
+<p>于是我翻了很久的博客，把我能想到的终端都试了试，最后还是没打出来。</p>
+<p>还有一个 2.35 的堆，得逆 cjson，我逆完了，但是审不出洞，打游戏去了。</p>
+<p>然后把第一个 fmt 简单写了下，打 exit 就可以。</p>
+<p>打比赛真坐牢，快给我打自闭了。。。哎哎。</p>
+
+        </div>
+
+        <div class="row middle-xs">
+          <div class="col-xs-12">
+            
+          </div>
+        </div>
+        
+          <div class="row">
+            <div class="col-xs-12">
+              
+            </div>
+          </div>
+
+          
+
+
+
+          
+          
+          <div style="height: 50px;"></div>
+          
+        
+
+        
+
+<link rel="shortcut icon" href="favicon.ico" />
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
+    });
+</script>
+
+
+
+
+<link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/x86asm.min.js"></script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+  document.querySelectorAll('pre code').forEach((el) => {
+    hljs.highlightElement(el);
+  });
+});
+</script>
+
+
+
+
+      </div>
+    </div>
+  </article>
+
+  
+
+<script>
+  
+  
+    
+    
+  
+</script>
+
+  
+
+</body>
+
+</html>

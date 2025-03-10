@@ -6,7 +6,23 @@
     <description>Recent content on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 13 Jan 2025 18:29:39 +0800</lastBuildDate><atom:link href="http://littflower.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 03 Mar 2025 16:27:41 +0800</lastBuildDate><atom:link href="http://littflower.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>WinjaCTF2025 WriteUp</title>
+      <link>http://littflower.github.io/posts/winjactf2025-writeup/</link>
+      <pubDate>Mon, 03 Mar 2025 16:27:41 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/winjactf2025-writeup/</guid>
+      <description>逆天比赛没有 pwn 题，无敌了。
+Aura 前一天问我来不来打，我一看 ctftime 权重有 13，感觉还行，就来打了。
+结果一上号
+👴：我 Pwn 题呢？ 👴：垃圾比赛。 Aura：垃圾比赛。
+后来从 Reverse 的分区里翻出来一道 Pwn 题，那就做一下吧。
+TheChamberofSecrets 程序比较简单，给了一个可执行文件，没给 libc 之类的，这其实很逆天，后面会考。
+ida 打开：
+__int64 __fastcall main(int a1, char **a2, char **a3) { _BYTE v4[36]; // [rsp+0h] [rbp-30h] BYREF _BYTE v5[4]; // [rsp+24h] [rbp-Ch] BYREF size_t len; // [rsp+28h] [rbp-8h] printf(&amp;#34;Say the Magic Word: &amp;#34;); __isoc99_scanf(&amp;#34;%s&amp;#34;, v5); len = getpagesize(); if ( mprotect((-len &amp;amp; &amp;amp;func1), len, 7) == -1 || mprotect((-len &amp;amp; &amp;amp;func2), len, 7) == -1 ) { perror(&amp;#34;mprotect&amp;#34;); return 1LL; } else { xor(&amp;amp;func1, xor, v5); if ( (func1)(v4) ) { xor(&amp;amp;func2, xor, v4); (func2)(); } else { puts(&amp;#34;Door remains locked!</description>
+    </item>
+    
     <item>
       <title>2024年度小结</title>
       <link>http://littflower.github.io/posts/2024-annual-summary/</link>
