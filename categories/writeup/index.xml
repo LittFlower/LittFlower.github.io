@@ -16,7 +16,9 @@
       <description>逆天比赛没有 pwn 题，无敌了。
 Aura 前一天问我来不来打，我一看 ctftime 权重有 13，感觉还行，就来打了。
 结果一上号
-👴：我 Pwn 题呢？ 👴：垃圾比赛。 Aura：垃圾比赛。
+👴：我 Pwn 题呢？
+👴：垃圾比赛。
+Aura：垃圾比赛。
 后来从 Reverse 的分区里翻出来一道 Pwn 题，那就做一下吧。
 TheChamberofSecrets 程序比较简单，给了一个可执行文件，没给 libc 之类的，这其实很逆天，后面会考。
 ida 打开：

@@ -21,7 +21,7 @@
       "articleSection" : "posts",
       "name" : "WinjaCTF2025 WriteUp",
       "headline" : "WinjaCTF2025 WriteUp",
-      "description" : "逆天比赛没有 pwn 题，无敌了。\nAura 前一天问我来不来打，我一看 ctftime 权重有 13，感觉还行，就来打了。\n结果一上号\n👴：我 Pwn 题呢？ 👴：垃圾比赛。 Aura：垃圾比赛。\n后来从 Reverse 的分区里翻出来一道 Pwn 题，那就做一下吧。\nTheChamberofSecrets 程序比较简单，给了一个可执行文件，没给 libc 之类的，这其实很逆天，后面会考。\nida 打开：\n__int64 __fastcall main(int a1, char **a2, char **a3) { _BYTE v4[36]; \/\/ [rsp\u002b0h] [rbp-30h] BYREF _BYTE v5[4]; \/\/ [rsp\u002b24h] [rbp-Ch] BYREF size_t len; \/\/ [rsp\u002b28h] [rbp-8h] printf(\u0026#34;Say the Magic Word: \u0026#34;); __isoc99_scanf(\u0026#34;%s\u0026#34;, v5); len = getpagesize(); if ( mprotect((-len \u0026amp; \u0026amp;func1), len, 7) == -1 || mprotect((-len \u0026amp; \u0026amp;func2), len, 7) == -1 ) { perror(\u0026#34;mprotect\u0026#34;); return 1LL; } else { xor(\u0026amp;func1, xor, v5); if ( (func1)(v4) ) { xor(\u0026amp;func2, xor, v4); (func2)(); } else { puts(\u0026#34;Door remains locked!",
+      "description" : "逆天比赛没有 pwn 题，无敌了。\nAura 前一天问我来不来打，我一看 ctftime 权重有 13，感觉还行，就来打了。\n结果一上号\n👴：我 Pwn 题呢？\n👴：垃圾比赛。\nAura：垃圾比赛。\n后来从 Reverse 的分区里翻出来一道 Pwn 题，那就做一下吧。\nTheChamberofSecrets 程序比较简单，给了一个可执行文件，没给 libc 之类的，这其实很逆天，后面会考。\nida 打开：\n__int64 __fastcall main(int a1, char **a2, char **a3) { _BYTE v4[36]; \/\/ [rsp\u002b0h] [rbp-30h] BYREF _BYTE v5[4]; \/\/ [rsp\u002b24h] [rbp-Ch] BYREF size_t len; \/\/ [rsp\u002b28h] [rbp-8h] printf(\u0026#34;Say the Magic Word: \u0026#34;); __isoc99_scanf(\u0026#34;%s\u0026#34;, v5); len = getpagesize(); if ( mprotect((-len \u0026amp; \u0026amp;func1), len, 7) == -1 || mprotect((-len \u0026amp; \u0026amp;func2), len, 7) == -1 ) { perror(\u0026#34;mprotect\u0026#34;); return 1LL; } else { xor(\u0026amp;func1, xor, v5); if ( (func1)(v4) ) { xor(\u0026amp;func2, xor, v4); (func2)(); } else { puts(\u0026#34;Door remains locked!",
       "inLanguage" : "en-US",
       "author" : "LittFlower.",
       "creator" : "LittFlower.",
@@ -41,7 +41,9 @@
   <meta property="og:description" content="逆天比赛没有 pwn 题，无敌了。
 Aura 前一天问我来不来打，我一看 ctftime 权重有 13，感觉还行，就来打了。
 结果一上号
-👴：我 Pwn 题呢？ 👴：垃圾比赛。 Aura：垃圾比赛。
+👴：我 Pwn 题呢？
+👴：垃圾比赛。
+Aura：垃圾比赛。
 后来从 Reverse 的分区里翻出来一道 Pwn 题，那就做一下吧。
 TheChamberofSecrets 程序比较简单，给了一个可执行文件，没给 libc 之类的，这其实很逆天，后面会考。
 ida 打开：
@@ -49,7 +51,9 @@ __int64 __fastcall main(int a1, char **a2, char **a3) { _BYTE v4[36]; // [rsp&#4
   <meta name="description" content="逆天比赛没有 pwn 题，无敌了。
 Aura 前一天问我来不来打，我一看 ctftime 权重有 13，感觉还行，就来打了。
 结果一上号
-👴：我 Pwn 题呢？ 👴：垃圾比赛。 Aura：垃圾比赛。
+👴：我 Pwn 题呢？
+👴：垃圾比赛。
+Aura：垃圾比赛。
 后来从 Reverse 的分区里翻出来一道 Pwn 题，那就做一下吧。
 TheChamberofSecrets 程序比较简单，给了一个可执行文件，没给 libc 之类的，这其实很逆天，后面会考。
 ida 打开：
@@ -142,9 +146,9 @@ __int64 __fastcall main(int a1, char **a2, char **a3) { _BYTE v4[36]; // [rsp&#4
 <p>Aura 前一天问我来不来打，我一看 ctftime 权重有 13，感觉还行，就来打了。</p>
 <p>结果一上号</p>
 <blockquote>
-<p>👴：我 Pwn 题呢？
-👴：垃圾比赛。
-Aura：垃圾比赛。</p>
+<p>👴：我 Pwn 题呢？</p>
+<p>👴：垃圾比赛。</p>
+<p>Aura：垃圾比赛。</p>
 </blockquote>
 <p>后来从 Reverse 的分区里翻出来一道 Pwn 题，那就做一下吧。</p>
 <h2 id="thechamberofsecrets">TheChamberofSecrets</h2>
