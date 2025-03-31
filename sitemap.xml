@@ -3,24 +3,33 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://littflower.github.io/categories/</loc>
-    <lastmod>2025-03-16T00:44:32+08:00</lastmod>
+    <lastmod>2025-04-01T00:59:36+08:00</lastmod>
+  </url><url>
+    <loc>http://littflower.github.io/tags/glibc/</loc>
+    <lastmod>2025-04-01T00:59:36+08:00</lastmod>
+  </url><url>
+    <loc>http://littflower.github.io/posts/glibc-exit-function-analyze-and-attack/</loc>
+    <lastmod>2025-04-01T00:59:36+08:00</lastmod>
+  </url><url>
+    <loc>http://littflower.github.io/categories/notes/</loc>
+    <lastmod>2025-04-01T00:59:36+08:00</lastmod>
   </url><url>
     <loc>http://littflower.github.io/posts/</loc>
-    <lastmod>2025-03-16T00:44:32+08:00</lastmod>
+    <lastmod>2025-04-01T00:59:36+08:00</lastmod>
   </url><url>
     <loc>http://littflower.github.io/tags/pwn/</loc>
-    <lastmod>2025-03-16T00:44:32+08:00</lastmod>
+    <lastmod>2025-04-01T00:59:36+08:00</lastmod>
   </url><url>
     <loc>http://littflower.github.io/tags/</loc>
-    <lastmod>2025-03-16T00:44:32+08:00</lastmod>
+    <lastmod>2025-04-01T00:59:36+08:00</lastmod>
+  </url><url>
+    <loc>http://littflower.github.io/</loc>
+    <lastmod>2025-04-01T00:59:36+08:00</lastmod>
   </url><url>
     <loc>http://littflower.github.io/posts/utctf2025-writeup/</loc>
     <lastmod>2025-03-16T00:44:32+08:00</lastmod>
   </url><url>
     <loc>http://littflower.github.io/categories/writeup/</loc>
-    <lastmod>2025-03-16T00:44:32+08:00</lastmod>
-  </url><url>
-    <loc>http://littflower.github.io/</loc>
     <lastmod>2025-03-16T00:44:32+08:00</lastmod>
   </url><url>
     <loc>http://littflower.github.io/posts/winjactf2025-writeup/</loc>
@@ -34,9 +43,6 @@
   </url><url>
     <loc>http://littflower.github.io/categories/%E7%96%AF%E8%A8%80%E7%96%AF%E8%AF%AD/</loc>
     <lastmod>2025-01-13T18:29:39+08:00</lastmod>
-  </url><url>
-    <loc>http://littflower.github.io/categories/notes/</loc>
-    <lastmod>2024-12-14T18:09:23+08:00</lastmod>
   </url><url>
     <loc>http://littflower.github.io/posts/pwn-random-attack/</loc>
     <lastmod>2024-12-14T18:09:23+08:00</lastmod>

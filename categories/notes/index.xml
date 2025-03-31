@@ -6,7 +6,20 @@
     <description>Recent content in Notes on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 14 Dec 2024 18:09:23 +0800</lastBuildDate><atom:link href="http://littflower.github.io/categories/notes/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 01 Apr 2025 00:59:36 +0800</lastBuildDate><atom:link href="http://littflower.github.io/categories/notes/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Glibc Exit 函数分析与利用</title>
+      <link>http://littflower.github.io/posts/glibc-exit-function-analyze-and-attack/</link>
+      <pubDate>Tue, 01 Apr 2025 00:59:36 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/glibc-exit-function-analyze-and-attack/</guid>
+      <description>源码分析 用的源码是 glibc 2.35 的，具体版本是 Ubuntu GLIBC 2.35-0ubuntu3.9，在 glibc all in one 里可以下载到。
+调试信息我是用 docker 下载的，然后拷出来在我的 arch linux 上慢慢调试。
+exit 函数定义在 glibc 的 stdlib/exit.c 中，如下：
+void exit (int status) { __run_exit_handlers (status, &amp;amp;__exit_funcs, true, true); } libc_hidden_def (exit) 有一个很重要的结构 __exit_funcs，如下：
+enum { ef_free,	/* `ef_free&amp;#39; MUST be zero! */ ef_us, ef_on, ef_at, ef_cxa }; struct exit_function // 析构函数的类型，可以是 {ef_free, ef_us, ef_on, ef_at, ef_cxa} 之一 { // ef_free 表示此位置空闲 // ef_us 表示此位置被占用，但是不知道函数类型 // ef_on ef_at ef_cxa 都表示了具体的函数类型，差别在参数上 /* `flavour&amp;#39; should be of type of the `enum&amp;#39; above but since we need this element in an atomic operation we have to use `long int&amp;#39;.</description>
+    </item>
+    
     <item>
       <title>Pwn 随机数攻击</title>
       <link>http://littflower.github.io/posts/pwn-random-attack/</link>
