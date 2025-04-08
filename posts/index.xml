@@ -591,5 +591,17 @@ $dJ=dm\cdot r^{2}=r^{2}\cdot \rho \cdot V_{0}$
 又因为 $V_{0}=h\cdot S=h\cdot 2\pi r\cdot dr$</description>
     </item>
     
+    <item>
+      <title>TPCTF2025 WriteUp</title>
+      <link>http://littflower.github.io/posts/tpctf2025-writeup/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://littflower.github.io/posts/tpctf2025-writeup/</guid>
+      <description>和 n1 的师傅一起打了这场比赛，由于不会 web pwn 和 iot，这场基本上只能打签到堆题wwww
+师傅们 tql
+ezdb Glibc 2.35，洞在这里：
+__int16 __fastcall TablePage::InsertRecord(TablePage *this, Record *record) { int Size; // [rsp+10h] [rbp-10h] int v4; // [rsp+14h] [rbp-Ch] Size = Record::GetSize(record); if ( TablePage::GetFreeSpaceSize(this) &amp;lt; (Size + 4LL) ) return -1; LOWORD(v4) = this-&amp;gt;end - Size - this-&amp;gt;page; HIWORD(v4) = Size; *this-&amp;gt;start = v4; this-&amp;gt;start = (this-&amp;gt;start + 4); memcpy(this-&amp;gt;end - Size, record-&amp;gt;content, Size); // off by one this-&amp;gt;end = (this-&amp;gt;end - Size); return (LOWORD(this-&amp;gt;start) - 4 - LOWORD(this-&amp;gt;page)) &amp;gt;&amp;gt; 2; } 这个地方有一个溢出，可以修改 Page 的 length，这个 length 会被用在后面 show 和 edit 功能里，例如 edit：</description>
+    </item>
+    
   </channel>
 </rss>
