@@ -65,6 +65,18 @@ __int64 __fastcall main(int a1, char **a2, char **a3) { _BYTE v4[36]; // [rsp+0h
     </item>
     
     <item>
+      <title>西湖论剑 2025 Pwn WriteUp</title>
+      <link>http://littflower.github.io/posts/%E8%A5%BF%E6%B9%96%E8%AE%BA%E5%89%91-2025-pwn-writeup/</link>
+      <pubDate>Thu, 20 Feb 2025 08:22:27 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/%E8%A5%BF%E6%B9%96%E8%AE%BA%E5%89%91-2025-pwn-writeup/</guid>
+      <description>人生第一次打西湖论剑，虽然是跟着 401 的师傅只看了看题，但是感觉还是有一点收获的。
+赛后复现 ak 了本场，在这里记录一下。
+Vpwn 比较简单的栈虚拟机，逆向无难度，给了任意栈地址读写原语，先泄漏 libc 然后修改返回地址即可。
+#!/usr/bin/env python3 from pwn import * from sys import argv proc = &amp;#34;./Vpwn_patched&amp;#34; context.log_level = &amp;#34;debug&amp;#34; context.binary = proc elf = ELF(proc, checksec=False) libc = ELF(&amp;#34;./libc.so.6&amp;#34;, checksec=False) io = remote(&amp;#34;&amp;#34;, ) if argv[1] == &amp;#39;r&amp;#39; else process(proc) if args.G: gdb.attach(io, &amp;#34;&amp;#34;&amp;#34; decompiler connect ida --host localhost --port 3662 breakrva 0x17d0 &amp;#34;&amp;#34;&amp;#34;) def choose(op): io.sendlineafter(b&amp;#34;Enter your choice: &amp;#34;, str(op).encode()) def edit(idx, value): choose(1) io.</description>
+    </item>
+    
+    <item>
       <title>2024年度小结</title>
       <link>http://littflower.github.io/posts/2024-annual-summary/</link>
       <pubDate>Mon, 13 Jan 2025 18:29:39 +0800</pubDate>
