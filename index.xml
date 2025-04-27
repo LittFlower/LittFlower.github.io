@@ -6,7 +6,20 @@
     <description>Recent content on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 08 Apr 2025 10:28:47 +0800</lastBuildDate><atom:link href="http://littflower.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 27 Apr 2025 15:50:55 +0800</lastBuildDate><atom:link href="http://littflower.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>ACTF2025 WriteUps</title>
+      <link>http://littflower.github.io/posts/actf2025-writeups/</link>
+      <pubDate>Sun, 27 Apr 2025 15:50:55 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/actf2025-writeups/</guid>
+      <description>本次 ACTF 我基本上 24 h 打满了，队伍里一共出了三道 pwn，我参与做了两道，另外一道 qemu pwn 没出，这里写一下 WriteUp。
+only_read 题目很简洁，只给了一个不限长度的 read，保护如下：
+Arch: amd64-64-little RELRO: Partial RELRO Stack: No canary found NX: NX enabled PIE: No PIE (0x3fe000) RUNPATH: b&amp;#39;.&amp;#39; SHSTK: Enabled IBT: Enabled Stripped: No 看到这个保护肯定是想打 ret2dlresolve 的，但是题目里没有 pop rdi; ret 这种 gadget，所以我这边的思路是打 magic gadget。
+我选择了下面这两条 gadget：
+libc 里：0x0000000000110a46: pop rbx; pop rbp; pop r12; pop r13; pop r14; ret; 程序中：0x000000000040111c : add dword ptr [rbp - 0x3d], ebx ; nop ; ret 其中第一条是因为倒数第三字节和 libc 中 read 的偏移是一样的，不需要更多的爆破，第二条则是经典的 magic_gadget，两条配合起来可以做一个任意地址写原语。</description>
+    </item>
+    
     <item>
       <title>RITsecCTF2025 WriteUp</title>
       <link>http://littflower.github.io/posts/ritsecctf2025-writeup/</link>
