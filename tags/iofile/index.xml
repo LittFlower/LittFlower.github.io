@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>IOFILE on 一只花盆.</title>
+    <link>http://littflower.github.io/tags/iofile/</link>
+    <description>Recent content in IOFILE on 一只花盆.</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 08 May 2025 00:31:27 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/iofile/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>_IO_FILE 任意地址读写攻击面分析</title>
+      <link>http://littflower.github.io/posts/iofile%E4%BB%BB%E6%84%8F%E5%9C%B0%E5%9D%80%E8%AF%BB%E5%86%99%E6%94%BB%E5%87%BB%E9%9D%A2%E5%88%86%E6%9E%90/</link>
+      <pubDate>Thu, 08 May 2025 00:31:27 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/iofile%E4%BB%BB%E6%84%8F%E5%9C%B0%E5%9D%80%E8%AF%BB%E5%86%99%E6%94%BB%E5%87%BB%E9%9D%A2%E5%88%86%E6%9E%90/</guid>
+      <description>简介 FILE 在 Linux 系统的标准 IO 库中是用于描述文件的结构，称为文件流。 FILE 结构在程序执行 fopen 等函数时会进行创建，并分配在堆中。我们常定义一个指向 FILE 结构的指针来接收这个返回值。
+在标准 I/O 库中，每个程序启动时有三个文件流是自动打开的：stdin、stdout、stderr。因此在初始状态下，_IO_list_all 指向了一个有这些文件流构成的链表，但是需要注意的是这三个文件流位于 libc.so 的数据段。而我们使用 fopen 创建的文件流是分配在堆内存上的。
+FILE 的结构这里不再详细描述了，之前学 apple 的时候已经看过了，简单来说在 pwndbg 调试时，可以 p _IO_2_1_stdin 查看它们的详细结构。
+这里主要介绍一下比较常用的指针：
+_IO_buf_base：输入（出）缓冲区的基地址，例如 _IO_file_xsgetn 函数会通过它来判断输入缓冲区是否为空，为空则会调用 _IO_doallocbuf 函数来进行初始化。 _IO_buf_end：输入（出）缓冲区的结束地址。 在建立输入输出缓冲区后，如果缓冲区作为输入缓冲区使用，则会将 _IO_buf_base 基地址赋值给 _IO_read_base，结束地址 _IO_buf_end 赋值给 _IO_read_end
+_IO_read_ptr：指向当前已经写入的地址。 _IO_read_base：输入缓冲区的基地址。 _IO_read_end：一般和 _IO_read_ptr 共同使用，_IO_read_end-_IO_read_ptr 表示可用的输入缓冲区大小。 如果缓冲区作为输出缓冲区使用则同理。
+而我们在 CTF 题目中非常常见的一个初始化函数是：
+setvbuf(stdin, 0LL, 2, 0LL); setvbuf(stdout, 0LL, 2, 0LL); setvbuf(stderr, 0LL, 2, 0LL); 这个函数的作用是设置 _IO_buf_end - _IO_buf_base = 1，这样的效果是缓冲区长度只有 1，也就是 1 字节输入/出一次。</description>
+    </item>
+    
+  </channel>
+</rss>
