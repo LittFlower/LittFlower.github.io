@@ -562,7 +562,7 @@ setvbuf(stdin, 0LL, 2, 0LL); setvbuf(stdout, 0LL, 2, 0LL); setvbuf(stderr, 0LL, 
 <li>修改 <code>fp-&gt;_flags</code> 为 <code>0xfbad1800</code> 或 <code>0xfbad1887</code>，重点在于满足 <code>fp-&gt;_flags &amp; _IO_IS_APPENDING == 1</code></li>
 <li>然后修改 <code>fp-&gt;_IO_write_base</code> 和 <code>fp-&gt;_IO_write_ptr</code> 实现任意地址读。</li>
 </ul>
-<p>另外，其他 <code>fwrite</code> 等函数和 <code>puts</code> 的调用链也差不多。</p>
+<p>另外，其他 <code>fwrite</code>、<code>printf</code> 等函数和 <code>puts</code> 的调用链也差不多。</p>
 
         </div>
 
