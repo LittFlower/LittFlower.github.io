@@ -6,7 +6,18 @@
     <description>Recent content in WriteUp on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 27 Apr 2025 15:50:55 +0800</lastBuildDate><atom:link href="http://littflower.github.io/categories/writeup/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 08 May 2025 09:31:57 +0800</lastBuildDate><atom:link href="http://littflower.github.io/categories/writeup/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>UMDCTF2025 WriteUp</title>
+      <link>http://littflower.github.io/posts/umdctf2025-writeup/</link>
+      <pubDate>Thu, 08 May 2025 09:31:57 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/umdctf2025-writeup/</guid>
+      <description>比赛时间和 ACTF2025 基本上冲突了，所以没时间打，赛时只来得及看了两道签到题就遗憾离场，赛后补了所有的用户态题目，剩了几道 v8 暂时摸了（（
+gambling2 题目给了源码：
+#include &amp;lt;stdio.h&amp;gt; #include &amp;lt;string.h&amp;gt; #include &amp;lt;stdlib.h&amp;gt; float rand_float() { float x = (float)rand() / RAND_MAX; printf(&amp;#34;%f\n&amp;#34;, x); return x; } void print_money() { system(&amp;#34;/bin/sh&amp;#34;); } void gamble() { float f[4]; float target = rand_float(); printf(&amp;#34;Enter your lucky numbers: &amp;#34;); scanf(&amp;#34; %lf %lf %lf %lf %lf %lf %lf&amp;#34;, f,f+1,f+2,f+3,f+4,f+5,f+6); if (f[0] == target || f[1] == target || f[2] == target || f[3] == target || f[4] == target || f[5] == target || f[6] == target) { printf(&amp;#34;You win!</description>
+    </item>
+    
     <item>
       <title>ACTF2025 WriteUps</title>
       <link>http://littflower.github.io/posts/actf2025-writeups/</link>
