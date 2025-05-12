@@ -6,7 +6,19 @@
     <description>Recent content in Pwn on 一只花盆.</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 08 May 2025 09:31:57 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 12 May 2025 10:37:16 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>DAMCTF2025 WriteUp</title>
+      <link>http://littflower.github.io/posts/damctf2025-writeup/</link>
+      <pubDate>Mon, 12 May 2025 10:37:16 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/damctf2025-writeup/</guid>
+      <description>本来周末想着打那个 midnight sun CTF2025 来着，结果推迟了，就看了这一场 DAMCTF2025 和另外一场 Break The Syntax CTF2025。。
+dnd 简单逆向一下恢复结构体：
+00000000 struct Game // sizeof=0x4 00000000 { 00000000 char point; 00000001 char health; 00000002 char attack; 00000003 char d; 00000004 }; 00000000 struct Monster // sizeof=0x3 00000000 { 00000000 char health; 00000001 char damage; 00000002 char c; 00000003 }; 恢复出来 Monster::attack 函数如下：
+Game *__fastcall Monster::Attack(Monster *monster, Game *you) { __int64 v2; // rax Game *result; // rax __int64 v4; // rax if ( you-&amp;gt;attack &amp;lt;= monster-&amp;gt;health ) { v4 = std::operator&amp;lt;&amp;lt;&amp;lt;std::char_traits&amp;lt;char&amp;gt;&amp;gt;(&amp;amp;std::cout, &amp;#34;Oof, that hurt ;(&amp;#34;); std::ostream::operator&amp;lt;&amp;lt;(v4, &amp;amp;std::endl&amp;lt;char,std::char_traits&amp;lt;char&amp;gt;&amp;gt;); you-&amp;gt;health -= monster-&amp;gt;damage; result = you; you-&amp;gt;point -= monster-&amp;gt;health; // 整数溢出 } else { v2 = std::operator&amp;lt;&amp;lt;&amp;lt;std::char_traits&amp;lt;char&amp;gt;&amp;gt;(&amp;amp;std::cout, &amp;#34;You defeated the monster!</description>
+    </item>
+    
     <item>
       <title>UMDCTF2025 WriteUp</title>
       <link>http://littflower.github.io/posts/umdctf2025-writeup/</link>
