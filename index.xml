@@ -25,6 +25,16 @@ ELF（Executable and Linkable Format） 是 linux 平台上的目标文件，主
     </item>
     
     <item>
+      <title>京麟CTF2025热身赛 WriteUp</title>
+      <link>http://littflower.github.io/posts/%E4%BA%AC%E9%BA%9Fctf2025-writeup/</link>
+      <pubDate>Thu, 15 May 2025 09:24:03 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/%E4%BA%AC%E9%BA%9Fctf2025-writeup/</guid>
+      <description>SimpleRop 保护：
+Arch: amd64-64-little RELRO: Partial RELRO Stack: Canary found NX: NX enabled PIE: No PIE (0x400000) SHSTK: Enabled IBT: Enabled Stripped: No __int64 init() { setvbuf(stdout, 0LL, 2LL, 0LL); setvbuf(stdin, 0LL, 2LL, 0LL); setvbuf(stderr, 0LL, 2LL, 0LL); return close(2LL); } __int64 __fastcall vuln(__int64 a1, __int64 a2) { __int64 v2; // rdx __int64 v3; // rcx __int64 v4; // r8 __int64 v5; // r9 unsigned int v7; // [rsp+0h] [rbp-40h] __int64 v8; // [rsp+8h] [rbp-38h] BYREF random_fd(); v7 = dup(1LL); close(1LL); random_fd(); seccomp_orw_only(1LL, a2, v2, v3, v4, v5); // sandbox write(v7, &amp;#34;Let me see see your rop skill\n&amp;#34;, 0x1EuLL); return read(0LL, &amp;amp;v8, 1024LL); // stack overflow } 题目给了几乎无限的栈溢出，但是只能打 orw，且程序 close 了 1，2，而且在 dup 前后随机申请了若干个 fd，但是 v7 作为 dup 出来的 fd 并没有 close，所以还是可以打。</description>
+    </item>
+    
+    <item>
       <title>DAMCTF2025 WriteUp</title>
       <link>http://littflower.github.io/posts/damctf2025-writeup/</link>
       <pubDate>Mon, 12 May 2025 10:37:16 +0800</pubDate>
