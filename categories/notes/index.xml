@@ -26,10 +26,10 @@ ELF（Executable and Linkable Format） 是 linux 平台上的目标文件，主
     
     <item>
       <title>_IO_FILE 任意地址读写攻击面分析</title>
-      <link>http://littflower.github.io/posts/iofile%E4%BB%BB%E6%84%8F%E5%9C%B0%E5%9D%80%E8%AF%BB%E5%86%99%E6%94%BB%E5%87%BB%E9%9D%A2%E5%88%86%E6%9E%90/</link>
+      <link>http://littflower.github.io/posts/iofile-arbitrary-memory-write-and-read/</link>
       <pubDate>Thu, 08 May 2025 00:31:27 +0800</pubDate>
       
-      <guid>http://littflower.github.io/posts/iofile%E4%BB%BB%E6%84%8F%E5%9C%B0%E5%9D%80%E8%AF%BB%E5%86%99%E6%94%BB%E5%87%BB%E9%9D%A2%E5%88%86%E6%9E%90/</guid>
+      <guid>http://littflower.github.io/posts/iofile-arbitrary-memory-write-and-read/</guid>
       <description>简介 FILE 在 Linux 系统的标准 IO 库中是用于描述文件的结构，称为文件流。 FILE 结构在程序执行 fopen 等函数时会进行创建，并分配在堆中。我们常定义一个指向 FILE 结构的指针来接收这个返回值。
 在标准 I/O 库中，每个程序启动时有三个文件流是自动打开的：stdin、stdout、stderr。因此在初始状态下，_IO_list_all 指向了一个有这些文件流构成的链表，但是需要注意的是这三个文件流位于 libc.so 的数据段。而我们使用 fopen 创建的文件流是分配在堆内存上的。
 FILE 的结构这里不再详细描述了，之前学 apple 的时候已经看过了，简单来说在 pwndbg 调试时，可以 p _IO_2_1_stdin 查看它们的详细结构。

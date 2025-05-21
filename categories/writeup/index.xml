@@ -55,6 +55,17 @@ bit_burger 思路比较简单，利用了函数调用/返回后不会清理栈�
     </item>
     
     <item>
+      <title>NCTF2025 WriteUp</title>
+      <link>http://littflower.github.io/posts/nctf2025-writeup/</link>
+      <pubDate>Wed, 26 Mar 2025 20:00:58 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/nctf2025-writeup/</guid>
+      <description>unauth-diary-v2 2.39 的菜单堆题，外面套了一层网络服务。
+直接分析菜单部分：
+unsigned __int64 __fastcall vuln(int a1) { size_t v1; // rax size_t v2; // rax size_t v4; // rax unsigned __int64 v5; // [rsp+58h] [rbp-8h] v5 = __readfsqword(0x28u); signal(13, handler); while ( 1 ) { printf(&amp;#34;Waiting for command on fd %d\n&amp;#34;, a1); v1 = strlen(buf); write(a1, buf, v1); switch ( read_int(a1) ) { case 1: create(a1); break; case 2: erase(a1); break; case 3: modify(a1); break; case 4: show(a1); break; case 5: v2 = strlen(&amp;#34;Goodbye!</description>
+    </item>
+    
+    <item>
       <title>UTCTF2025 Writeup</title>
       <link>http://littflower.github.io/posts/utctf2025-writeup/</link>
       <pubDate>Sun, 16 Mar 2025 00:44:32 +0800</pubDate>
