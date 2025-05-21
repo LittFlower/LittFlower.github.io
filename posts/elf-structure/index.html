@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Hugo 0.119.0">
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="LittFlower." />
+  <meta property="og:url" content="http://littflower.github.io/posts/elf-structure/" />
+  <link rel="canonical" href="http://littflower.github.io/posts/elf-structure/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
+
+  <script type="application/ld+json">
+  {
+      "@context" : "http://schema.org",
+      "@type" : "BlogPosting",
+      "mainEntityOfPage": {
+           "@type": "WebPage",
+           "@id": "http:\/\/littflower.github.io"
+      },
+      "articleSection" : "posts",
+      "name" : "ELF 文件结构详解",
+      "headline" : "ELF 文件结构详解",
+      "description" : "简介 本文在不特殊声明的情况下，默认架构为 x86-64，操作系统内核为 linux\nELF（Executable and Linkable Format） 是 linux 平台上的目标文件，主要有以下三种类型：\n可重定位文件（Relocatable File），后缀名 .o，这种文件一般和其他目标文件一起被链接器链接成可执行文件或者共享目标文件 可执行文件（Executable File），一般无后缀名，就是我们平常在 linux 中可以运行的程序 共享目标文件（Shared Object File），后缀名 .so，就是我们常说的“库文件” ELF 的文件结构如下图所示：\n这是一张很经典的用来讲解 ELF 文件结构的图，ELF 文件结构主要是从两方面解析：执行视图和链接视图。从 ELF 文件的全名也可看出，一个合法的 ELF 文件既有可能参与链接，也有可能直接执行。\n文件结构 宏观视图 链接视图\n文件开始处是 ELF Header 接下来是程序头部表，不过在链接视图下（也就是 ELF 文件参与链接时），这个部分是可选的 若干个节区（Section，简称“节”） 节区头部表，包含了描述文件节区的信息，每个节区在表中都有一个表项，会给出节区名称、节区大小等信息。用于链接的目标文件必须有节区头部表。 执行视图\n文件开始处是 ELF Header 程序头部表，它会告诉系统如何创建进程。用于生成进程的目标文件必须具有程序头部表。 若干个段 节区头部表，这个部分是可选的。 注意，所谓“链接视图”和“执行视图”其实是看待 ELF 文件的两种不同的视角，实际上在一个合法的 ELF 文件中，二者是完全重合的，也就是本文第一张图。\n我们把上面两种视图结合起来分析，其实 sections 和 segments 在 ELF 中占用的是一样的地方，其中，sections 是程序员可见的，是给链接器使用的概念，而 segments 是程序员不可见的，是给加载器使用的概念。一般来讲，一个 segement 可以包含多个 sections\n另外，尽管这些图中是按照 ELF 头，程序头部表，节区，节区头部表的顺序排列的，但实际上除了 ELF 头部表以外，其它部分都没有严格的的顺序。",
+      "inLanguage" : "en-US",
+      "author" : "LittFlower.",
+      "creator" : "LittFlower.",
+      "publisher": "LittFlower.",
+      "accountablePerson" : "LittFlower.",
+      "copyrightHolder" : "LittFlower.",
+      "copyrightYear" : "2025",
+      "datePublished": "2025-05-21 15:17:45 \u002b0800 CST",
+      "dateModified" : "2025-05-21 15:17:45 \u002b0800 CST",
+      "url" : "http:\/\/littflower.github.io\/posts\/elf-structure\/",
+      "keywords" : [ "ELF", ]
+  }
+</script>
+<title>ELF 文件结构详解</title>
+  <meta property="og:title" content="ELF 文件结构详解" />
+  <meta property="og:type" content="article" />
+  <meta property="og:description" content="简介 本文在不特殊声明的情况下，默认架构为 x86-64，操作系统内核为 linux
+ELF（Executable and Linkable Format） 是 linux 平台上的目标文件，主要有以下三种类型：
+可重定位文件（Relocatable File），后缀名 .o，这种文件一般和其他目标文件一起被链接器链接成可执行文件或者共享目标文件 可执行文件（Executable File），一般无后缀名，就是我们平常在 linux 中可以运行的程序 共享目标文件（Shared Object File），后缀名 .so，就是我们常说的“库文件” ELF 的文件结构如下图所示：
+这是一张很经典的用来讲解 ELF 文件结构的图，ELF 文件结构主要是从两方面解析：执行视图和链接视图。从 ELF 文件的全名也可看出，一个合法的 ELF 文件既有可能参与链接，也有可能直接执行。
+文件结构 宏观视图 链接视图
+文件开始处是 ELF Header 接下来是程序头部表，不过在链接视图下（也就是 ELF 文件参与链接时），这个部分是可选的 若干个节区（Section，简称“节”） 节区头部表，包含了描述文件节区的信息，每个节区在表中都有一个表项，会给出节区名称、节区大小等信息。用于链接的目标文件必须有节区头部表。 执行视图
+文件开始处是 ELF Header 程序头部表，它会告诉系统如何创建进程。用于生成进程的目标文件必须具有程序头部表。 若干个段 节区头部表，这个部分是可选的。 注意，所谓“链接视图”和“执行视图”其实是看待 ELF 文件的两种不同的视角，实际上在一个合法的 ELF 文件中，二者是完全重合的，也就是本文第一张图。
+我们把上面两种视图结合起来分析，其实 sections 和 segments 在 ELF 中占用的是一样的地方，其中，sections 是程序员可见的，是给链接器使用的概念，而 segments 是程序员不可见的，是给加载器使用的概念。一般来讲，一个 segement 可以包含多个 sections
+另外，尽管这些图中是按照 ELF 头，程序头部表，节区，节区头部表的顺序排列的，但实际上除了 ELF 头部表以外，其它部分都没有严格的的顺序。" />
+  <meta name="description" content="简介 本文在不特殊声明的情况下，默认架构为 x86-64，操作系统内核为 linux
+ELF（Executable and Linkable Format） 是 linux 平台上的目标文件，主要有以下三种类型：
+可重定位文件（Relocatable File），后缀名 .o，这种文件一般和其他目标文件一起被链接器链接成可执行文件或者共享目标文件 可执行文件（Executable File），一般无后缀名，就是我们平常在 linux 中可以运行的程序 共享目标文件（Shared Object File），后缀名 .so，就是我们常说的“库文件” ELF 的文件结构如下图所示：
+这是一张很经典的用来讲解 ELF 文件结构的图，ELF 文件结构主要是从两方面解析：执行视图和链接视图。从 ELF 文件的全名也可看出，一个合法的 ELF 文件既有可能参与链接，也有可能直接执行。
+文件结构 宏观视图 链接视图
+文件开始处是 ELF Header 接下来是程序头部表，不过在链接视图下（也就是 ELF 文件参与链接时），这个部分是可选的 若干个节区（Section，简称“节”） 节区头部表，包含了描述文件节区的信息，每个节区在表中都有一个表项，会给出节区名称、节区大小等信息。用于链接的目标文件必须有节区头部表。 执行视图
+文件开始处是 ELF Header 程序头部表，它会告诉系统如何创建进程。用于生成进程的目标文件必须具有程序头部表。 若干个段 节区头部表，这个部分是可选的。 注意，所谓“链接视图”和“执行视图”其实是看待 ELF 文件的两种不同的视角，实际上在一个合法的 ELF 文件中，二者是完全重合的，也就是本文第一张图。
+我们把上面两种视图结合起来分析，其实 sections 和 segments 在 ELF 中占用的是一样的地方，其中，sections 是程序员可见的，是给链接器使用的概念，而 segments 是程序员不可见的，是给加载器使用的概念。一般来讲，一个 segement 可以包含多个 sections
+另外，尽管这些图中是按照 ELF 头，程序头部表，节区，节区头部表的顺序排列的，但实际上除了 ELF 头部表以外，其它部分都没有严格的的顺序。" />
+  <meta property="og:locale" content="en-us" /><meta property="og:image" content="" />
+  
+
+  
+    <style>body{font-family:sarasa-fixed-sc,sans-serif;-webkit-font-smoothing:antialiased;src:url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/ttf/FiraCode-Light.ttf)format('ttf');margin:0 20px}article{max-width:1100px;margin-left:auto;margin-right:auto}a{color:#000;text-decoration:none}a:hover{font-weight:700;text-decoration:underline}.post-ads{margin:50px 0}.markdown-body{font-size:17.5px;max-width:100%}.markdown-body a{text-decoration:underline;text-decoration-color:#4005f3}.markdown-body blockquote{margin:0;padding:0 1em;color:#494d53;border-left:.25em solid #0b79e7}.markdown-body pre{padding:12px;overflow:auto;border-radius:10px}.markdown-body code{padding:.1em 0;font-size:100%;background-color:#eef1f3;border-radius:6px}.markdown-body pre>code{padding:0;font-size:95%;background-color:inherit;border:0}.markdown-body pre{background-color:#272822}.hljs{font-size:17.2px;color:#eef1f3}ul,ol{margin:.25em 0;line-height:1.6}ul ul,ul ol,ol ul,ol ol{margin:.25em 0}li{padding:.25em 0}h1{font-size:1.83rem}h2{font-size:1.74rem}h3{font-size:1.45rem}h4{font-size:1.28rem}h5{font-size:1.16rem}h6{font-size:1.21rem}.Chinese .markdown-body{line-height:200%}.site-date-catalog{font-size:2rem}.header-title{font-size:2rem;font-weight:700;margin-top:32px;font-family:source code pro,sans-serif;src:url(https://cdn.jsdelivr.net/npm/source-code-pro@2.38.0/WOFF/TTF/SourceCodePro-Bold.ttf.woff)format("woff")}.header-title a{text-decoration:none}.header-subtitle{color:#666}.header-items{margin:10px 0}.header-item{margin:0 5px}.header-line{width:100%;border-width:2px;border-color:#482936;border-style:solid none none none}.lang-switch{font-weight:700}#posts-list{min-height:600px}.posts-line{font-size:1.2rem;margin:12px 0}.posts-categories{font-size:.8rem;margin:auto;text-align:center}.posts-category{padding:3px 0;border:#000 2px solid;border-radius:5px}.site-footer{margin-top:50px}.site-footer-item{margin-right:12px}.post-content img{max-width:100%;display:block;margin-right:auto;margin-top:12px}.post-header{margin-bottom:50px}.post-title{font-size:2rem;font-weight:600}.post-tags{display:inline;font-weight:600;padding:2px 5px;margin-right:6px;border:#000 2px solid;border-radius:5px}.post-date{font-weight:800;font-style:italic}.post-author{float:right;font-weight:600}.page-content{min-height:60%}.post-content{margin-bottom:50px}.post-content p{hyphens:auto;line-height:1.8;text-justify:ideographic;margin-bottom:1em}.related-content{border-width:3px;border-style:solid;border-color:#000;padding:0 10px;margin-bottom:50px;margin-top:100px}.related-content li{margin:5px 0}.taxonomy-term{font-size:3rem}.gallery-img{text-align:center}.gallery-img span{text-align:center}.gallery-img-desc{font-size:.8em;font-weight:800}#disqus_thread{position:relative}#disqus_thread:after{content:"";display:block;height:55px;width:100%;position:absolute;bottom:0;background:#fff}@media screen and (max-width:600px){.header-title,.header-subtitle,.header-items{text-align:center}.posts-line{font-size:16px}.markdown-body{font-size:16px}.post-title{font-size:2rem}.post-content p{letter-spacing:.05em}}@media screen and (max-width:48em){.posts-category{display:none}}:root{--nav-width:1380px;--article-width:650px;--toc-width:300px}.toc{margin:0 2px 40px;border:1px solid var(--border);background:var(--entry);border-radius:var(--radius);padding:.4em}.toc-container.wide{position:absolute;height:100%;border-right:1px solid var(--border);left:calc((var(--toc-width) + var(--gap)) * -1);top:calc(var(--gap) * 2);width:var(--toc-width)}.wide .toc{position:sticky;top:var(--gap);border:unset;background:unset;border-radius:unset;width:100%;margin:0 2px 40px}.toc details summary{cursor:zoom-in;margin-inline-start:20px;padding:12px 0}.toc details[open] summary{font-weight:500}.toc-container.wide .toc .inner{margin:0}.active{font-size:110%;font-weight:600}.toc ul{list-style-type:circle}.toc .inner{margin:0 0 0 20px;padding:0 15px 15px 20px;font-size:16px;max-height:83vh;overflow-y:auto}.toc .inner::-webkit-scrollbar-thumb{background:var(--border);border:7px solid var(--theme);border-radius:var(--radius)}.toc li ul{margin-inline-start:calc(var(--gap) * .5);list-style-type:none}.toc li{list-style:none;font-size:.95rem;padding-bottom:5px}.toc li a:hover{color:var(--secondary)}</style>
+  
+  
+    <style>.container,.container-fluid{margin-right:auto;margin-left:auto}.container-fluid{padding-right:2rem;padding-left:2rem}.row{box-sizing:border-box;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-flex:0;-ms-flex:0 1 auto;flex:initial;-webkit-box-orient:horizontal;-webkit-box-direction:normal;-ms-flex-direction:row;flex-direction:row;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-.5rem;margin-left:-.5rem}.row.reverse{-webkit-box-orient:horizontal;-webkit-box-direction:reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.col.reverse{-webkit-box-orient:vertical;-webkit-box-direction:reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.col-xs,.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9,.col-xs-offset-0,.col-xs-offset-1,.col-xs-offset-10,.col-xs-offset-11,.col-xs-offset-12,.col-xs-offset-2,.col-xs-offset-3,.col-xs-offset-4,.col-xs-offset-5,.col-xs-offset-6,.col-xs-offset-7,.col-xs-offset-8,.col-xs-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-xs{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-xs-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-xs-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-xs-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-xs-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-xs-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-xs-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-xs-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-xs-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-xs-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-xs-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-xs-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-xs-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-xs-offset-0{margin-left:0}.col-xs-offset-1{margin-left:8.33333333%}.col-xs-offset-2{margin-left:16.66666667%}.col-xs-offset-3{margin-left:25%}.col-xs-offset-4{margin-left:33.33333333%}.col-xs-offset-5{margin-left:41.66666667%}.col-xs-offset-6{margin-left:50%}.col-xs-offset-7{margin-left:58.33333333%}.col-xs-offset-8{margin-left:66.66666667%}.col-xs-offset-9{margin-left:75%}.col-xs-offset-10{margin-left:83.33333333%}.col-xs-offset-11{margin-left:91.66666667%}.start-xs{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-xs{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-xs{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-xs{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-xs{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-xs{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-xs{-ms-flex-pack:distribute;justify-content:space-around}.between-xs{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-xs{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-xs{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}@media only screen and (min-width:48em){.container{width:49rem}.col-sm,.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-sm-offset-0,.col-sm-offset-1,.col-sm-offset-10,.col-sm-offset-11,.col-sm-offset-12,.col-sm-offset-2,.col-sm-offset-3,.col-sm-offset-4,.col-sm-offset-5,.col-sm-offset-6,.col-sm-offset-7,.col-sm-offset-8,.col-sm-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-sm{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-sm-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-sm-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-sm-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-sm-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-sm-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-sm-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-sm-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-sm-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-sm-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-sm-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-sm-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-sm-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-sm-offset-0{margin-left:0}.col-sm-offset-1{margin-left:8.33333333%}.col-sm-offset-2{margin-left:16.66666667%}.col-sm-offset-3{margin-left:25%}.col-sm-offset-4{margin-left:33.33333333%}.col-sm-offset-5{margin-left:41.66666667%}.col-sm-offset-6{margin-left:50%}.col-sm-offset-7{margin-left:58.33333333%}.col-sm-offset-8{margin-left:66.66666667%}.col-sm-offset-9{margin-left:75%}.col-sm-offset-10{margin-left:83.33333333%}.col-sm-offset-11{margin-left:91.66666667%}.start-sm{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-sm{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-sm{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-sm{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-sm{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-sm{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-sm{-ms-flex-pack:distribute;justify-content:space-around}.between-sm{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-sm{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-sm{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:64em){.container{width:65rem}.col-md,.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9,.col-md-offset-0,.col-md-offset-1,.col-md-offset-10,.col-md-offset-11,.col-md-offset-12,.col-md-offset-2,.col-md-offset-3,.col-md-offset-4,.col-md-offset-5,.col-md-offset-6,.col-md-offset-7,.col-md-offset-8,.col-md-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-md{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-md-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-md-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-md-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-md-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-md-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-md-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-md-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-md-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-md-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-md-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-md-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-md-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-md-offset-0{margin-left:0}.col-md-offset-1{margin-left:8.33333333%}.col-md-offset-2{margin-left:16.66666667%}.col-md-offset-3{margin-left:25%}.col-md-offset-4{margin-left:33.33333333%}.col-md-offset-5{margin-left:41.66666667%}.col-md-offset-6{margin-left:50%}.col-md-offset-7{margin-left:58.33333333%}.col-md-offset-8{margin-left:66.66666667%}.col-md-offset-9{margin-left:75%}.col-md-offset-10{margin-left:83.33333333%}.col-md-offset-11{margin-left:91.66666667%}.start-md{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-md{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-md{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-md{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-md{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-md{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-md{-ms-flex-pack:distribute;justify-content:space-around}.between-md{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-md{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-md{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}@media only screen and (min-width:75em){.container{width:76rem}.col-lg,.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9,.col-lg-offset-0,.col-lg-offset-1,.col-lg-offset-10,.col-lg-offset-11,.col-lg-offset-12,.col-lg-offset-2,.col-lg-offset-3,.col-lg-offset-4,.col-lg-offset-5,.col-lg-offset-6,.col-lg-offset-7,.col-lg-offset-8,.col-lg-offset-9{box-sizing:border-box;-webkit-box-flex:0;-ms-flex:0 0 auto;flex:none;padding-right:.5rem;padding-left:.5rem}.col-lg{-webkit-box-flex:1;-ms-flex-positive:1;flex-grow:1;-ms-flex-preferred-size:0;flex-basis:0;max-width:100%}.col-lg-1{-ms-flex-preferred-size:8.33333333%;flex-basis:8.33333333%;max-width:8.33333333%}.col-lg-2{-ms-flex-preferred-size:16.66666667%;flex-basis:16.66666667%;max-width:16.66666667%}.col-lg-3{-ms-flex-preferred-size:25%;flex-basis:25%;max-width:25%}.col-lg-4{-ms-flex-preferred-size:33.33333333%;flex-basis:33.33333333%;max-width:33.33333333%}.col-lg-5{-ms-flex-preferred-size:41.66666667%;flex-basis:41.66666667%;max-width:41.66666667%}.col-lg-6{-ms-flex-preferred-size:50%;flex-basis:50%;max-width:50%}.col-lg-7{-ms-flex-preferred-size:58.33333333%;flex-basis:58.33333333%;max-width:58.33333333%}.col-lg-8{-ms-flex-preferred-size:66.66666667%;flex-basis:66.66666667%;max-width:66.66666667%}.col-lg-9{-ms-flex-preferred-size:75%;flex-basis:75%;max-width:75%}.col-lg-10{-ms-flex-preferred-size:83.33333333%;flex-basis:83.33333333%;max-width:83.33333333%}.col-lg-11{-ms-flex-preferred-size:91.66666667%;flex-basis:91.66666667%;max-width:91.66666667%}.col-lg-12{-ms-flex-preferred-size:100%;flex-basis:100%;max-width:100%}.col-lg-offset-0{margin-left:0}.col-lg-offset-1{margin-left:8.33333333%}.col-lg-offset-2{margin-left:16.66666667%}.col-lg-offset-3{margin-left:25%}.col-lg-offset-4{margin-left:33.33333333%}.col-lg-offset-5{margin-left:41.66666667%}.col-lg-offset-6{margin-left:50%}.col-lg-offset-7{margin-left:58.33333333%}.col-lg-offset-8{margin-left:66.66666667%}.col-lg-offset-9{margin-left:75%}.col-lg-offset-10{margin-left:83.33333333%}.col-lg-offset-11{margin-left:91.66666667%}.start-lg{-webkit-box-pack:start;-ms-flex-pack:start;justify-content:flex-start;text-align:start}.center-lg{-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;text-align:center}.end-lg{-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;text-align:end}.top-lg{-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start}.middle-lg{-webkit-box-align:center;-ms-flex-align:center;align-items:center}.bottom-lg{-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end}.around-lg{-ms-flex-pack:distribute;justify-content:space-around}.between-lg{-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}.first-lg{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}.last-lg{-webkit-box-ordinal-group:2;-ms-flex-order:1;order:1}}</style>
+  
+
+  
+
+  <link href="/index.xml" rel="alternate" type="application/rss+xml"
+    title="一只花盆.">
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Bree+Serif|Bungee+Shade" rel="stylesheet">
+  
+  
+
+  
+  
+</head>
+
+
+<body>
+  <article class="post " id="article">
+    <div class="row">
+      <div class="col-xs-12">
+        <div class="site-header">
+          
+<header>
+  <div class="header-title">
+    <a href="/"
+      >小花ฅ.</a
+    >
+  </div>
+  <div class="header-subtitle"></div>
+</header>
+<div class="row end-md center-xs header-items">
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/aboutme" target="_blank">AboutMe</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://github.com/LittFlower" target="_blank">Github</a>
+  </div>
+  
+  <div class="header-item">
+    <a href="https://blog.littflower.top/friends" target="_blank">Friends</a>
+  </div>
+  
+</div>
+<div class="row end-xs">
+   
+</div>
+<div class="header-line"></div>
+
+        </div>
+        <header class="post-header">
+          <h1 class="post-title">ELF 文件结构详解</h1>
+          
+          <div class="row post-desc">
+            <div class="col-xs-6">
+              
+              <time class="post-date" datetime="2025-05-21 15:17:45 CST">
+                21 May 2025
+              </time>
+              
+            </div>
+            <div class="col-xs-6">
+              
+              <div class="post-author">
+                <a target="_blank" href="https://blog.littflower.top">@LittFlower.</a>
+              </div>
+              
+            </div>
+          </div>
+          
+        </header>
+
+        <div class="post-content markdown-body">
+          
+          <h2 id="简介">简介</h2>
+<p><strong>本文在不特殊声明的情况下，默认架构为 x86-64，操作系统内核为 linux</strong></p>
+<p>ELF（Executable and Linkable Format） 是 linux 平台上的目标文件，主要有以下三种类型：</p>
+<ul>
+<li>可重定位文件（Relocatable File），后缀名 <code>.o</code>，这种文件一般和其他目标文件一起被链接器链接成<strong>可执行文件</strong>或者<strong>共享目标文件</strong></li>
+<li>可执行文件（Executable File），一般无后缀名，就是我们平常在 linux 中可以运行的程序</li>
+<li>共享目标文件（Shared Object File），后缀名 <code>.so</code>，就是我们常说的“库文件”</li>
+</ul>
+<p>ELF 的文件结构如下图所示：</p>
+<p><img src="https://pic1.imgdb.cn/item/682b1ea858cb8da5c8fc750b.png" alt="ELF文件结构"></p>
+<p>这是一张很经典的用来讲解 ELF 文件结构的图，ELF 文件结构主要是从两方面解析：执行视图和链接视图。从 ELF 文件的全名也可看出，一个合法的 ELF 文件既有可能参与链接，也有可能直接执行。</p>
+<h2 id="文件结构">文件结构</h2>
+<h3 id="宏观视图">宏观视图</h3>
+<p><strong>链接视图</strong></p>
+<p><img src="https://pic1.imgdb.cn/item/682b1f6658cb8da5c8fc7708.png" alt=""></p>
+<ol>
+<li>文件开始处是 ELF Header</li>
+<li>接下来是程序头部表，不过在链接视图下（也就是 ELF 文件参与链接时），这个部分是可选的</li>
+<li>若干个节区（Section，简称“节”）</li>
+<li>节区头部表，包含了描述文件节区的信息，每个节区在表中都有一个表项，会给出节区名称、节区大小等信息。用于链接的目标文件必须有节区头部表。</li>
+</ol>
+<p><strong>执行视图</strong></p>
+<p><img src="https://pic1.imgdb.cn/item/682b201758cb8da5c8fc79a7.png" alt=""></p>
+<ol>
+<li>文件开始处是 ELF Header</li>
+<li>程序头部表，它会告诉系统如何创建进程。用于生成进程的目标文件必须具有程序头部表。</li>
+<li>若干个段</li>
+<li>节区头部表，这个部分是可选的。</li>
+</ol>
+<p>注意，所谓“链接视图”和“执行视图”其实是看待 ELF 文件的两种不同的视角，实际上在一个合法的 ELF 文件中，二者是完全重合的，也就是本文第一张图。</p>
+<p>我们把上面两种视图结合起来分析，其实 sections 和 segments 在 ELF 中占用的是一样的地方，其中，sections 是程序员可见的，是给<strong>链接器</strong>使用的概念，而 segments 是程序员不可见的，是给<strong>加载器</strong>使用的概念。一般来讲，<strong>一个 segement 可以包含多个 sections</strong></p>
+<p>另外，尽管这些图中是按照 ELF 头，程序头部表，节区，节区头部表的顺序排列的，但实际上<strong>除了 ELF 头部表以外，其它部分都没有严格的的顺序</strong>。</p>
+<h3 id="数据结构">数据结构</h3>
+<p>这部分可以直接参考 elf.h 里的源码。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">/* 32-bit ELF base types. */</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> __u32	Elf32_Addr;    <span style="color:#75715e">// unsigned int
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __u16	Elf32_Half;    <span style="color:#75715e">// unsigned short
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __u32	Elf32_Off;     <span style="color:#75715e">// unsigned int
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __s32	Elf32_Sword;   <span style="color:#75715e">// __signed__ int
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __u32	Elf32_Word;    <span style="color:#75715e">// unsigned int
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/* 64-bit ELF base types. */</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> __u64	Elf64_Addr;    <span style="color:#75715e">// unsigned long long
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __u16	Elf64_Half;    <span style="color:#75715e">// unsigned short
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __s16	Elf64_SHalf;   <span style="color:#75715e">// __signed__ short
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __u64	Elf64_Off;     <span style="color:#75715e">// unsigned long long
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __s32	Elf64_Sword;   <span style="color:#75715e">// __signed__ int
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __u32	Elf64_Word;    <span style="color:#75715e">// unsigned int
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __u64	Elf64_Xword;   <span style="color:#75715e">// unsigned long long
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> __s64	Elf64_Sxword;  <span style="color:#75715e">// __signed__ long long
+</span></span></span></code></pre></div><p>很清楚了。</p>
+<h3 id="elf-header">ELF Header</h3>
+<p>源码如下</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#define EI_NIDENT	16
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf32_hdr {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span>	e_ident[EI_NIDENT];
+</span></span><span style="display:flex;"><span>  Elf32_Half	e_type;
+</span></span><span style="display:flex;"><span>  Elf32_Half	e_machine;
+</span></span><span style="display:flex;"><span>  Elf32_Word	e_version;
+</span></span><span style="display:flex;"><span>  Elf32_Addr	e_entry;  <span style="color:#75715e">/* Entry point */</span>
+</span></span><span style="display:flex;"><span>  Elf32_Off	e_phoff;
+</span></span><span style="display:flex;"><span>  Elf32_Off	e_shoff;
+</span></span><span style="display:flex;"><span>  Elf32_Word	e_flags;
+</span></span><span style="display:flex;"><span>  Elf32_Half	e_ehsize;
+</span></span><span style="display:flex;"><span>  Elf32_Half	e_phentsize;
+</span></span><span style="display:flex;"><span>  Elf32_Half	e_phnum;
+</span></span><span style="display:flex;"><span>  Elf32_Half	e_shentsize;
+</span></span><span style="display:flex;"><span>  Elf32_Half	e_shnum;
+</span></span><span style="display:flex;"><span>  Elf32_Half	e_shstrndx;
+</span></span><span style="display:flex;"><span>} Elf32_Ehdr;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf64_hdr {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span>	e_ident[EI_NIDENT];	<span style="color:#75715e">/* ELF &#34;magic number&#34; */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Half e_type;
+</span></span><span style="display:flex;"><span>  Elf64_Half e_machine;
+</span></span><span style="display:flex;"><span>  Elf64_Word e_version;
+</span></span><span style="display:flex;"><span>  Elf64_Addr e_entry;		<span style="color:#75715e">/* Entry point virtual address */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Off e_phoff;		<span style="color:#75715e">/* Program header table file offset */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Off e_shoff;		<span style="color:#75715e">/* Section header table file offset */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Word e_flags;
+</span></span><span style="display:flex;"><span>  Elf64_Half e_ehsize;
+</span></span><span style="display:flex;"><span>  Elf64_Half e_phentsize;
+</span></span><span style="display:flex;"><span>  Elf64_Half e_phnum;
+</span></span><span style="display:flex;"><span>  Elf64_Half e_shentsize;
+</span></span><span style="display:flex;"><span>  Elf64_Half e_shnum;
+</span></span><span style="display:flex;"><span>  Elf64_Half e_shstrndx;
+</span></span><span style="display:flex;"><span>} Elf64_Ehdr;
+</span></span></code></pre></div><p>以 64 位架构为例分析一下：</p>
+<table>
+<thead>
+<tr>
+<th>字段名</th>
+<th>解释</th>
+<th>字节数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>e_ident</td>
+<td>ELF的一些标识信息，固定值</td>
+<td>16</td>
+</tr>
+<tr>
+<td>e_type</td>
+<td>目标文件类型：1-可重定位文件，2-可执行文件，3-共享目标文件</td>
+<td>2</td>
+</tr>
+<tr>
+<td>e_machine</td>
+<td>文件的目标系统架构</td>
+<td>2</td>
+</tr>
+<tr>
+<td>e_version</td>
+<td>目标文件版本：1-当前版本</td>
+<td>4</td>
+</tr>
+<tr>
+<td>e_entry</td>
+<td>程序入口的虚拟地址，没有可为0</td>
+<td>8</td>
+</tr>
+<tr>
+<td>e_phoff</td>
+<td>程序头表(segment header table)的偏移量，没有可为0</td>
+<td>8</td>
+</tr>
+<tr>
+<td>e_shoff</td>
+<td>节区头表(section header table)的偏移量，没有可为0</td>
+<td>8</td>
+</tr>
+<tr>
+<td>e_flags</td>
+<td>与文件相关的，特定于处理器的标志</td>
+<td>4</td>
+</tr>
+<tr>
+<td>e_ehsize</td>
+<td>ELF头部的大小，单位字节</td>
+<td>2</td>
+</tr>
+<tr>
+<td>e_phentsize</td>
+<td>程序头表每个表项的大小，单位字节</td>
+<td>2</td>
+</tr>
+<tr>
+<td>e_phnum</td>
+<td>程序头表表项的个数</td>
+<td>2</td>
+</tr>
+<tr>
+<td>e_shentsize</td>
+<td>节区头表每个表项的大小，单位字节</td>
+<td>2</td>
+</tr>
+<tr>
+<td>e_shnum</td>
+<td>节区头表表项的数目</td>
+<td>2</td>
+</tr>
+<tr>
+<td>e_shstrndx</td>
+<td>某些节区中包含固定大小的项目，如符号表。对于这类节区，此成员给出每个表项的长度字节数</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<h3 id="program-header-table">program header table</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">/* These constants define the permissions on sections in the program
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">   header, p_flags. */</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#define PF_R		0x4
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define PF_W		0x2
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define PF_X		0x1
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf32_phdr {
+</span></span><span style="display:flex;"><span>  Elf32_Word	p_type;
+</span></span><span style="display:flex;"><span>  Elf32_Off	p_offset;
+</span></span><span style="display:flex;"><span>  Elf32_Addr	p_vaddr;
+</span></span><span style="display:flex;"><span>  Elf32_Addr	p_paddr;
+</span></span><span style="display:flex;"><span>  Elf32_Word	p_filesz;
+</span></span><span style="display:flex;"><span>  Elf32_Word	p_memsz;
+</span></span><span style="display:flex;"><span>  Elf32_Word	p_flags;
+</span></span><span style="display:flex;"><span>  Elf32_Word	p_align;
+</span></span><span style="display:flex;"><span>} Elf32_Phdr;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf64_phdr {
+</span></span><span style="display:flex;"><span>  Elf64_Word p_type;        <span style="color:#75715e">/* 段类型 */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Word p_flags;       <span style="color:#75715e">/* 段的权限标记 */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Off p_offset;		<span style="color:#75715e">/* 从文件开始到该段开头的第一个字节的偏移 */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Addr p_vaddr;		<span style="color:#75715e">/* 该段第一个字节在内存中的虚拟地址 */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Addr p_paddr;		<span style="color:#75715e">/* 该字段仅用于物理地址寻址相关的系统中 */</span>
+</span></span><span style="display:flex;"><span>							<span style="color:#75715e">/* 由于”System V”忽略了应用程序的物理寻址 */</span>
+</span></span><span style="display:flex;"><span>							<span style="color:#75715e">/* 可执行文件和共享目标文件的该项内容并未被限定 */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Xword p_filesz;		<span style="color:#75715e">/* 文件镜像中该段的大小，可能为0 */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Xword p_memsz;		<span style="color:#75715e">/* 内存镜像中该段的大小，可能为0 */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Xword p_align;		<span style="color:#75715e">/* 可加载的程序的段的 p_vaddr 以及 p_offset 的大小必须是 page 的整数倍。该成员给出了段在文件以及内存中的对齐方式。如果该值为 0 或 1 的话，表示不需要对齐。除此之外，p_align 应该是 2 的整数指数次方，并且 p_vaddr 与 p_offset 在模 p_align 的意义下，应该相等。 */</span>
+</span></span><span style="display:flex;"><span>} Elf64_Phdr;
+</span></span></code></pre></div><p>依然是以 x64 为例，对于执行视图下的 ELF 文件，它的程序头表记录了程序的所有段，每个记录有 8 个属性，对于这 8 种属性的介绍可以看注释。</p>
+<p>关于段的类型，下面是一些常见类型的介绍：</p>
+<ul>
+<li>PHDR：保存程序头表</li>
+<li>INTERP：此类型段给出了一个以 NULL 结尾的字符串的位置和长度，该字符串将被当作解释器调用。这种段类型仅对可执行文件有意义（也可能出现在共享目标文件中）。此外，这种段在一个文件中最多出现一次。而且这种类型的段存在的话，它必须在所有可加载段项的前面。</li>
+<li>LOAD：此类型段为一个可加载的段，大小由 p_filesz 和 p_memsz 描述。文件中的字节被映射到相应内存段开始处。如果 p_memsz 大于 p_filesz，“剩余”的字节都要被置为0。p_filesz 不能大于 p_memsz。可加载的段在程序头部中按照 p_vaddr 的升序排列。</li>
+<li>DYNAMIC：段保存了由动态链接器（即，INTERP中指定的解释器）使用的信息。</li>
+<li>NOTE：保存了专有信息。</li>
+</ul>
+<p>此外，还有一些名称为 GNU_STACK、GNU_EH_FRAME、GNU_RELRO 的段。</p>
+<p>关于段的内容，由于一个段可以包含多个节区，所以详见下一节。</p>
+<p>一个小细节：通常情况下，没有被初始化的数据在段的尾部，因此，p_memsz 才会比 p_filesz 大。</p>
+<h3 id="section-header-table">section header table</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">/* sh_type */</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHT_NULL	0               </span><span style="color:#75715e">// 非活动的，这种类型的节头中的其它成员取值无意义。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_PROGBITS	1           </span><span style="color:#75715e">// 包含程序定义的信息，它的格式和含义都由程序来决定。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_SYMTAB	2               </span><span style="color:#75715e">// 符号表
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_STRTAB	3               </span><span style="color:#75715e">// 字符串表
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_RELA	4               </span><span style="color:#75715e">// 包含显式指定位数的重定位项，目标文件可以有多个重定位节
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_HASH	5               </span><span style="color:#75715e">// 符号哈希表
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_DYNAMIC	6               </span><span style="color:#75715e">// 动态链接的信息
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_NOTE	7               </span><span style="color:#75715e">// 包含以某种方式标记文件的信息
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_NOBITS	8               </span><span style="color:#75715e">// 不占用文件的空间的节区，其它方面和SHT_PROGBITS相似
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_REL		9               </span><span style="color:#75715e">// 包含重定位表项，不过没有显式指定位数
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_SHLIB	10              </span><span style="color:#75715e">// 保留节区，语义未定义
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_DYNSYM	11              </span><span style="color:#75715e">// 完整的符号表，可能包含很多对动态链接不必要的符号。目标文件可以包含一个 SHT_DYNSYM 节区，其中保存动态链接符号的一个最小集合，以节省空间。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_NUM		12              </span><span style="color:#75715e">// 没找到资料。。。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHT_LOPROC	0x70000000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHT_HIPROC	0x7fffffff
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHT_LOUSER	0x80000000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHT_HIUSER	0xffffffff
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/* sh_flags */</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHF_WRITE		0x1
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHF_ALLOC		0x2                  </span><span style="color:#75715e">// 该部分在进程执行期间占用内存
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e">#define SHF_EXECINSTR		0x4
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHF_RELA_LIVEPATCH	0x00100000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHF_RO_AFTER_INIT	0x00200000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHF_MASKPROC		0xf0000000
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/* special section indexes */</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHN_UNDEF	0
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHN_LORESERVE	0xff00
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHN_LOPROC	0xff00
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHN_HIPROC	0xff1f
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHN_LIVEPATCH	0xff20
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHN_ABS		0xfff1
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHN_COMMON	0xfff2
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SHN_HIRESERVE	0xffff
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf32_shdr {
+</span></span><span style="display:flex;"><span>  Elf32_Word	sh_name;
+</span></span><span style="display:flex;"><span>  Elf32_Word	sh_type;
+</span></span><span style="display:flex;"><span>  Elf32_Word	sh_flags;
+</span></span><span style="display:flex;"><span>  Elf32_Addr	sh_addr;
+</span></span><span style="display:flex;"><span>  Elf32_Off	sh_offset;
+</span></span><span style="display:flex;"><span>  Elf32_Word	sh_size;
+</span></span><span style="display:flex;"><span>  Elf32_Word	sh_link;
+</span></span><span style="display:flex;"><span>  Elf32_Word	sh_info;
+</span></span><span style="display:flex;"><span>  Elf32_Word	sh_addralign;
+</span></span><span style="display:flex;"><span>  Elf32_Word	sh_entsize;
+</span></span><span style="display:flex;"><span>} Elf32_Shdr;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf64_shdr {
+</span></span><span style="display:flex;"><span>  Elf64_Word sh_name;		<span style="color:#75715e">/* Section name, index in string tbl */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Word sh_type;		<span style="color:#75715e">/* Type of section */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Xword sh_flags;		<span style="color:#75715e">/* Miscellaneous section attributes */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Addr sh_addr;		<span style="color:#75715e">/* Section virtual addr at execution */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Off sh_offset;		<span style="color:#75715e">/* Section file offset */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Xword sh_size;		<span style="color:#75715e">/* Size of section in bytes */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Word sh_link;		<span style="color:#75715e">/* Index of another section */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Word sh_info;		<span style="color:#75715e">/* Additional section information */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Xword sh_addralign;	<span style="color:#75715e">/* Section alignment */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Xword sh_entsize;	<span style="color:#75715e">/* Entry size if section holds table */</span>
+</span></span><span style="display:flex;"><span>} Elf64_Shdr;
+</span></span></code></pre></div><p>以 64 位 ELF 为例，节头表的每个字段的含义和取值范围以及对应取值的含义都可以看注释。</p>
+<h3 id="sections-and-segements">Sections and Segements</h3>
+<p>在链接视图下，节区包含目标文件中除了 ELF 头部、程序头部表、节区头部表的所有信息，而加载视图下，段可以细分为多个节区，所以这里把节区（下文简称的节都是指节区）和段放在一起讲。</p>
+<p>首先看节，对于一个合法的节，满足以下条件：</p>
+<ul>
+<li>每个节区都有对应的节头来描述它。但是反过来，节区头部并不一定会对应着一个节区。</li>
+<li>每个节区在目标文件中是连续的，但是大小可能为 0。</li>
+<li>任意两个节区不能重叠，即一个字节不能同时存在于两个节区中。</li>
+<li>目标文件中可能会有闲置空间（inactive space），各种头和节不一定会覆盖到目标文件中的所有字节，闲置区域的内容未指定。</li>
+</ul>
+<p>注意：</p>
+<ul>
+<li>以 “.” 开头的节区名称是系统保留的，由于节是对程序员可见的（一开始就提到过），所以应用程序也可以自己注册节区。为了避免与系统节区冲突，应用程序应该尽量使用没有前缀的节区名称。</li>
+<li>目标文件格式可以包含多个名字相同的节区。</li>
+<li>保留给处理器体系结构的节区名称一般命名规则为：处理器体系结构名称简写+ 节区名称。其中，处理器名称应该与 e_machine 中使用的名称相同。例如 .FOO.psect 节区是 FOO 体系结构中的 psect 节区。</li>
+</ul>
+<p>一些比较常见的节的介绍如下：</p>
+<ul>
+<li>.bss：这个节保存的是未初始化的全局定义。根据定义，当程序开始运行时，系统会将这些数据初始化为零。该部分的类型为 SHT_NOBITS。属性类型为 SHF_ALLOC 和 SHF_WRITE。</li>
+<li>.data：这个节保存初始化数据，用于生成程序的内存。该部分的类型为 SHT_PROGBITS。属性类型为 SHF_ALLOC 和 SHF_WRITE。</li>
+<li>.dynamic：该部分包含动态链接信息。该部分的属性包括 SHF_ALLOC 位。是否设置 SHF_WRITE 位取决于处理器。该部分的类型为 SHT_DYNAMIC。</li>
+<li>.dynstr：该部分包含动态链接所需的字符串，最常见的是表示符号表项相关名称的字符串。该部分的类型为 SHT_STRTAB。使用的属性类型是 SHF_ALLOC。</li>
+<li>.dynsym：该部分保存动态连接符号表。该部分的类型为 SHT_DYNSYM。使用的属性是 SHF_ALLOC。</li>
+<li>.fini：该部分包含有助于进程终止代码的可执行指令。当程序正常退出时，系统会安排执行该部分的代码。该部分的类型为 SHT_PROGBITS。使用的属性是 SHF_ALLOC 和 SHF_EXECINSTR。</li>
+<li>.got：该部分包含全局偏移表。该部分的类型为 SHT_PROGBITS。其属性与处理器有关。</li>
+<li>.hash：该部分包含一个符号哈希表。该部分的类型为 SHT_HASH。使用的属性是 SHF_ALLOC。</li>
+<li>.init：这部分包含有助于进程初始化代码的可执行指令。当程序开始运行时，系统会在调用主程序入口点之前执行该部分的代码。该部分的类型为 SHT_PROGBITS。使用的属性是 SHF_ALLOC 和 SHF_EXECINSTR。</li>
+<li>.interp：该部分包含程序解释器的路径名。如果文件中有包含该部分的可加载段，则该部分的属性将包括 SHF_ALLOC 位。否则，就不会设置这个位。该部分的类型为 SHT_PROGBITS。</li>
+<li>.plt：该部分包含过程链接表（procedure linkage table）。该部分的类型为 SHT_PROGBITS。其属性与处理器有关。</li>
+<li>.rel(a)NAME：该部分包含重定位信息，如果文件有包含重定位的可加载段，该部分的属性将包括 SHF_ALLOC 位，否则就不会有。按照惯例，&ldquo;NAME&rdquo; 由被重定位的部分提供，例如 .text 的重定位部分通常称为 .rel(a).text。该部分的类型为 SHT_REL。</li>
+<li>.rodata：该部分保存只读数据，通常用于进程映像中的非写段。该部分的类型为 SHT_PROGBITS。使用的属性是 SHF_ALLOC。</li>
+<li>.shstrtab：该部分包含部分名称。该部分的类型为 SHT_STRTAB。不使用属性类型。</li>
+<li>.strtab：这部分存放字符串，最常见的是表示与符号表项相关名称的字符串。如果文件有一个包含符号字符串表的可加载段，该部分的属性将包括 SHF_ALLOC 位。否则，不会设置这个位。该部分的类型为 SHT_STRTAB。</li>
+<li>.symtab：该部分包含一个符号表。如果文件有一个包含符号表的可加载段，该部分的属性将包括 SHF_ALLOC 位，否则不会设置该位。该部分的类型为 SHT_SYMTAB。</li>
+</ul>
+<p>这里重点说一下符号表、字符串表、重定位表等动态链接是经常使用的部分，一个经典的应用场景就是ret2dlresolve 手法。</p>
+<h4 id="字符串表">字符串表</h4>
+<p>常见的字符串表有 .dynstr，.shstrtab 和 .strtab，其中：</p>
+<ul>
+<li>.dynstr：是动态字符串表，是动态符号表 .dynsym 的辅助节</li>
+<li>.shstrtab：是ELF文件的“目录索引”，用于定位各节的名称。</li>
+<li>.strtab：是静态字符串表，是静态符号表 .symtab 的辅助节。</li>
+</ul>
+<h4 id="符号表">符号表</h4>
+<p>符号名是函数名和变量名的统称。</p>
+<p>目标文件的符号表保存着定位和重新定位程序的符号定义和引用所需的信息。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf32_sym {
+</span></span><span style="display:flex;"><span>  Elf32_Word	st_name;
+</span></span><span style="display:flex;"><span>  Elf32_Addr	st_value;
+</span></span><span style="display:flex;"><span>  Elf32_Word	st_size;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span>	st_info;
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span>	st_other;
+</span></span><span style="display:flex;"><span>  Elf32_Half	st_shndx;
+</span></span><span style="display:flex;"><span>} Elf32_Sym;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf64_sym {
+</span></span><span style="display:flex;"><span>  Elf64_Word st_name;		<span style="color:#75715e">/* 一个字符串表的索引值，如果为0说明符号没有名称 */</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span>	st_info;	<span style="color:#75715e">/* 指定符号的类型和绑定的属性 */</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span>	st_other;	<span style="color:#75715e">/* 定义了符号的可见性 */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Half st_shndx;		<span style="color:#75715e">/* 每个符号表条目都与某个部分相关。该成员保存相关的段头表索引。 */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Addr st_value;		<span style="color:#75715e">/* 相关符号的地址 */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Xword st_size;		<span style="color:#75715e">/* 符号的大小 */</span>
+</span></span><span style="display:flex;"><span>} Elf64_Sym;
+</span></span></code></pre></div><p>注意到，32 位和 64 位下符号表的结构中成员是相同的，只是顺序不同。</p>
+<p>常见的符号表包括：.symtab 和 .dynsym，这两个节都是我们常说的“符号表”，只不过前者在所有目标文件上都会存在，除非进行 strip 剥离，而后者只会出现在动态链接的目标文件上，且无法被剥离，这是因为后者在动态链接解析符号的过程中起到了非常关键的作用，如果被剥离程序将无法运行。</p>
+<p>另外，.dynsym 保存的符号是 .symtab 所保存的符号的子集，且前者具有 ALLOC 标记后者没有，意味着前者在运行时需要被装载入内存，后者不需要。</p>
+<p>两个重要的成员：</p>
+<ul>
+<li><code>st_name</code> 保存着动态符号在 .dynstr 表里的偏移；</li>
+<li><code>st_value</code> 保存着动态符号的虚拟地址。</li>
+</ul>
+<h4 id="重定位表">重定位表</h4>
+<p>重定位表包括 .rel 和 .rela，是将符号引用与符号定义连接起来的过程，在动态链接解析函数符号的过程中非常重要。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">/* The following are used with relocations */</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#define ELF32_R_SYM(x) ((x) &gt;&gt; 8)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define ELF32_R_TYPE(x) ((x) &amp; 0xff)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#define ELF64_R_SYM(i)			((i) &gt;&gt; 32)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define ELF64_R_TYPE(i)			((i) &amp; 0xffffffff)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf32_rel {
+</span></span><span style="display:flex;"><span>  Elf32_Addr	r_offset;
+</span></span><span style="display:flex;"><span>  Elf32_Word	r_info;
+</span></span><span style="display:flex;"><span>} Elf32_Rel;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf64_rel {
+</span></span><span style="display:flex;"><span>  Elf64_Addr r_offset;	<span style="color:#75715e">/* Location at which to apply the action */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Xword r_info;	<span style="color:#75715e">/* index and type of relocation */</span>
+</span></span><span style="display:flex;"><span>} Elf64_Rel;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf32_rela {
+</span></span><span style="display:flex;"><span>  Elf32_Addr	r_offset;
+</span></span><span style="display:flex;"><span>  Elf32_Word	r_info;
+</span></span><span style="display:flex;"><span>  Elf32_Sword	r_addend;
+</span></span><span style="display:flex;"><span>} Elf32_Rela;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> elf64_rela {
+</span></span><span style="display:flex;"><span>  Elf64_Addr r_offset;	<span style="color:#75715e">/* Location at which to apply the action */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Xword r_info;	<span style="color:#75715e">/* index and type of relocation */</span>
+</span></span><span style="display:flex;"><span>  Elf64_Sxword r_addend;	<span style="color:#75715e">/* Constant addend used to compute value */</span>
+</span></span><span style="display:flex;"><span>} Elf64_Rela;
+</span></span></code></pre></div><p>要理解重定位表的结构，先要搞明白“重定位”是什么。</p>
+<p>在程序从“代码”到“可执行文件”这个过程中，要经历<strong>编译器</strong>，<strong>汇编器</strong>和<strong>链接器</strong>对代码的处理。然而编译器和汇编器通常创建的是一个地址从 0 开始的目标代码，但几乎没有计算机会允许从地址 0 加载某个程序。如果一个程序是由多个子程序组成的，那么所有的子程序也必须要加载到互不重叠的地址上。“重定位”就是为程序不同部分分配加载地址，调整程序中的数据和代码以反映所分配地址的过程。简而言之，<strong>程序的重定位是将程序中的各个部分映射到合理的地址上的过程</strong>。</p>
+<p>还有一种说法是，<strong>重定位是将符号引用与符号定义连接起来的过程</strong>。在 ELF 文件中，对于每一个需要重定位的 ELF 节都有对应的重定位表，比如说 .text 节如果需要重定位，那么其对应的重定位表为 .rel.text。</p>
+<p>例如，当程序调用了一个函数时，相关的调用指令必须把控制传输到适当的目标执行地址。在这个程序倒入某个函数时，.dynstr 就会包含对应函数名称的字符串，.dynsym 中就会包含一个相应的结构（Elf64_Sym），然后在 .rel.dyn 里就会包含一个指向这个符号的重定位表项。</p>
+<p>理解了上面的概念，再来看源码，在动态链接的程序中，同时有 .rel(a).dyn 节和 .rel(a).plt 节，这两个节都使用如上源码的结构。</p>
+<ul>
+<li><code>r_offset</code> 是重定位动作需要用到的地址</li>
+<li><code>r_info</code> 要进行重定位的符号表索引，以及相应的重定位类型（哪些位需要修改，以及如何计算它们的取值）</li>
+<li><code>r_addend</code> 给出一个常量补齐，用来计算将被填充到可重定位字段的数值。</li>
+</ul>
+<p><code>r_info</code> 的计算依赖于上面的那两个宏。</p>
+<p>一般来说，32 位程序只使用 Elf32_Rel，64 位程序只使用 Elf32_Rela。</p>
+<p>重定位类型有很多，这里不再赘述。</p>
+<h4 id="got-全局偏移表">GOT 全局偏移表</h4>
+<p>GOT 表在 ELF 文件中分为两个部分</p>
+<ul>
+<li>.got，存储全局变量的引用。</li>
+<li>.got.plt，存储函数的引用。</li>
+</ul>
+<p>其相应的值由能够解析 .rel.plt 段中的重定位的动态链接器来填写。</p>
+<p>GOT 表的功能是储存外部符号在动态链接之后的绝对地址。</p>
+<blockquote>
+<p>通常来说，地址无关代码不能包含绝对虚拟地址，理由很简单。然而 GOT 表中可以包含“隐藏的绝对虚拟地址”，这使得在不违背位置无关性以及程序代码段兼容的情况下，得到相关符号的绝对地址。</p>
+</blockquote>
+<p>一般来说，GOT 表的内容如下：</p>
+<ul>
+<li>GOT[0]：包含动态结构的地址，用符号 _DYNAMIC 来进行引用。这使得一个程序，例如动态链接器，在没有执行其重定向前可以找到对应的动态结构。这对于动态链接器来说是非常重要的，因为它必须在不依赖其它程序的情况下可以重定位自己的内存镜像。</li>
+<li>GOT[1]：指向内部类型为 <code>link_map</code> 的指针，这个结构只会在动态装载器中使用，包含了进行符号解析需要的当前 ELF 对象的信息。每个 link_map 都是一条双向链表的一个节点，而这个链表保存了所有加载的 ELF 对象的信息。</li>
+<li>GOT[2]：指向动态装载器中 <code>_dl_runtime_resolve</code> 函数的指针。</li>
+<li>GOT[3] 也就是 .got.plt 后面的项则是程序中不同 .so 中函数的引用地址，如果一个程序需要直接访问一个符号的绝对地址，那么这个符号将会有一个 got 表项。</li>
+</ul>
+<p>至于通过谁来完成“填写 GOT 表中的绝对地址”这个工作呢？答案是 PLT 表。</p>
+<h4 id="plt-过程链接表">PLT 过程链接表</h4>
+<p>PLT 表是用来实现惰性加载的关键部分。</p>
+<p>动态链接器和程序按照如下方式解析过程链接表和全局偏移表的符号引用：</p>
+<p>第一次执行时：</p>
+<p><img src="https://pic1.imgdb.cn/item/682d7cb858cb8da5c8018b96.png" alt="首次执行"></p>
+<p>第二次执行时：</p>
+<p><img src="https://pic1.imgdb.cn/item/682d7cfe58cb8da5c8018bcf.png" alt="第二次以后执行"></p>
+<p>而 PLT[0] 是什么呢？举个例子：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ objdump -d -j .plt main
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>main：     文件格式 elf64-x86-64
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Disassembly of section .plt:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">0000000000003020</span> &lt;.plt&gt;:
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># PLE[0]</span>
+</span></span><span style="display:flex;"><span>3020:       ff <span style="color:#ae81ff">35</span> <span style="color:#ae81ff">72</span> 4d <span style="color:#ae81ff">01</span> <span style="color:#ae81ff">00</span>       push   0x14d72<span style="color:#f92672">(</span>%rip<span style="color:#f92672">)</span>        <span style="color:#75715e"># 17d98 &lt;_GLOBAL_OFFSET_TABLE_+0x8&gt;</span>
+</span></span><span style="display:flex;"><span>3026:       f2 ff <span style="color:#ae81ff">25</span> <span style="color:#ae81ff">73</span> 4d <span style="color:#ae81ff">01</span> <span style="color:#ae81ff">00</span>    bnd jmp *0x14d73<span style="color:#f92672">(</span>%rip<span style="color:#f92672">)</span>        <span style="color:#75715e"># 17da0 &lt;_GLOBAL_OFFSET_TABLE_+0x10&gt;</span>
+</span></span><span style="display:flex;"><span>302d:       0f 1f <span style="color:#ae81ff">00</span>                nopl   <span style="color:#f92672">(</span>%rax<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># PLT[1]</span>
+</span></span><span style="display:flex;"><span>3030:       f3 0f 1e fa             endbr64
+</span></span><span style="display:flex;"><span>3034:       <span style="color:#ae81ff">68</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>          push   $0x0
+</span></span><span style="display:flex;"><span>3039:       f2 e9 e1 ff ff ff       bnd jmp <span style="color:#ae81ff">3020</span> &lt;_init+0x20&gt;
+</span></span><span style="display:flex;"><span>303f:       <span style="color:#ae81ff">90</span>                      nop
+</span></span><span style="display:flex;"><span>...
+</span></span></code></pre></div><p>可以看到，PLT[0] 的内容其实就是去将 <code>link_map</code> 压栈，然后调用 <code>_dl_runtime_resolve</code> 函数，这一部分的内容会在 ret2dlresolve 手法总结 那篇博客里详细解释。</p>
+<h2 id="参考">参考</h2>
+<ol>
+<li><a href="https://ciphersaw.me/ctf-wiki/executable/elf/elf_structure/">ELF文件基本结构</a></li>
+<li><a href="https://man7.org/linux/man-pages/man5/elf.5.html">elf(5) —— linux manual page</a></li>
+<li><a href="https://blog.csdn.net/mergerly/article/details/94585901">ELF文件格式解析</a></li>
+</ol>
+
+        </div>
+
+        <div class="row middle-xs">
+          <div class="col-xs-12">
+            
+            <div class="post-tags">
+              <a href="/tags/elf/">
+                ELF
+              </a>
+            </div>
+            
+          </div>
+        </div>
+        
+          <div class="row">
+            <div class="col-xs-12">
+              
+            </div>
+          </div>
+
+          
+
+
+
+          
+          
+          <div style="height: 50px;"></div>
+          
+        
+
+        
+
+<link rel="shortcut icon" href="favicon.ico" />
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ]
+        });
+    });
+</script>
+
+
+
+
+<link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/x86asm.min.js"></script>
+
+<script>hljs.initHighlightingOnLoad();</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+  document.querySelectorAll('pre code').forEach((el) => {
+    hljs.highlightElement(el);
+  });
+});
+</script>
+
+
+
+
+      </div>
+    </div>
+  </article>
+
+  
+
+<script>
+  
+  
+    
+    
+  
+</script>
+
+  
+
+</body>
+
+</html>
