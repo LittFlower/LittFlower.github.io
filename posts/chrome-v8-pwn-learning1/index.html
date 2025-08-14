@@ -7,8 +7,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="author" content="LittFlower." />
-  <meta property="og:url" content="http://littflower.github.io/tags/" />
-  <link rel="canonical" href="http://littflower.github.io/tags/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
+  <meta property="og:url" content="http://littflower.github.io/posts/chrome-v8-pwn-learning1/" />
+  <link rel="canonical" href="http://littflower.github.io/posts/chrome-v8-pwn-learning1/" /><link rel="alternate" type="application/atom+xml" href="http://littflower.github.ioindex.xml" title="一只花盆.">
 
   <script type="application/ld+json">
   {
@@ -18,10 +18,10 @@
            "@type": "WebPage",
            "@id": "http:\/\/littflower.github.io"
       },
-      "articleSection" : "tags",
-      "name" : "Tags",
-      "headline" : "Tags",
-      "description" : "",
+      "articleSection" : "posts",
+      "name" : "Chrome V8 Pwn 学习（一）",
+      "headline" : "Chrome V8 Pwn 学习（一）",
+      "description" : "简介 V8 是一个由 Google 开发的开源 JavaScript 引擎，用于 Google Chrome 及 Chromium 中，项目以V8发动机其命名。此项目由Lars Bak主导开发。 ——摘自维基百科\nJavaScript 是解释语言，需要先翻译成字节码后在 VM 上运行。V8 中实现了一个 VM。出于性能考虑，目前的引擎普遍采用一种叫做 Just-in-time (JIT) 的编译技术，V8 也是。JIT 的思想在于，如果一段代码反复执行，那么将其编译成机器代码运行，会比每次都解释要快得多。\nv8 这个引擎编译出来的二进制文件为 d8，我们 Pwner 攻击的主要目标一般就是这个。\nv8 的开源仓库在这里\n环境搭建 最新版本 首先，由于需要大量在 google 的网站和 github 上下载代码，所以需要配置好代理，这里略过不表。\n随后，先安装 depot_tools，arch linux 可以使用 aur 仓库里打包好的软件包，其他发行版可能需要 clone 项目仓库。这个工具包是用来管理 v8 代码的。\n然后安装 ninja，arch linux 的 extra 仓库里有这个包，直接下就行，其他发行版可以自己 clone 编译。\n然后编译 v8 代码即可，v8 的编译结果可以有两种，release 或者 debug 版本，我们一般使用 debug 版本方便调试。\n$ fetch v8 \u0026amp;\u0026amp; cd v8\u0026amp;\u0026amp; gclient sync $ tools\/dev\/v8gen.",
       "inLanguage" : "en-US",
       "author" : "LittFlower.",
       "creator" : "LittFlower.",
@@ -29,17 +29,33 @@
       "accountablePerson" : "LittFlower.",
       "copyrightHolder" : "LittFlower.",
       "copyrightYear" : "2025",
-      "datePublished": "2025-08-15 01:28:58 \u002b0800 CST",
-      "dateModified" : "2025-08-15 01:28:58 \u002b0800 CST",
-      "url" : "http:\/\/littflower.github.io\/tags\/",
-      "keywords" : [  ]
+      "datePublished": "2025-08-13 00:27:46 \u002b0800 CST",
+      "dateModified" : "2025-08-13 00:27:46 \u002b0800 CST",
+      "url" : "http:\/\/littflower.github.io\/posts\/chrome-v8-pwn-learning1\/",
+      "keywords" : [ "Pwn","v8", ]
   }
 </script>
-<title>Tags</title>
-  <meta property="og:title" content="Tags" />
+<title>Chrome V8 Pwn 学习（一）</title>
+  <meta property="og:title" content="Chrome V8 Pwn 学习（一）" />
   <meta property="og:type" content="article" />
-  <meta property="og:description" content="" />
-  <meta name="description" content="" />
+  <meta property="og:description" content="简介 V8 是一个由 Google 开发的开源 JavaScript 引擎，用于 Google Chrome 及 Chromium 中，项目以V8发动机其命名。此项目由Lars Bak主导开发。 ——摘自维基百科
+JavaScript 是解释语言，需要先翻译成字节码后在 VM 上运行。V8 中实现了一个 VM。出于性能考虑，目前的引擎普遍采用一种叫做 Just-in-time (JIT) 的编译技术，V8 也是。JIT 的思想在于，如果一段代码反复执行，那么将其编译成机器代码运行，会比每次都解释要快得多。
+v8 这个引擎编译出来的二进制文件为 d8，我们 Pwner 攻击的主要目标一般就是这个。
+v8 的开源仓库在这里
+环境搭建 最新版本 首先，由于需要大量在 google 的网站和 github 上下载代码，所以需要配置好代理，这里略过不表。
+随后，先安装 depot_tools，arch linux 可以使用 aur 仓库里打包好的软件包，其他发行版可能需要 clone 项目仓库。这个工具包是用来管理 v8 代码的。
+然后安装 ninja，arch linux 的 extra 仓库里有这个包，直接下就行，其他发行版可以自己 clone 编译。
+然后编译 v8 代码即可，v8 的编译结果可以有两种，release 或者 debug 版本，我们一般使用 debug 版本方便调试。
+$ fetch v8 &amp;amp;&amp;amp; cd v8&amp;amp;&amp;amp; gclient sync $ tools/dev/v8gen." />
+  <meta name="description" content="简介 V8 是一个由 Google 开发的开源 JavaScript 引擎，用于 Google Chrome 及 Chromium 中，项目以V8发动机其命名。此项目由Lars Bak主导开发。 ——摘自维基百科
+JavaScript 是解释语言，需要先翻译成字节码后在 VM 上运行。V8 中实现了一个 VM。出于性能考虑，目前的引擎普遍采用一种叫做 Just-in-time (JIT) 的编译技术，V8 也是。JIT 的思想在于，如果一段代码反复执行，那么将其编译成机器代码运行，会比每次都解释要快得多。
+v8 这个引擎编译出来的二进制文件为 d8，我们 Pwner 攻击的主要目标一般就是这个。
+v8 的开源仓库在这里
+环境搭建 最新版本 首先，由于需要大量在 google 的网站和 github 上下载代码，所以需要配置好代理，这里略过不表。
+随后，先安装 depot_tools，arch linux 可以使用 aur 仓库里打包好的软件包，其他发行版可能需要 clone 项目仓库。这个工具包是用来管理 v8 代码的。
+然后安装 ninja，arch linux 的 extra 仓库里有这个包，直接下就行，其他发行版可以自己 clone 编译。
+然后编译 v8 代码即可，v8 的编译结果可以有两种，release 或者 debug 版本，我们一般使用 debug 版本方便调试。
+$ fetch v8 &amp;amp;&amp;amp; cd v8&amp;amp;&amp;amp; gclient sync $ tools/dev/v8gen." />
   <meta property="og:locale" content="en-us" /><meta property="og:image" content="" />
   
 
@@ -66,10 +82,11 @@
 
 
 <body>
-  <article class="posts">
+  <article class="post " id="article">
     <div class="row">
       <div class="col-xs-12">
-        
+        <div class="site-header">
+          
 <header>
   <div class="header-title">
     <a href="/"
@@ -98,11 +115,185 @@
 </div>
 <div class="header-line"></div>
 
-
-        <h1 class="taxonomy-term"></h1>
-        <div id="posts-list">
-          
         </div>
+        <header class="post-header">
+          <h1 class="post-title">Chrome V8 Pwn 学习（一）</h1>
+          
+          <div class="row post-desc">
+            <div class="col-xs-6">
+              
+              <time class="post-date" datetime="2025-08-13 00:27:46 CST">
+                13 Aug 2025
+              </time>
+              
+            </div>
+            <div class="col-xs-6">
+              
+              <div class="post-author">
+                <a target="_blank" href="https://blog.littflower.top">@LittFlower.</a>
+              </div>
+              
+            </div>
+          </div>
+          
+        </header>
+
+        <div class="post-content markdown-body">
+          
+          <h2 id="简介">简介</h2>
+<blockquote>
+<p>V8 是一个由 Google 开发的开源 JavaScript 引擎，用于 Google Chrome 及 Chromium 中，项目以V8发动机其命名。此项目由Lars Bak主导开发。
+——摘自维基百科</p>
+</blockquote>
+<p>JavaScript 是解释语言，需要先翻译成字节码后在 VM 上运行。V8 中实现了一个 VM。出于性能考虑，目前的引擎普遍采用一种叫做 Just-in-time (JIT) 的编译技术，V8 也是。JIT 的思想在于，如果一段代码反复执行，那么将其编译成机器代码运行，会比每次都解释要快得多。</p>
+<p>v8 这个引擎编译出来的二进制文件为 d8，我们 Pwner 攻击的主要目标一般就是这个。</p>
+<p>v8 的开源仓库在<a href="https://chromium.googlesource.com/v8/v8/">这里</a></p>
+<h2 id="环境搭建">环境搭建</h2>
+<h3 id="最新版本">最新版本</h3>
+<p>首先，由于需要大量在 google 的网站和 github 上下载代码，所以需要配置好代理，这里略过不表。</p>
+<p>随后，先安装 depot_tools，arch linux 可以使用 aur 仓库里打包好的软件包，其他发行版可能需要 clone 项目<a href="https://chromium.googlesource.com/chromium/tools/depot_tools.git">仓库</a>。这个工具包是用来管理 v8 代码的。</p>
+<p>然后安装 ninja，arch linux 的 extra 仓库里有这个包，直接下就行，其他发行版可以自己 <a href="https://github.com/ninja-build/ninja.git">clone</a> 编译。</p>
+<p>然后编译 v8 代码即可，v8 的编译结果可以有两种，release 或者 debug 版本，我们一般使用 debug 版本方便调试。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ fetch v8 <span style="color:#f92672">&amp;&amp;</span> cd v8<span style="color:#f92672">&amp;&amp;</span> gclient sync
+</span></span><span style="display:flex;"><span>$ tools/dev/v8gen.py x64.debug
+</span></span><span style="display:flex;"><span>$ ninja -C out.gn/x64.debug
+</span></span></code></pre></div><p>最终的可执行文件就在 out.gn 目录下。</p>
+<h3 id="配置题目环境">配置题目环境</h3>
+<p>上面的方法一般只能编译最新版本的 v8 代码，而平常遇到的题目使用的可能是某个特殊的 commit，这就需要我们更灵活的配置环境。</p>
+<p>回到 v8 目录，一般题目都会给出特殊的 commit id 和一个 diff 文件，所以，需要先把源码的版本 reset 到和题目一样的版本，然后再应用题目的 diff 文件：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ git reset --hard &lt;your_commit_id&gt;
+</span></span><span style="display:flex;"><span>$ gclient sync
+</span></span><span style="display:flex;"><span>$ git apply &lt; test.diff
+</span></span></code></pre></div><p>然后重新编译即可：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ tools/dev/v8gen.py x64.debug
+</span></span><span style="display:flex;"><span>$ ninja -C out.gn/x64.debug
+</span></span></code></pre></div><h3 id="报错修复">报错修复</h3>
+<p>2025 年了，大部分的软件包依赖的都是 python3，不过 v8 这块一些比较老的 commit 可能依赖的还是 python2.7，而且哪怕你的发行版上安装了 python2，你的默认全局 python 依然是 python3，这就很难受了，这里提供一些解决措施。</p>
+<p>首先，在 <code>gclient sync</code> 这一步时，由于系统 python 指向的是 python3，所以可能会报错类似下面这样：</p>
+<pre tabindex="0"><code>Error: Command &#39;python v8/build/linux/sysroot_scripts/install-sysroot.py --arch=x86&#39; returned non-zero exit status 1 in /home/flower/CTFhub/Tools/Pwn
+File &#34;/home/flower/CTFhub/Tools/Pwn/v8/build/linux/sysroot_scripts/install-sysroot.py&#34;, line 79
+print GetSysrootDict(DEFAULT_TARGET_PLATFORM,
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: Missing parentheses in call to &#39;print&#39;. Did you mean print(...)?
+</code></pre><p>我自己使用的解决方法有两个，一个是使用 pyenv 切换到 Python2.7，另一个办法是临时在当前 shell 中 <code>export PYTHON=python2</code>。</p>
+<p>其次在 <code>tools/dev/v8gen.py x64.debug</code> 这里，第一次跑可能能需要安装 sysroot，这个报错信息里有：</p>
+<pre tabindex="0"><code>$ tools/dev/v8gen.py x64.debug -vv
+################################################################################
+/usr/bin/python2 -u tools/mb/mb.py gen -f infra/mb/mb_config.pyl -m developer_default -b x64.debug out.gn/x64.debug
+
+Writing &#34;&#34;&#34;\
+is_debug = true
+target_cpu = &#34;x64&#34;
+v8_enable_backtrace = true
+v8_enable_slow_dchecks = true
+v8_optimized_debug = false
+&#34;&#34;&#34; to /home/flower/CTFhub/Tools/Pwn/v8/out.gn/x64.debug/args.gn.
+
+/home/flower/CTFhub/Tools/Pwn/v8/buildtools/linux64/gn gen out.gn/x64.debug --check
+-&gt; returned 1
+ERROR at //build/config/compiler/BUILD.gn:1138:22: Script returned non-zero exit code.
+clang_revision = exec_script(&#34;//tools/clang/scripts/update.py&#34;,
+^----------
+Current dir: /home/flower/CTFhub/Tools/Pwn/v8/out.gn/x64.debug/
+Command: python /home/flower/CTFhub/Tools/Pwn/v8/tools/clang/scripts/update.py --print-revision --verify-version=9.0.0
+Returned 1.
+stderr:
+
+Traceback (most recent call last):
+File &#34;/home/flower/CTFhub/Tools/Pwn/v8/tools/clang/scripts/update.py&#34;, line 16, in &lt;module&gt;
+import pipes
+ModuleNotFoundError: No module named &#39;pipes&#39;
+
+See //BUILD.gn:260:5: which caused the file to be included.
+&#34;//build/config/compiler:wexit_time_destructors&#34;,
+^-----------------------------------------------
+GN gen failed: 1
+Traceback (most recent call last):
+File &#34;tools/dev/v8gen.py&#34;, line 307, in &lt;module&gt;
+sys.exit(gen.main())
+File &#34;tools/dev/v8gen.py&#34;, line 301, in main
+return self._options.func()
+File &#34;tools/dev/v8gen.py&#34;, line 169, in cmd_gen
+gn_outdir,
+File &#34;tools/dev/v8gen.py&#34;, line 211, in _call_cmd
+stderr=subprocess.STDOUT,
+File &#34;/usr/lib/python2.7/subprocess.py&#34;, line 223, in check_output
+raise CalledProcessError(retcode, cmd, output=output)
+subprocess.CalledProcessError: Command &#39;[&#39;/usr/bin/python2&#39;, &#39;-u&#39;, &#39;tools/mb/mb.py&#39;, &#39;gen&#39;, &#39;-f&#39;, &#39;infra/mb/mb_config.pyl&#39;, &#39;-m&#39;, &#39;developer_default&#39;, &#39;-b&#39;, &#39;x64.debug&#39;, &#39;out.gn/x64.debug&#39;]&#39; returned non-zero exit status 1
+</code></pre><p>然后对于找不到 <code>pipes</code> 这个模块，显然是因为系统使用了 python3 运行这个脚本，所以这里修改脚本的 bang 为 <code>#!/usr/bin/env python2</code> 就可以了，也可以 <code>export PYTHON=python2</code></p>
+<p>最后，<code>ninja -C out.gn/x64.debug</code> 编译时，可能会遇到</p>
+<pre tabindex="0"><code>../../src/base/macros.h:246:7: error: builtin __has_trivial_copy is deprecated; use __is_trivially_copyable instead [-Werror,-Wdeprecated-builtins]
+246 |       __has_trivial_copy(T) &amp;&amp; __has_trivial_destructor(T);
+|       ^
+../../src/base/macros.h:246:32: error: builtin __has_trivial_destructor is deprecated; use __is_trivially_destructible instead [-Werror,-Wdeprecated-builtins]
+246 |       __has_trivial_copy(T) &amp;&amp; __has_trivial_destructor(T);
+</code></pre><p>这种报错，也很简单，修改一下 <code>out.gn/x64.debug/args.gn</code> 的配置即可：</p>
+<pre tabindex="0"><code class="language-gn" data-lang="gn">extra_cflags = [ &#34;-Wno-deprecated-builtins&#34; ]
+treat_warnings_as_errors = false
+</code></pre><p>这样就不会把 warnings 当成 errors 导致编译失败啦。</p>
+<p>然后基本上就可以编译出一个符合题目环境要求的 d8 版本了。</p>
+<p>对于 release 版本，为了更多的调试信息，可以在编译参数里添加：</p>
+<pre tabindex="0"><code class="language-gn" data-lang="gn">v8_enable_backtrace = true
+v8_enable_disassembler = true
+v8_enable_object_print = true
+v8_enable_verify_heap = true
+</code></pre><h3 id="调试">调试</h3>
+<h4 id="natives-syntax">natives-syntax</h4>
+<p><code>--allow-natives-syntax</code> 这个参数可以允许 d8 执行带有调试函数的 js 脚本。</p>
+<p>也可以在 gdb 里用 <code>set args --allow-natives-syntax ./test.js</code> 达到一样的效果。</p>
+<h4 id="gdb">gdb</h4>
+<p>d8 实现了一些辅助调试的函数，并且提供了 gdb 脚本，以供在 gdb 中调用。在你的 gdbinit 文件中添加以下两行即可：</p>
+<pre tabindex="0"><code class="language-gdbinit" data-lang="gdbinit">source /path/to/v8/tools/gdbinit
+source /path/to/v8/tools/gdb-v8-support.py
+</code></pre>
+        </div>
+
+        <div class="row middle-xs">
+          <div class="col-xs-12">
+            
+            <div class="post-tags">
+              <a href="/tags/pwn/">
+                Pwn
+              </a>
+            </div>
+            
+            <div class="post-tags">
+              <a href="/tags/v8/">
+                v8
+              </a>
+            </div>
+            
+          </div>
+        </div>
+        
+          <div class="row">
+            <div class="col-xs-12">
+              
+            </div>
+          </div>
+
+          
+
+<div class="related-content">
+  <h3>Related Posts</h3>
+  <ul>
+    
+    <li><a href="/posts/jinglinctf2025-writeup/">京麟CTF2025热身赛 WriteUp</a></li>
+    
+    <li><a href="/posts/damctf2025-writeup/">DAMCTF2025 WriteUp</a></li>
+    
+    <li><a href="/posts/umdctf2025-writeup/">UMDCTF2025 WriteUp</a></li>
+    
+  </ul>
+</div>
+
+
+
+          
+          
+          <div style="height: 50px;"></div>
+          
+        
 
         
 
@@ -160,6 +351,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
   
 </script>
+
+  
 
 </body>
 

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>v8 on 一只花盆.</title>
+    <link>http://littflower.github.io/tags/v8/</link>
+    <description>Recent content in v8 on 一只花盆.</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 15 Aug 2025 01:28:58 +0800</lastBuildDate><atom:link href="http://littflower.github.io/tags/v8/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Chrome V8 Pwn 学习（二）</title>
+      <link>http://littflower.github.io/posts/chrome-v8-pwn-learning2/</link>
+      <pubDate>Fri, 15 Aug 2025 01:28:58 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/chrome-v8-pwn-learning2/</guid>
+      <description>前置知识 chrome 查看快照 首先打开浏览器开发者工具，在控制台中运行一段 js 代码：
+然后在内存选项卡查看快照 v8 JsObject 简介 这里我们要先区分一个概念，即 JavaScript 语言层面和 V8 引擎内部实现层面上对于数据结构的理解是不一样的。
+我们先说V8 引擎内部实现层面，在这个层面上，V8 引擎将所有类型大体划分为 smi 和 HeapObject，这个划分的方式称作 Tagged Value 技术，它利用了最低位来区别 Smi 和对象指针，当最低位为 0 时，表明这是一个 Smi；当最低位为 1 时，表明这是一个对象指针。
+下面介绍一下 v8 对象（JsObject）的结构。
+v8 对象结构简介 首先有一张很经典的图：
+v8 的对象由三个部分组成：
+Hidden Class(隐藏类) Property Element 总结：
+隐藏类用于描述对象的结构，Property 和 Element 用于存放对象的属性，两者的区别主要体现在键名能否被索引：前者用于存放命名属性（不可索引），后者用于存放可索引属性（可索引）。 参照ECMA规范中的要求，可索引属性需要按照索引值大小升序排列，而命令属性根据创建的顺序升序排列。 同时使用两种属性时，两个属性分开存储。 拥有不相同的属性一般并不会影响隐藏类（map） 测试代码如下：
+function Foo1 () {}; var a = new Foo1(); var b = new Foo1(); a.name = &amp;#39;aaa&amp;#39;; a.text = &amp;#39;aaa&amp;#39;; b.</description>
+    </item>
+    
+    <item>
+      <title>Chrome V8 Pwn 学习（一）</title>
+      <link>http://littflower.github.io/posts/chrome-v8-pwn-learning1/</link>
+      <pubDate>Wed, 13 Aug 2025 00:27:46 +0800</pubDate>
+      
+      <guid>http://littflower.github.io/posts/chrome-v8-pwn-learning1/</guid>
+      <description>简介 V8 是一个由 Google 开发的开源 JavaScript 引擎，用于 Google Chrome 及 Chromium 中，项目以V8发动机其命名。此项目由Lars Bak主导开发。 ——摘自维基百科
+JavaScript 是解释语言，需要先翻译成字节码后在 VM 上运行。V8 中实现了一个 VM。出于性能考虑，目前的引擎普遍采用一种叫做 Just-in-time (JIT) 的编译技术，V8 也是。JIT 的思想在于，如果一段代码反复执行，那么将其编译成机器代码运行，会比每次都解释要快得多。
+v8 这个引擎编译出来的二进制文件为 d8，我们 Pwner 攻击的主要目标一般就是这个。
+v8 的开源仓库在这里
+环境搭建 最新版本 首先，由于需要大量在 google 的网站和 github 上下载代码，所以需要配置好代理，这里略过不表。
+随后，先安装 depot_tools，arch linux 可以使用 aur 仓库里打包好的软件包，其他发行版可能需要 clone 项目仓库。这个工具包是用来管理 v8 代码的。
+然后安装 ninja，arch linux 的 extra 仓库里有这个包，直接下就行，其他发行版可以自己 clone 编译。
+然后编译 v8 代码即可，v8 的编译结果可以有两种，release 或者 debug 版本，我们一般使用 debug 版本方便调试。
+$ fetch v8 &amp;amp;&amp;amp; cd v8&amp;amp;&amp;amp; gclient sync $ tools/dev/v8gen.</description>
+    </item>
+    
+  </channel>
+</rss>
