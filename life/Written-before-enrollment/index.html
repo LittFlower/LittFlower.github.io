@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
+        const storageKey = "theme";
+        const root = document.documentElement;
+        const supportsMatchMedia = typeof window.matchMedia === "function";
+        const mediaQuery = supportsMatchMedia
+            ? window.matchMedia("(prefers-color-scheme: dark)")
+            : null;
+
+        const readStorage = () => {
+            try {
+                return window.localStorage.getItem(storageKey);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeStorage = (value) => {
+            try {
+                window.localStorage.setItem(storageKey, value);
+            } catch (error) {
+                return;
+            }
+        };
+
+        const applyTheme = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            if (document.body) {
+                document.body.setAttribute("data-theme", theme);
+            } else {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        if (document.body) {
+                            document.body.setAttribute("data-theme", theme);
+                        }
+                    },
+                    { once: true }
+                );
+            }
+            return theme;
+        };
+
+        const updateButton = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button) {
+                return;
+            }
+            const label = button.querySelector("[data-theme-toggle-label]");
+            const isDark = theme === "dark";
+            button.setAttribute("aria-pressed", isDark ? "true" : "false");
+            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
+            if (label) {
+                label.textContent = isDark ? "深色" : "浅色";
+            }
+        };
+
+        const stored = readStorage();
+        const initial =
+            stored === "light" || stored === "dark"
+                ? stored
+                : mediaQuery && mediaQuery.matches
+                  ? "dark"
+                  : "light";
+
+        const appliedTheme = applyTheme(initial);
+        updateButton(appliedTheme);
+
+        window.__setTheme = (value) => {
+            const theme = applyTheme(value);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        window.__toggleTheme = () => {
+            const current =
+                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const next = current === "dark" ? "light" : "dark";
+            const theme = applyTheme(next);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        const syncButtonState = () => {
+            updateButton(root.getAttribute("data-theme"));
+        };
+
+        const attachToggle = () => {
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button || button.__themeToggleBound) {
+                return;
+            }
+            button.__themeToggleBound = true;
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                if (typeof window.__toggleTheme === "function") {
+                    window.__toggleTheme();
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                syncButtonState();
+                attachToggle();
+            });
+        } else {
+            syncButtonState();
+            attachToggle();
+        }
+
+        const handleMediaChange = (event) => {
+            const storedTheme = readStorage();
+            if (storedTheme === "light" || storedTheme === "dark") {
+                updateButton(storedTheme);
+                return;
+            }
+            const next = event.matches ? "dark" : "light";
+            const theme = applyTheme(next);
+            updateButton(theme);
+        };
+
+        if (mediaQuery) {
+            if (typeof mediaQuery.addEventListener === "function") {
+                mediaQuery.addEventListener("change", handleMediaChange);
+            } else if (typeof mediaQuery.addListener === "function") {
+                mediaQuery.addListener(handleMediaChange);
+            }
+        }
+    })();
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>写在入校前 | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="写在入校前 | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/life/Written-before-enrollment/"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="stylesheet" href="/fonts.css" type="text/css" preload/><link rel="stylesheet" href="/style.css" type="text/css" preload/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"><div class="file"><a href="./README.mdx" class="file-link"><img src="/icons/text.png" alt/><span>README.mdx</span></a><div class="file-meta"><span>4.28 KiB</span><span class="file-meta-date">2023-09-22 08:00</span></div></div></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>写在小花大一开学前</a></h1>
+<p>三个月的暑假瞬间就过去了… 让人不禁感慨自己即将步入大学的校门。</p>
+<p>说起来自高考出成绩之后，自己先是伤心失意了两三周，虽然没有在深夜默默流泪这种狗血桥段，但是相当一段时间内还是被不甘心、不情愿等等负面情绪充斥着。在报志愿之前，一看自己的成绩，再看看各个曾经想去的、不想去的学校的最低录取位次，无数个瞬间都感觉自己完蛋了：似乎… 我没学上了？</p>
+<p>大概沉浸在这种负面情绪里低落了相当一段时间，把自己整日泡在图书馆里做题、写代码、挨学长批评，我真该死啊…</p>
+<p>最后稀里糊涂地去了川大… 结果又被调剂去研究自然科学，于是又自闭了半个月… 负面情绪 emo 一直持续到 8 月上旬，彼时我尽量让自己做一只鸵鸟，不去想高考没考好的事实，把自己埋在计算机里：每天帮各种同学看题、自己做题、修缮博客系统、读 arch linux 的文档… 好像日子也算过得下去… 只是感觉生活没什么光亮… 前途没什么希望…</p>
+<p>那时每每想起 Rx 学长在自己博客里写过一句话：</p>
+<blockquote>
+<p>感觉自己好像那个什么驴…… 该休息的时候却总想着怎么继续拉磨盘。。</p>
+</blockquote>
+<p>照镜子了… 真难绷。还是跟 Rx，聊起来我的去向，他劝我说：</p>
+<blockquote>
+<p>你就像窗户外那个蝉，在地底下的黑暗里埋了 18 年，只能出来叫 3 个月，然后就死掉了。。</p>
+</blockquote>
+<p>确实，他说以后再也没这么好的时间了… 不如好好休息休息，玩一玩。</p>
+<p>仔细一想确实是这个理，于是决定不管怎么样都要出去散散心，既是毕业旅行的仪式感，也是给我自己一点点心理的安慰和交代。</p>
+<p>那天看见一个 25 届的学弟发了一条说说：</p>
+<blockquote>
+<p>今天听到 zy （ps：我们名义上的指导老师）又在宣传信息竞赛，还说什么零基础也没事……</p>
+<p>但是只有经历过的人才懂，明白水有多深、路有多长、任务有多艰巨。。。</p>
+</blockquote>
+<p>真是让人不禁感慨啊… 曾经的我还是整天追在学长后面问问题的小孩子… 现在我的 25 届学弟已经开始给 26 届新生出 oi 入门考试题目了…</p>
+<p>回想起占据了自己高中生活半壁江山的竞赛生涯（我这种彩笔也配说“生涯”吗），一路上走过来很少感受到真切的理解，大部分时候都是在踽踽独行…… 就像是走那条每次从教学楼出来回宿舍的 20 m 的夜路，灯光穿过树叶投在地上斑驳，周围各个年级的同学有说有笑地回答，而我却总感觉到一股直逼灵魂深处的冷意 —— 一种孤独与痛苦。孤独来自于无人理解，痛苦来自于自己学不明白东西的现实。</p>
+<p>三年来这条路我走了无数次，却从来没有比那个时候更感到漫长…… 就感觉自己一个人低着头走着直线，只有影子在后面陪我……</p>
+<p>现在大抵习惯了孤身一人的感觉… 所以有什么伤心事大都埋在自己心里，寂寞的时候一遍一遍地告诉自己：“享受孤独。”</p>
+<p>这三年来我确实做了不少东西，如果不以高考成绩论输赢，那么我的高中生活在我眼里相当成功…… 至少我自己挺满意的：靠自己进了年级上最好的班、靠着运气拿了 oi 的奖、打过四五场 CTF 、模考的时候考过特别好 / 差的成绩、给数学老师写了个学生管理系统、给之前的博客评论插件写了个 bash、作为背锅人建了 E-Butx 社团……</p>
+<p>自己总是期望得到大家的认可，得没得到我也不知道...... 大抵是没有吧。这该死的孤独感到底是怎么回事呢？</p>
+<p>从长春回来之后，感觉自己心情似乎好了一些，今天入校把东西收拾好之后发了条说说：</p>
+<img src="https://s2.loli.net/2023/09/08/iqImnbDY2cSr8B9.jpg" width="60%"/>
+<p>确实是这样… 慢慢的慢慢的，日子依然可以过得下去、我依然可以乐观的起来…… 尽管现实已经变得面目全非了，但是也并非完全没有希望？</p>
+<p>每每看到自己的昵称，都在心中默默提醒自己要像一朵花一样绽放。</p></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
+<a href="https://github.com/unvariant/blog">unvariant/blog</a>
+改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>

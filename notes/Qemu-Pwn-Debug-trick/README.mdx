@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
+        const storageKey = "theme";
+        const root = document.documentElement;
+        const supportsMatchMedia = typeof window.matchMedia === "function";
+        const mediaQuery = supportsMatchMedia
+            ? window.matchMedia("(prefers-color-scheme: dark)")
+            : null;
+
+        const readStorage = () => {
+            try {
+                return window.localStorage.getItem(storageKey);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeStorage = (value) => {
+            try {
+                window.localStorage.setItem(storageKey, value);
+            } catch (error) {
+                return;
+            }
+        };
+
+        const applyTheme = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            if (document.body) {
+                document.body.setAttribute("data-theme", theme);
+            } else {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        if (document.body) {
+                            document.body.setAttribute("data-theme", theme);
+                        }
+                    },
+                    { once: true }
+                );
+            }
+            return theme;
+        };
+
+        const updateButton = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button) {
+                return;
+            }
+            const label = button.querySelector("[data-theme-toggle-label]");
+            const isDark = theme === "dark";
+            button.setAttribute("aria-pressed", isDark ? "true" : "false");
+            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
+            if (label) {
+                label.textContent = isDark ? "深色" : "浅色";
+            }
+        };
+
+        const stored = readStorage();
+        const initial =
+            stored === "light" || stored === "dark"
+                ? stored
+                : mediaQuery && mediaQuery.matches
+                  ? "dark"
+                  : "light";
+
+        const appliedTheme = applyTheme(initial);
+        updateButton(appliedTheme);
+
+        window.__setTheme = (value) => {
+            const theme = applyTheme(value);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        window.__toggleTheme = () => {
+            const current =
+                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const next = current === "dark" ? "light" : "dark";
+            const theme = applyTheme(next);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        const syncButtonState = () => {
+            updateButton(root.getAttribute("data-theme"));
+        };
+
+        const attachToggle = () => {
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button || button.__themeToggleBound) {
+                return;
+            }
+            button.__themeToggleBound = true;
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                if (typeof window.__toggleTheme === "function") {
+                    window.__toggleTheme();
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                syncButtonState();
+                attachToggle();
+            });
+        } else {
+            syncButtonState();
+            attachToggle();
+        }
+
+        const handleMediaChange = (event) => {
+            const storedTheme = readStorage();
+            if (storedTheme === "light" || storedTheme === "dark") {
+                updateButton(storedTheme);
+                return;
+            }
+            const next = event.matches ? "dark" : "light";
+            const theme = applyTheme(next);
+            updateButton(theme);
+        };
+
+        if (mediaQuery) {
+            if (typeof mediaQuery.addEventListener === "function") {
+                mediaQuery.addEventListener("change", handleMediaChange);
+            } else if (typeof mediaQuery.addListener === "function") {
+                mediaQuery.addListener(handleMediaChange);
+            }
+        }
+    })();
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>Qemu Pwn 调试技巧 | 花盆</title><meta name="author" content="LittFlower"/><meta name="description" content="Qemu Pwn 调试技巧"/><meta property="og:title" content="Qemu Pwn 调试技巧 | 花盆"/><meta property="og:description" content="Qemu Pwn 调试技巧"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/notes/Qemu-Pwn-Debug-trick/README.mdx"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="stylesheet" href="/fonts.css" type="text/css" preload/><link rel="stylesheet" href="/style.css" type="text/css" preload/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="qemu-pwn" class="scroll-target"><a href="#qemu-pwn"><code class="hash inline-code">#</code>Qemu Pwn 入门与调试</a></h1>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>前置知识</a></h2>
+<p>MMIO 和 PMIO 是 CPU 和外部设备之间两种互为补充的 I/O 方法。</p>
+<ul>
+<li>MMIO (Memory-mapped I/O)</li>
+<li>PMIO (Port-mapped I/O)</li>
+</ul>
+<h3 id="mmio" class="scroll-target"><a href="#mmio"><code class="hash inline-code">#</code>MMIO</a></h3>
+<p>让 CPU 访问外部设备就像访问磁盘虚拟内存空间一样方便，也就是说，内存和 I/O 设备共享同一个地址空间。当 CPU 使用 MMU 将虚拟内存空间地址转化时，可以转化成物理内存空间地址、也可以转化成 I/O 设备的内存。因此，用于访问内存的CPU指令也可来访问I/O设备。每个I/O设备监视CPU的地址总线，一旦CPU访问分配给它的地址，它就做出响应，将数据总线连接到需要访问的设备硬件寄存器。为了容纳 I/O 设备，CPU 必须预留给 I/O 一个地址区域，该地址区域不能给物理内存使用。</p>
+<h3 id="pmio" class="scroll-target"><a href="#pmio"><code class="hash inline-code">#</code>PMIO</a></h3>
+<p>在端口映射 IO 中，内存和 I/O 设备有各自的地址空间，PMIO 会使用特殊的 CPU 指令专门执行 I/O 操作，I/O设备有一个与内存不同的地址空间，为了实现地址空间的隔离，要么在CPU物理接口上增加一个I/O引脚，要么增加一条专用的I/O总线。由于I/O地址空间与内存地址空间是隔离的，所以有时将 PMIO 称为被隔离的 IO(Isolated I/O)。</p>
+<h3 id="mmio" class="scroll-target"><a href="#mmio"><code class="hash inline-code">#</code>如何实现 MMIO</a></h3>
+<p>在Linux中， 内核使用ioremap()将IO设备的物理内存地址映射到内核空间的虚拟地址上； 用户空间程序使用mmap(2)系统调用将IO设备的物理内存地址映射到用户空间的虚拟内存地址上，一旦映射完成，用户空间的一段内存就与IO设备的内存关联起来，当用户访问用户空间的这段内存地址范围时，实际上会转化为对IO设备的访问。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>如何启动</a></h2>
+<p>以下是一个启动脚本 <code class="inline-code">start.sh</code>:</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-shell language-shell"><span style="color:#59873A">./qemu-system-x86_64</span><span style="color:#A65E2B"> \</span><br><span style="color:#A65E2B">	-m</span><span style="color:#B56959"> 1G</span><span style="color:#A65E2B"> \</span><br><span style="color:#A65E2B">	-device</span><span style="color:#B56959"> strng</span><span style="color:#A65E2B"> \</span><br><span style="color:#A65E2B">	-hda</span><span style="color:#B56959"> my-disk.img</span><span style="color:#A65E2B"> \</span><br><span style="color:#A65E2B">	-hdb</span><span style="color:#B56959"> my-seed.img</span><span style="color:#A65E2B"> \</span><br><span style="color:#A65E2B">	-nographic</span><span style="color:#A65E2B"> \</span><br><span style="color:#A65E2B">	-L</span><span style="color:#B56959"> pc-bios/</span><span style="color:#A65E2B"> \</span><br><span style="color:#A65E2B">	-enable-kvm</span><span style="color:#A65E2B"> \</span><br><span style="color:#A65E2B">	-device</span><span style="color:#B56959"> e1000,netdev=net0</span><span style="color:#A65E2B"> \</span><br><span style="color:#A65E2B">	-netdev</span><span style="color:#B56959"> user,id=net0,hostfwd=tcp::5555-:22</span><br></code></pre></div>
+<p>其中 <code class="inline-code">-device</code> 后面的是设备名。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>静态分析</a></h2>
+<p>然后 ida 打开 qemu，直接搜这个设备名可以看到：</p>
+<p><img src="https://pic.imgdb.cn/item/674a9244d0e0a243d4db5d10.png" alt/></p>
+<p>然后从 <code class="inline-code">do_qemu_init_pci_strng_register_types()</code> 函数往后跟就行，一般漏洞点都在 <code class="inline-code">strng_mmio_read</code> <code class="inline-code">strng_mmio_write</code> <code class="inline-code">strng_pmio_read</code> <code class="inline-code">strng_pmio_write</code> 这些函数里。</p>
+<p>ida 这里在 type info 栏可以看结构体类型，这里主要看 <code class="inline-code">STRNGState</code> 和 <code class="inline-code">PCIDeviceClass</code>，前者是设备的具体结构体，后者是注册设备的结构体。</p>
+<h2 id="mmio-pmio" class="scroll-target"><a href="#mmio-pmio"><code class="hash inline-code">#</code>查看 mmio pmio</a></h2>
+<h3 id="lspci" class="scroll-target"><a href="#lspci"><code class="hash inline-code">#</code>lspci</a></h3>
+<p>启动 qemu 后，登陆进去，先查看设备信息：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-shell language-shell"><span style="color:#59873A">ubuntu@ubuntu:~$</span><span style="color:#B56959"> lspci</span><br><span style="color:#59873A">00:00.0</span><span style="color:#B56959"> Host</span><span style="color:#B56959"> bridge:</span><span style="color:#B56959"> Intel</span><span style="color:#B56959"> Corporation</span><span style="color:#B56959"> 440FX</span><span style="color:#B56959"> -</span><span style="color:#B56959"> 82441FX</span><span style="color:#B56959"> PMC</span><span style="color:#393A34"> </span><span style="color:#2993a3">[</span><span style="color:#393A34">Natoma</span><span style="color:#2993a3">]</span><span style="color:#393A34"> </span><span style="color:#2993a3">(</span><span style="color:#59873A">rev</span><span style="color:#2F798A"> 02</span><span style="color:#2993a3">)</span><br><span style="color:#59873A">00:01.0</span><span style="color:#B56959"> ISA</span><span style="color:#B56959"> bridge:</span><span style="color:#B56959"> Intel</span><span style="color:#B56959"> Corporation</span><span style="color:#B56959"> 82371SB</span><span style="color:#B56959"> PIIX3</span><span style="color:#B56959"> ISA</span><span style="color:#393A34"> </span><span style="color:rgba(255, 18, 18, 0.8)">[</span><span style="color:#393A34">Natoma/Triton </span><span style="color:#B56959">II]</span><br><span style="color:#59873A">00:01.1</span><span style="color:#B56959"> IDE</span><span style="color:#B56959"> interface:</span><span style="color:#B56959"> Intel</span><span style="color:#B56959"> Corporation</span><span style="color:#B56959"> 82371SB</span><span style="color:#B56959"> PIIX3</span><span style="color:#B56959"> IDE</span><span style="color:#393A34"> </span><span style="color:rgba(255, 18, 18, 0.8)">[</span><span style="color:#393A34">Natoma/Triton </span><span style="color:#B56959">II]</span><br><span style="color:#59873A">00:01.3</span><span style="color:#B56959"> Bridge:</span><span style="color:#B56959"> Intel</span><span style="color:#B56959"> Corporation</span><span style="color:#B56959"> 82371AB/EB/MB</span><span style="color:#B56959"> PIIX4</span><span style="color:#B56959"> ACPI</span><span style="color:#393A34"> </span><span style="color:#a65e2b">(</span><span style="color:#393A34">rev </span><span style="color:#2F798A">03</span><span style="color:#a65e2b">)</span><br><span style="color:#59873A">00:02.0</span><span style="color:#B56959"> VGA</span><span style="color:#B56959"> compatible</span><span style="color:#B56959"> controller:</span><span style="color:#B56959"> Device</span><span style="color:#B56959"> 1234:1111</span><span style="color:#393A34"> </span><span style="color:#a65e2b">(</span><span style="color:#393A34">rev </span><span style="color:#2F798A">02</span><span style="color:#a65e2b">)</span><br><span style="color:#59873A">00:03.0</span><span style="color:#B56959"> Unclassified</span><span style="color:#B56959"> device</span><span style="color:#393A34"> </span><span style="color:#a65e2b">[</span><span style="color:#393A34">00ff</span><span style="color:#a65e2b">]</span><span style="color:#393A34">: Device 1234:11e9 </span><span style="color:#a65e2b">(</span><span style="color:#59873A">rev</span><span style="color:#2F798A"> 10</span><span style="color:#a65e2b">)</span><br><span style="color:#59873A">00:04.0</span><span style="color:#B56959"> Ethernet</span><span style="color:#B56959"> controller:</span><span style="color:#B56959"> Intel</span><span style="color:#B56959"> Corporation</span><span style="color:#B56959"> 82540EM</span><span style="color:#B56959"> Gigabit</span><span style="color:#B56959"> Ethernet</span><span style="color:#B56959"> Controller</span><span style="color:#393A34"> </span><span style="color:#a65e2b">(</span><span style="color:#393A34">rev </span><span style="color:#2F798A">03</span><span style="color:#a65e2b">)</span><br></code></pre></div>
+<p>找到设备 <code class="inline-code">00:03.0 Unclassified device [00ff]: Device 1234:11e9 (rev 10)</code>，其中 <code class="inline-code">xx:yy:z</code> 的格式为总线:设备:功能的格式。</p>
+<p><code class="inline-code">lspci -v -s 00:03.0</code> 可以查看设备详细信息：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-shell language-shell"><span style="color:#59873A">ubuntu@ubuntu:~$</span><span style="color:#B56959"> lspci</span><span style="color:#A65E2B"> -v</span><span style="color:#A65E2B"> -s</span><span style="color:#B56959"> 00:03.0</span><br><span style="color:#59873A">00:03.0</span><span style="color:#B56959"> Unclassified</span><span style="color:#B56959"> device</span><span style="color:#393A34"> </span><span style="color:#2993a3">[</span><span style="color:#393A34">00ff</span><span style="color:#2993a3">]</span><span style="color:#393A34">: Device 1234:11e9 </span><span style="color:#2993a3">(</span><span style="color:#59873A">rev</span><span style="color:#2F798A"> 10</span><span style="color:#2993a3">)</span><br><span style="color:#59873A">        Subsystem:</span><span style="color:#B56959"> Red</span><span style="color:#B56959"> Hat,</span><span style="color:#B56959"> Inc</span><span style="color:#B56959"> Device</span><span style="color:#2F798A"> 1100</span><br><span style="color:#59873A">        Physical</span><span style="color:#B56959"> Slot:</span><span style="color:#2F798A"> 3</span><br><span style="color:#59873A">        Flags:</span><span style="color:#B56959"> fast</span><span style="color:#B56959"> devsel</span><br><span style="color:#59873A">        Memory</span><span style="color:#B56959"> at</span><span style="color:#B56959"> febf1000</span><span style="color:#393A34"> </span><span style="color:#2993a3">(</span><span style="color:#393A34">32-bit, </span><span style="color:#B56959">non-prefetchable</span><span style="color:#2993a3">)</span><span style="color:#393A34"> </span><span style="color:#2993a3">[</span><span style="color:#393A34">size</span><span style="color:#AB5959">=</span><span style="color:#393A34">256</span><span style="color:#2993a3">]</span><br><span style="color:#59873A">        I/O</span><span style="color:#B56959"> ports</span><span style="color:#B56959"> at</span><span style="color:#B56959"> c050</span><span style="color:#393A34"> </span><span style="color:#2993a3">[</span><span style="color:#393A34">size=8</span><span style="color:#2993a3">]</span><br></code></pre></div>
+<p>可以看到有MMIO地址为 0xfebf1000，大小为 256 (<strong>意味者传入的地址空间不能大于 0xff</strong>)；PMIO 地址为 0xc050，总共有 8 个端口。</p>
+<h3 id="resource" class="scroll-target"><a href="#resource"><code class="hash inline-code">#</code>resource 文件</a></h3>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-shell language-shell"><span style="color:#59873A">ubuntu@ubuntu:~$</span><span style="color:#B56959"> cat</span><span style="color:#B56959"> /sys/devices/pci0000:00/0000:00:03.0/resource</span><br><span style="color:#59873A">0x00000000febf1000</span><span style="color:#2F798A"> 0x00000000febf10ff</span><span style="color:#2F798A"> 0x0000000000040200</span><br><span style="color:#59873A">0x000000000000c050</span><span style="color:#2F798A"> 0x000000000000c057</span><span style="color:#2F798A"> 0x0000000000040101</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br><span style="color:#59873A">0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><span style="color:#2F798A"> 0x0000000000000000</span><br></code></pre></div>
+<p>从这里也能看到基地址。</p>
+<h2 id="mmio-pmio" class="scroll-target"><a href="#mmio-pmio"><code class="hash inline-code">#</code>访问 mmio pmio</a></h2>
+<p>首先本地写个 exp.c，常用的头文件如下：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-c language-c"><span style="color:#999999">#</span><span style="color:#1E754F">include</span><span style="color:#B5695977"> &#x3C;</span><span style="color:#B56959">stdio.h</span><span style="color:#B5695977">></span><br><span style="color:#999999">#</span><span style="color:#1E754F">include</span><span style="color:#B5695977"> &#x3C;</span><span style="color:#B56959">stdlib.h</span><span style="color:#B5695977">></span><span style="color:#A0ADA0"> // exit()</span><br><span style="color:#999999">#</span><span style="color:#1E754F">include</span><span style="color:#B5695977"> &#x3C;</span><span style="color:#B56959">fcntl.h</span><span style="color:#B5695977">></span><span style="color:#A0ADA0">  // open()</span><br><span style="color:#999999">#</span><span style="color:#1E754F">include</span><span style="color:#B5695977"> &#x3C;</span><span style="color:#B56959">unistd.h</span><span style="color:#B5695977">></span><br><span style="color:#999999">#</span><span style="color:#1E754F">include</span><span style="color:#B5695977"> &#x3C;</span><span style="color:#B56959">sys/mman.h</span><span style="color:#B5695977">></span><span style="color:#A0ADA0"> // mmap()</span><br><span style="color:#999999">#</span><span style="color:#1E754F">include</span><span style="color:#B5695977"> &#x3C;</span><span style="color:#B56959">stdint.h</span><span style="color:#B5695977">></span><span style="color:#A0ADA0"> // uint32 uint64</span><br><span style="color:#999999">#</span><span style="color:#1E754F">include</span><span style="color:#B5695977"> &#x3C;</span><span style="color:#B56959">sys/io.h</span><span style="color:#B5695977">></span><span style="color:#A0ADA0"> // in() out() iopl()</span><br></code></pre></div>
+<h3 id="mmio" class="scroll-target"><a href="#mmio"><code class="hash inline-code">#</code>访问 mmio</a></h3>
+<p>如何把 mmio 的内存映射到程序内存上呢？</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-c language-c"><span style="color:#AB5959">int</span><span style="color:#59873A"> main</span><span style="color:#2993a3">(</span><span style="color:#2993a3">)</span><span style="color:#999999"> </span><span style="color:#2993a3">{</span><br><span style="color:#A0ADA0">	// 打开 resource0 文件，获得一个 fd</span><br><span style="color:#393A34">    mmio_fd </span><span style="color:#999999">=</span><span style="color:#59873A"> open</span><span style="color:#1e754f">(</span><span style="color:#B5695977">"</span><span style="color:#B56959">/sys/devices/pci0000:00/0000:00:03.0/resource0</span><span style="color:#B5695977">"</span><span style="color:#999999">,</span><span style="color:#393A34"> O_RDWR </span><span style="color:#AB5959">|</span><span style="color:#393A34"> O_SYNC</span><span style="color:#1e754f">)</span><span style="color:#999999">;</span><br><span style="color:#1E754F">    if</span><span style="color:#999999"> </span><span style="color:#1e754f">(</span><span style="color:#393A34">mmio_fd </span><span style="color:#AB5959">==</span><span style="color:#AB5959"> -</span><span style="color:#2F798A">1</span><span style="color:#1e754f">)</span><span style="color:#999999"> </span><span style="color:#1e754f">{</span><br><span style="color:#59873A">        errExit</span><span style="color:#a65e2b">(</span><span style="color:#B5695977">"</span><span style="color:#B56959">mmio_fd open failed.</span><span style="color:#B5695977">"</span><span style="color:#a65e2b">)</span><span style="color:#999999">;</span><br><span style="color:#999999">    </span><span style="color:#1e754f">}</span><br><span style="color:#A0ADA0">	// mmap 把这个 fd 映射到 exp 的虚拟地址空间，然后就可以正常读写了</span><br><span style="color:#393A34">    mmio_addr </span><span style="color:#999999">=</span><span style="color:#999999"> </span><span style="color:#1e754f">(</span><span style="color:#AB5959">uint64_t</span><span style="color:#1e754f">)</span><span style="color:#59873A"> mmap</span><span style="color:#1e754f">(</span><span style="color:#2F798A">0</span><span style="color:#999999">,</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">1000</span><span style="color:#999999">,</span><span style="color:#393A34"> PROT_READ </span><span style="color:#AB5959">|</span><span style="color:#393A34"> PROT_WRITE</span><span style="color:#999999">,</span><span style="color:#393A34"> MAP_SHARED</span><span style="color:#999999">,</span><span style="color:#393A34"> mmio_fd</span><span style="color:#999999">,</span><span style="color:#2F798A"> 0</span><span style="color:#1e754f">)</span><span style="color:#999999">;</span><br><span style="color:#1E754F">    if</span><span style="color:#999999"> </span><span style="color:#1e754f">(</span><span style="color:#393A34">mmio_addr </span><span style="color:#AB5959">==</span><span style="color:#999999"> </span><span style="color:#a65e2b">(</span><span style="color:#AB5959">uint64_t</span><span style="color:#a65e2b">)</span><span style="color:#393A34"> MAP_FAILED</span><span style="color:#1e754f">)</span><span style="color:#999999"> </span><span style="color:#1e754f">{</span><br><span style="color:#59873A">        errExit</span><span style="color:#a65e2b">(</span><span style="color:#B5695977">"</span><span style="color:#B56959">mmio_addr mmap failed.</span><span style="color:#B5695977">"</span><span style="color:#a65e2b">)</span><span style="color:#999999">;</span><br><span style="color:#999999">    </span><span style="color:#1e754f">}</span><br><span style="color:#59873A">    printf</span><span style="color:#1e754f">(</span><span style="color:#B5695977">"</span><span style="color:#B56959">[+] mmio_addr => 0x</span><span style="color:#A65E2B">%lx\n</span><span style="color:#B5695977">"</span><span style="color:#999999">,</span><span style="color:#393A34"> mmio_addr</span><span style="color:#1e754f">)</span><span style="color:#999999">;</span><br><span style="color:#2993a3">}</span><br></code></pre></div>
+<h3 id="pmio" class="scroll-target"><a href="#pmio"><code class="hash inline-code">#</code>查看 pmio</a></h3>
+<p>pmio 直接用端口访问，大概这样：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-c language-c"><span style="color:#AB5959">int</span><span style="color:#59873A"> main</span><span style="color:#2993a3">(</span><span style="color:#2993a3">)</span><span style="color:#999999"> </span><span style="color:#2993a3">{</span><br><span style="color:#1E754F">    if</span><span style="color:#999999"> </span><span style="color:#1e754f">(</span><span style="color:#59873A">iopl</span><span style="color:#a65e2b">(</span><span style="color:#2F798A">3</span><span style="color:#a65e2b">)</span><span style="color:#AB5959"> </span><span style="color:#AB5959">&#x3C;</span><span style="color:#2F798A"> 0</span><span style="color:#1e754f">)</span><span style="color:#999999"> </span><span style="color:#1e754f">{</span><br><span style="color:#59873A">        errExit</span><span style="color:#a65e2b">(</span><span style="color:#B5695977">"</span><span style="color:#B56959">I/O permisson is not enough.</span><span style="color:#B5695977">"</span><span style="color:#a65e2b">)</span><span style="color:#999999">;</span><br><span style="color:#999999">    </span><span style="color:#1e754f">}</span><br><span style="color:#2993a3">}</span><br></code></pre></div>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>动态调试</a></h2>
+<p>编译 exp:</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-makefile language-makefile"><span style="color:#59873A">ALL</span><span style="color:#999999">:</span><br><span style="color:#393A34">	cc -m32 -O0 -static -o exp exp.c</span><br></code></pre></div>
+<p><code class="inline-code">make</code> 编译 exp 后，上传到本地的 qemu 里：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-shell language-shell"><span style="color:#59873A">$</span><span style="color:#B56959"> scp</span><span style="color:#A65E2B"> -P5555</span><span style="color:#B56959"> exp</span><span style="color:#B56959"> ubuntu@127.0.0.1:/home/ubuntu</span><br></code></pre></div>
+<p>开个 shell2，<code class="inline-code">sudo gdb -q -pid=[pid]</code>，其中 pid 是 shell1 里运行的 qemu 进程的 pid，可以 <code class="inline-code">ps -ax | grep qemu</code> 查看。</p>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>打断点</a></h3>
+<p>题目是有符号的，所以可以 <code class="inline-code">file qemu-system-x86_64</code>，然后 <code class="inline-code">b *strng_mmio_write</code> 等等。</p>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>查看结构体</a></h3>
+<p>gdb 可以直接以结构体形式解析数据（当然还是得有符号），可以这么看 <code class="inline-code">print *(STRNGState*)$rdi</code>。</p></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
+<a href="https://github.com/unvariant/blog">unvariant/blog</a>
+改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>

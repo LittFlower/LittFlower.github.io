@@ -1,0 +1,21 @@
+export const layout = "#components/MainPage.js";
+export const title = "花盆";
+export const description =
+    "LittFlower 's Blog.";
+export const created = "2025-05-12T10:37:16+08:00"
+
+
+# LittFlower's Blog
+
+<h2>欢迎 👋</h2>
+
+我是 LittFlower，这里记录我在安全研究、前端折腾和生活点滴里的灵感。文章主要分成三个区域：
+
+- [Writeups](./writeups/)：参加过的 CTF 比赛的 WP，包括赛时解题思路与赛后复现。
+- [Notes](./notes/)：日常实验、课程笔记和板子备忘，重在快速查阅。
+- [Life](./life/)：一些反思、感悟与旅途见闻。
+- [Link](./links/)：友情链接。
+
+~~想第一时间收到更新，可以订阅 [RSS](/rss.xml)。~~ TODO.
+
+<hr></hr>

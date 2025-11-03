@@ -1,0 +1,6 @@
+export const layout = "#components/Page.js";
+export const title = "links";
+export const created = "2025-10-30T11:24:16+08:00"
+export const description = "整理日常使用的工具、社区与友情链接，方便快速查找。";
+
+todo.

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
+        const storageKey = "theme";
+        const root = document.documentElement;
+        const supportsMatchMedia = typeof window.matchMedia === "function";
+        const mediaQuery = supportsMatchMedia
+            ? window.matchMedia("(prefers-color-scheme: dark)")
+            : null;
+
+        const readStorage = () => {
+            try {
+                return window.localStorage.getItem(storageKey);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeStorage = (value) => {
+            try {
+                window.localStorage.setItem(storageKey, value);
+            } catch (error) {
+                return;
+            }
+        };
+
+        const applyTheme = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            if (document.body) {
+                document.body.setAttribute("data-theme", theme);
+            } else {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        if (document.body) {
+                            document.body.setAttribute("data-theme", theme);
+                        }
+                    },
+                    { once: true }
+                );
+            }
+            return theme;
+        };
+
+        const updateButton = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button) {
+                return;
+            }
+            const label = button.querySelector("[data-theme-toggle-label]");
+            const isDark = theme === "dark";
+            button.setAttribute("aria-pressed", isDark ? "true" : "false");
+            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
+            if (label) {
+                label.textContent = isDark ? "深色" : "浅色";
+            }
+        };
+
+        const stored = readStorage();
+        const initial =
+            stored === "light" || stored === "dark"
+                ? stored
+                : mediaQuery && mediaQuery.matches
+                  ? "dark"
+                  : "light";
+
+        const appliedTheme = applyTheme(initial);
+        updateButton(appliedTheme);
+
+        window.__setTheme = (value) => {
+            const theme = applyTheme(value);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        window.__toggleTheme = () => {
+            const current =
+                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const next = current === "dark" ? "light" : "dark";
+            const theme = applyTheme(next);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        const syncButtonState = () => {
+            updateButton(root.getAttribute("data-theme"));
+        };
+
+        const attachToggle = () => {
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button || button.__themeToggleBound) {
+                return;
+            }
+            button.__themeToggleBound = true;
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                if (typeof window.__toggleTheme === "function") {
+                    window.__toggleTheme();
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                syncButtonState();
+                attachToggle();
+            });
+        } else {
+            syncButtonState();
+            attachToggle();
+        }
+
+        const handleMediaChange = (event) => {
+            const storedTheme = readStorage();
+            if (storedTheme === "light" || storedTheme === "dark") {
+                updateButton(storedTheme);
+                return;
+            }
+            const next = event.matches ? "dark" : "light";
+            const theme = applyTheme(next);
+            updateButton(theme);
+        };
+
+        if (mediaQuery) {
+            if (typeof mediaQuery.addEventListener === "function") {
+                mediaQuery.addEventListener("change", handleMediaChange);
+            } else if (typeof mediaQuery.addListener === "function") {
+                mediaQuery.addListener(handleMediaChange);
+            }
+        }
+    })();
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>Chrome V8 Pwn 学习（一） | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="Chrome V8 Pwn 学习（一） | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/notes/chrome-v8-pwn-learning1/"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="stylesheet" href="/fonts.css" type="text/css" preload/><link rel="stylesheet" href="/style.css" type="text/css" preload/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"><div class="file"><a href="./README.mdx" class="file-link"><img src="/icons/text.png" alt/><span>README.mdx</span></a><div class="file-meta"><span>7.08 KiB</span><span class="file-meta-date">2025-08-13 00:27</span></div></div></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="chrome-v8-pwn" class="scroll-target"><a href="#chrome-v8-pwn"><code class="hash inline-code">#</code>Chrome V8 Pwn 学习（一）</a></h1>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>简介</a></h2>
+<blockquote>
+<p>V8 是一个由 Google 开发的开源 JavaScript 引擎，用于 Google Chrome 及 Chromium 中，项目以V8发动机其命名。此项目由Lars Bak主导开发。
+——摘自维基百科</p>
+</blockquote>
+<p>JavaScript 是解释语言，需要先翻译成字节码后在 VM 上运行。V8 中实现了一个 VM。出于性能考虑，目前的引擎普遍采用一种叫做 Just-in-time (JIT) 的编译技术，V8 也是。JIT 的思想在于，如果一段代码反复执行，那么将其编译成机器代码运行，会比每次都解释要快得多。</p>
+<p>v8 这个引擎编译出来的二进制文件为 d8，我们 Pwner 攻击的主要目标一般就是这个。</p>
+<p>v8 的开源仓库在<a href="https://chromium.googlesource.com/v8/v8/" title="https://chromium.googlesource.com/v8/v8/" target="_blank" rel="noopener">这里</a></p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>环境搭建</a></h2>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>最新版本</a></h3>
+<p>首先，由于需要大量在 google 的网站和 github 上下载代码，所以需要配置好代理，这里略过不表。</p>
+<p>随后，先安装 depot_tools，arch linux 可以使用 aur 仓库里打包好的软件包，其他发行版可能需要 clone 项目<a href="https://chromium.googlesource.com/chromium/tools/depot_tools.git" title="https://chromium.googlesource.com/chromium/tools/depot_tools.git" target="_blank" rel="noopener">仓库</a>。这个工具包是用来管理 v8 代码的。</p>
+<p>然后安装 ninja，arch linux 的 extra 仓库里有这个包，直接下就行，其他发行版可以自己 <a href="https://github.com/ninja-build/ninja.git" title="https://github.com/ninja-build/ninja.git" target="_blank" rel="noopener">clone</a> 编译。</p>
+<p>然后编译 v8 代码即可，v8 的编译结果可以有两种，release 或者 debug 版本，我们一般使用 debug 版本方便调试。</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-bash language-bash"><span style="color:#59873A">$</span><span style="color:#B56959"> fetch</span><span style="color:#B56959"> v8</span><span style="color:#999999"> &#x26;&#x26;</span><span style="color:#998418"> cd</span><span style="color:#B56959"> v8</span><span style="color:#999999">&#x26;&#x26;</span><span style="color:#59873A"> gclient</span><span style="color:#B56959"> sync</span><br><span style="color:#59873A">$</span><span style="color:#B56959"> tools/dev/v8gen.py</span><span style="color:#B56959"> x64.debug</span><br><span style="color:#59873A">$</span><span style="color:#B56959"> ninja</span><span style="color:#A65E2B"> -C</span><span style="color:#B56959"> out.gn/x64.debug</span><br></code></pre></div>
+<p>最终的可执行文件就在 out.gn 目录下。</p>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>配置题目环境</a></h3>
+<p>上面的方法一般只能编译最新版本的 v8 代码，而平常遇到的题目使用的可能是某个特殊的 commit，这就需要我们更灵活的配置环境。</p>
+<p>回到 v8 目录，一般题目都会给出特殊的 commit id 和一个 diff 文件，所以，需要先把源码的版本 reset 到和题目一样的版本，然后再应用题目的 diff 文件：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-bash language-bash"><span style="color:#59873A">$</span><span style="color:#B56959"> git</span><span style="color:#B56959"> reset</span><span style="color:#A65E2B"> --hard</span><span style="color:#AB5959"> </span><span style="color:#AB5959">&#x3C;</span><span style="color:#B56959">your_commit_i</span><span style="color:#393A34">d</span><span style="color:#AB5959">></span><br><span style="color:#59873A">$</span><span style="color:#B56959"> gclient</span><span style="color:#B56959"> sync</span><br><span style="color:#59873A">$</span><span style="color:#B56959"> git</span><span style="color:#B56959"> apply</span><span style="color:#AB5959"> </span><span style="color:#AB5959">&#x3C;</span><span style="color:#B56959"> test.diff</span><br></code></pre></div>
+<p>然后重新编译即可：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-bash language-bash"><span style="color:#59873A">$</span><span style="color:#B56959"> tools/dev/v8gen.py</span><span style="color:#B56959"> x64.debug</span><br><span style="color:#59873A">$</span><span style="color:#B56959"> ninja</span><span style="color:#A65E2B"> -C</span><span style="color:#B56959"> out.gn/x64.debug</span><br></code></pre></div>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>报错修复</a></h3>
+<p>2025 年了，大部分的软件包依赖的都是 python3，不过 v8 这块一些比较老的 commit 可能依赖的还是 python2.7，而且哪怕你的发行版上安装了 python2，你的默认全局 python 依然是 python3，这就很难受了，这里提供一些解决措施。</p>
+<p>首先，在 <code class="inline-code">gclient sync</code> 这一步时，由于系统 python 指向的是 python3，所以可能会报错类似下面这样：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">Error: Command 'python v8/build/linux/sysroot_scripts/install-sysroot.py --arch=x86' returned non-zero exit status 1 in /home/flower/CTFhub/Tools/Pwn
+File "/home/flower/CTFhub/Tools/Pwn/v8/build/linux/sysroot_scripts/install-sysroot.py", line 79
+print GetSysrootDict(DEFAULT_TARGET_PLATFORM,
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: Missing parentheses in call to 'print'. Did you mean print(...)?
+</code></pre></div>
+<p>我自己使用的解决方法有两个，一个是使用 pyenv 切换到 Python2.7，另一个办法是临时在当前 shell 中 <code class="inline-code">export PYTHON=python2</code>。</p>
+<p>其次在 <code class="inline-code">tools/dev/v8gen.py x64.debug</code> 这里，第一次跑可能能需要安装 sysroot，这个报错信息里有：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">$ tools/dev/v8gen.py x64.debug -vv
+################################################################################
+/usr/bin/python2 -u tools/mb/mb.py gen -f infra/mb/mb_config.pyl -m developer_default -b x64.debug out.gn/x64.debug
+
+Writing """\
+is_debug = true
+target_cpu = "x64"
+v8_enable_backtrace = true
+v8_enable_slow_dchecks = true
+v8_optimized_debug = false
+""" to /home/flower/CTFhub/Tools/Pwn/v8/out.gn/x64.debug/args.gn.
+
+/home/flower/CTFhub/Tools/Pwn/v8/buildtools/linux64/gn gen out.gn/x64.debug --check
+-> returned 1
+ERROR at //build/config/compiler/BUILD.gn:1138:22: Script returned non-zero exit code.
+clang_revision = exec_script("//tools/clang/scripts/update.py",
+^----------
+Current dir: /home/flower/CTFhub/Tools/Pwn/v8/out.gn/x64.debug/
+Command: python /home/flower/CTFhub/Tools/Pwn/v8/tools/clang/scripts/update.py --print-revision --verify-version=9.0.0
+Returned 1.
+stderr:
+
+Traceback (most recent call last):
+File "/home/flower/CTFhub/Tools/Pwn/v8/tools/clang/scripts/update.py", line 16, in <module>
+import pipes
+ModuleNotFoundError: No module named 'pipes'
+
+See //BUILD.gn:260:5: which caused the file to be included.
+"//build/config/compiler:wexit_time_destructors",
+^-----------------------------------------------
+GN gen failed: 1
+Traceback (most recent call last):
+File "tools/dev/v8gen.py", line 307, in <module>
+sys.exit(gen.main())
+File "tools/dev/v8gen.py", line 301, in main
+return self._options.func()
+File "tools/dev/v8gen.py", line 169, in cmd_gen
+gn_outdir,
+File "tools/dev/v8gen.py", line 211, in _call_cmd
+stderr=subprocess.STDOUT,
+File "/usr/lib/python2.7/subprocess.py", line 223, in check_output
+raise CalledProcessError(retcode, cmd, output=output)
+subprocess.CalledProcessError: Command '['/usr/bin/python2', '-u', 'tools/mb/mb.py', 'gen', '-f', 'infra/mb/mb_config.pyl', '-m', 'developer_default', '-b', 'x64.debug', 'out.gn/x64.debug']' returned non-zero exit status 1
+</code></pre></div>
+<p>然后对于找不到 <code class="inline-code">pipes</code> 这个模块，显然是因为系统使用了 python3 运行这个脚本，所以这里修改脚本的 bang 为 <code class="inline-code">#!/usr/bin/env python2</code> 就可以了，也可以 <code class="inline-code">export PYTHON=python2</code></p>
+<p>最后，<code class="inline-code">ninja -C out.gn/x64.debug</code> 编译时，可能会遇到</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">../../src/base/macros.h:246:7: error: builtin __has_trivial_copy is deprecated; use __is_trivially_copyable instead [-Werror,-Wdeprecated-builtins]
+246 |       __has_trivial_copy(T) && __has_trivial_destructor(T);
+|       ^
+../../src/base/macros.h:246:32: error: builtin __has_trivial_destructor is deprecated; use __is_trivially_destructible instead [-Werror,-Wdeprecated-builtins]
+246 |       __has_trivial_copy(T) && __has_trivial_destructor(T);
+</code></pre></div>
+<p>这种报错，也很简单，修改一下 <code class="inline-code">out.gn/x64.debug/args.gn</code> 的配置即可：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-gn language-gn">extra_cflags = [ "-Wno-deprecated-builtins" ]
+treat_warnings_as_errors = false
+</code></pre></div>
+<p>这样就不会把 warnings 当成 errors 导致编译失败啦。</p>
+<p>然后基本上就可以编译出一个符合题目环境要求的 d8 版本了。</p>
+<p>对于 release 版本，为了更多的调试信息，可以在编译参数里添加：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-gn language-gn">v8_enable_backtrace = true
+v8_enable_disassembler = true
+v8_enable_object_print = true
+v8_enable_verify_heap = true
+</code></pre></div>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>调试</a></h3>
+<h4 id="natives-syntax" class="scroll-target"><a href="#natives-syntax"><code class="hash inline-code">#</code>natives-syntax</a></h4>
+<p><code class="inline-code">--allow-natives-syntax</code> 这个参数可以允许 d8 执行带有调试函数的 js 脚本。</p>
+<p>也可以在 gdb 里用 <code class="inline-code">set args --allow-natives-syntax ./test.js</code> 达到一样的效果。</p>
+<h4 id="gdb" class="scroll-target"><a href="#gdb"><code class="hash inline-code">#</code>gdb</a></h4>
+<p>d8 实现了一些辅助调试的函数，并且提供了 gdb 脚本，以供在 gdb 中调用。在你的 gdbinit 文件中添加以下两行即可：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-gdbinit language-gdbinit">source /path/to/v8/tools/gdbinit
+source /path/to/v8/tools/gdb-v8-support.py
+</code></pre></div></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
+<a href="https://github.com/unvariant/blog">unvariant/blog</a>
+改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>

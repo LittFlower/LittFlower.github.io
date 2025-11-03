@@ -1,0 +1,8 @@
+export const layout = "#components/Page.js";
+export const title = "writeups";
+export const description = "面向 CTF 比赛的长篇题解，在此归档。";
+export const created = "2025-03-26";
+
+# Writeups
+
+近期参与的一些 CTF 比赛的 Writeups，包括赛时解题思路与赛后复现。

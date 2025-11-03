@@ -1,0 +1,192 @@
+export const layout = "#components/Page.js";
+export const title = "ArchLinux 体验与感悟";
+export const description = "使用 Arch Linux 期间的体验与感悟";
+export const created = "2023-09-22";
+
+# 在使用 ArchLinux 4 个月后
+
+## 前言
+
+高考前几个月和 Rx 聊天的时候，他给我摆拍了一张当时他使用的操作系统 / 生产环境，简洁、优雅的桌面深深吸引了我，自那时起，使用 ArchLinux 为主力生产/生活系统的种子便深深埋在了我心底。
+
+再就是高考结束一周后，连忙入手了一台华硕天选 4，问了两句 Rx 关于注意事项（他甩了 wiki 的链接给我），当时看见他给我发 wiki 的链接我还感觉有点不靠谱，现在想起来属实是应该给 wiki 磕一个 23333
+
+以下记录了一些我使用了 4 个月 Arch Linux 期间的一些体验，希望其中的一些经验及解决方案可以帮到看到这篇文章的友友。
+
+## 基础配置
+
+基础的安装操作可以右转 [Arch wiki](https://wiki.archlinux.org/title/Installation_guide)，wiki 上写得很详细了，只需要按照这份说明一步一步执行就可以（**注意不要跳步**），以及不推荐使用 Arch Linux Wiki 提供的一键安装脚本，我认为如果是 Arch Linux 的 target 用户，应该秉持着 Arch Linux 的 "Keep It Simple" 的 Arch 之道，对自己的生产环境了如指掌，而不是选择一键梭哈。
+
+Arch Linux 的安装方式可以不准确地粗略概括为：通过 U 盘上烧录的 ISO 介质以 `root` 身份登陆进入一个虚拟控制台，然后对裸机安装基础软件（如 `pacman`、`iptools`、`vim` 等）然后 `chroot` 进主机的 `root`，所以不要干出来把东西都装在虚拟控制台里而主机什么都没装这种操作，重启之后全部都会消失（别问我为什么要写这一条
+
+关于安装之后的工作，请浏览 [Arch wiki](https://wiki.archlinux.org/title/General_recommendations)。这里主要说一说显示服务协议以及后续 window manager 或者 compositor 的选择。
+
+在显示服务协议上，wiki 上很清楚地列举了两个现代标准：X11 和 Wayland ~~我 tm 一开始用的是 xfce 你敢信~~。前者是老东西了，各种应用运行良好，但是由于服务端和客户端的设计问题经常出现屏幕撕裂这种极其抽象的 issue，体验了一段时间之后还是切换为了 Wayland。老实说，Wayland 虽然是个（相对的）新东西，支持的应用较 X11 少，但是真的香，并且我个人使用至今很少出现无法解决的问题（说的就是你腾讯会议）。
+
+如果使用 Wayland 的话，我选择的 compositor 是堆叠式的 Kwin，对标 WM 是：KDE Plasma，这东西支持高度自定义，有什么不舒服的地方都可以调，打造一个最适合自己的桌面环境。
+
+其他软件看着装就行，`vscode`、`Jetbrains` 全家桶、`docker` 这些在 wiki 或者 aur 上都能找到，可以解决绝大部分需求。
+
+可以说，只要熟读 wiki 并善于在 wiki 里搜索，Arch Linux 几乎不会出什么幺蛾子。
+
+注意一下，别用各个语言对应的包管理器管理系统级别的包，比如什么 `pip3`、`npm` 之类的，`python` 的包可以在 aur 上找，npm 可以在 user dir 里安装。
+
+## Display Manager
+
+我选的 DM 是 SDDM，主题用的是在仓库里找的 NetLogin-userlist，算是一个比较 cool 的登陆界面，登陆时在 session 里可以切换 x11 or wayland，满足个人需求。
+
+值得一提的是，默认的 sddm 主题字体是 sans，比较丑陋，可以通过 patch 主题文件目录 `/usr/share/sddm/themes` 下的 qml 修改字体。
+
+可以写个 `patcher.sh` 简化操作，参考[这里](https://github.com/CommDServ/sddm-theme-font-patcher/blob/master/patcher.sh)，当然直接搜索替换也是可以的。
+
+## 内核和显卡驱动
+
+其实还是看了 Rx 的[这篇博客](https://blog.woooo.tech/posts/asus_linux_1/)，我最开始使用的是官方 Linux 内核（中间傻逼装了某个 aur 野鸡内核不算），由于高贵的 ASUS 属性，log 里小问题不断。看见 Rx 的文章后我也去试了试 [ASUS Linux](https://asus-linux.org/)，安装了 `linux-g14` 内核以及配套的一系列工具。显卡驱动使用了 `nvidia-dkms`，显卡调度等功能使用了 ASUS Linux 提供的 `supergfxctl`，配合 arch linux 的 `prime-run` 可以完美解决双显卡笔记本下的显卡调度问题。
+
+默认混合显卡模式，不过并不是说你的电脑会按需调度两张显卡，默认还是使用 intel 的集成显卡，在命令前加 `prime-run` 可以强制其运行于 N 独立显卡。
+
+## 电源管理
+
+电源就正常用，不过 ASUS Linux 建议最大充电设置为 80%... 那就限制到 80% 呗，我基本上都在宿舍插着电用，去图书馆也一般会带着充电器（毕竟待的比较久），没遇到什么问题。
+
+## 声音
+
+推荐使用 ALSA + PipeWire，注意一下蓝牙功能是需要安装 `pulseaudio-bluetooth` 的。
+
+## windows 兼容
+
+比较推荐整一个双系统（ArchLinux + Windows），虽然我目前大部分的 Windows 兼任性需求都通过 [wine](https://wiki.archlinux.org/title/Wine) 解决了，但是还是建议装一个以备不时之需（Adobe 系列这种大型工程软件还是别想着用 `wine` 起了）。
+
+先说一声，办公软件、音频剪辑这些不需要 `wine`，ArchLinux 的 package / aur 里已经有很多相当好的实现了，不需要 `wine`。
+
+官方文档写的很清楚了，主要注意一下 `wine` 的相关配置问题。
+
+关于字体，我用的方法是拷贝了一份 windows fonts 文件夹直接扔进去了，好使。
+
+实际上我现在用的是 `wine-staging`，虽然说测试版 / 不稳定版有可能寄，但是我还没寄，所以先用着，寄了再说（x
+
+关于腾讯会议，aur 里有一个勉强能用的实现，wayland 由于协议的原因没办法正常运行，“勉强能用”就体现在这个实现是调用了 xwayland，并且屏幕共享用不了.....有一些解决方案例如虚拟摄像头之类的都做不到尽善尽美，X11 下屏幕共享倒是没什么问题，只能等上游更新了。
+
+关于游戏或者一些特殊软件，我后面会提。
+
+## CTF 环境
+
+我用 Linux 的主要原因不还是图一个高生产效率，Arch Linux 下可以搭建各个方向的环境并正常使用。
+
+misc 会用到很多只有 exe 备份的软件，大部分 `wine` 直接起就可以了，极个别报错找不到 dll 的去网上下载一下。（注意 dll 的位数要与软件位数对应，x86.dll 扔到 `~/.wine/drive_c/windows/syswow64/` 里去，x64.dll 扔到 `~/.wine/drive_c/windows/system32/` 里去）
+
+re 主要是 ida，我现在用的是 ida7.7，直接 `wine` 起可能会报一些缺少模块的错误，建议别想着在 `wine` 里装一个 python 再一点点配置，ida7.7 的目录下就有一个现成的 python3，`regedit` 起一个 wine 的注册表改一下环境变量就可以了，注意一下目录的映射（可以在当前目录起一个 terminal 然后 `wine cmd` 看看）
+
+`wine` 起 `ida` 的时候千万别跑那种一键脚本，亲测发现跑了就寄。
+
+`wine` 起的 `ida` 是可以正常动态调试的，在 `dbgsrv` 目录下，如果要动调 elf 文件直接跑就行，exe 文件则可以 `wine` 起一个 `win32/64_remote.exe` 跑，亲测运行正常。
+
+为了方便，我是写了一个 `alias` 快捷启动：
+
+```bash
+alias ida32="env WINEDEBUG=-all wine /your/path/IDA_Pro_v7.7/ida.exe"
+alias ida64="env WINEDEBUG=-all wine /your/path/IDA_Pro_v7.7/ida64.exe"
+```
+
+我的 ida 甚至还换了 Rx 写的皮肤，你可以去 github 里翻。
+
+pwn，我个人更喜欢在虚拟环境里做 pwn，好在 Arch Linux 里用 `docker` 配制一个精简的 pwn docker 倒也容易，可以参考[这篇博客](https://e3pem.github.io/2019/04/19/%E6%9D%82%E9%A1%B9/%E5%9C%A8docker%E4%B8%AD%E6%90%AD%E5%BB%BApwn%E7%8E%AF%E5%A2%83/)。
+
+这东西也能写个 `alias` 跑，体验感和 wsl2 感觉很像。
+
+```bash
+ubuntu2204() {
+        sudo docker container start xxx # xxx 替换为 docker 编号后 3 位
+        sudo docker exec -i -t xxx fish
+}
+```
+
+web、crypto 的工具基本上都有 linux 备份。
+
+所以实际折腾下来，我在 arch linux 做 re / pwn 题一般都是 konsole 开一个终端里放 4 个标签页，分别是：一键启动 `ida32` / `64`、一键启动 `ubuntu2204`、起一个 `ipython`、在题目文件目录下起一个 `shell` 备用。
+
+感觉效率比在 windows 上高得多。
+
+## 办公
+
+办公套件用的是 [WPS office](https://wiki.archlinuxcn.org/wiki/WPS_Office)...... 这东西虽然在 windows 平台上由于广告问题槽点过多，但是在我的 arch linux 平台上用着还算正常。
+
+不能开箱即用的是字体问题，wps office 文档里的加粗字体会显示成依托黑色的东西，影响使用，[解决办法](https://home.wps.cn/topic/3137)是：下载[这个](https://mirrors.ustc.edu.cn/debian/pool/main/f/freetype/libfreetype6_2.12.1%2Bdfsg-5_amd64.deb)，解压之后把里面的 /usr/lib/x86_64-linux-gnu 里的 libfreetype.so.6.18.3 `cp` 到 /usr/lib/office6 里，并 `ln -s libfreetype.so.6.18.3 libfreetype.so.6` 即可。
+
+再就是 wps for linux 用的是系统字体，少了很多 windows 下例如微软雅黑、宋体、楷体这种东西，总不能每次写论文的时候都切到 windows 去，解决方法是把 windows 下的 `C:\Windows\Fonts` 里的字体文件拷一份，然后在 linux 下安装 `*.ttf` 即可。
+
+## 游戏
+
+### steam
+
+我谔谔，我目前玩到的 steam 游戏没有不能在 linux 上跑的，v 社给 linux 用户出了一个兼容性选项，使得非 linux 游戏也可以通过 wine 的魔改版 proton 起。之前有人还怀疑性能问题，我寻思着这东西连 2077 都能无损跑，我还经常在宿舍跟舍友打究极风暴，还有什么带不起来的？
+
+记得在游戏启动参数里加 `prime-run`，独显跑丝滑很多。
+
+有人用一些 linux 下的游戏启动器跑，我以前也这么干（比如 lutris、hero 等等），现在发现完全不需要，steam 原生就可以。
+
+### Mc
+
+在 wiki 里直接搜就有现成的，不想买正版也可以在 aur 里找启动器，mc 的服务器都能在 linux 上跑，你猜游戏本体能不能（
+
+### 炉石传说
+
+~~炉石传说，启动！！~~
+
+你别说，这东西我还真能用 wine 无损跑。
+
+我目前的解决方案是这样的，先起一个 `lutris`，搜索炉石传说亚服，找一个 `暴雪安装器.exe`，然后 lutris 里选择通过安装器安装，安装时记得选择英文模式，因为国服似了喵。在指定目录下做一个 Blizzard HearthStone 的专用 wine perfix ，如果这中间遇到了什么 VKD3D / DXVK 等等东西缺失，多半是 lutris 安装过程中寄了，删了重装一次（记得把 home 目录下 .config / .local 里的删干净）。
+
+然后把试着启动一次炉石，如果寄了，首先参考[这个](https://github.com/lutris/docs/blob/master/Battle.Net.md)，如果报找不到游戏文件，在终端抄一下 `wine perfix` 启动命令，可以参考我的：
+
+```bash
+env WINEPREFIX="/$HOME/Games/Blizzard" WINEDEBUG=-all prime-run wine '/$HOME/Games/Blizzard/drive_c/Program Files (x86)/Battle.net/Battle.net Launcher.exe'
+```
+
+其中 `prime-run` 是把炉石放在独立显卡上跑，实测发现用集成显卡很可能会卡。
+
+跑起来之后 lutris 就没啥用了，把上面的命令写个 `alias` 到你的 shell 里，
+
+你说得对，但暴雪尼麻麻似了。
+
+### 原神 and 星铁
+
+有一说一，这东西也能在 arch 上跑，真的。就是反作弊有点离谱，建议在双系统里玩，以免封号。
+
+~~什么？我一直都玩原神啊！？~~
+
+## 系统调试
+
+用 Arch Linux 免不了要自己上手调报错，所以要掌握一些查看日志的方法如 `journal` / `dmesg`，以及 archlinuxcn 的 tg 群和中文 / 英文 bbs。
+
+提问前记得全文背诵《提问的智慧》，不然帖子没人回变成死帖会是常态。
+
+## 个人博客
+
+在使用过 hexo、博客园、typecho 后，综合考虑，我现在使用的博客环境是 hugo + github pages + 自购域名：hugo 使用 go 写的，效率高；github pages 是免费的托管引擎（速度中等，重点是免费 /捂脸）；自购域名主要是因为 `.github.io` 太丑了（（
+
+选择的主题是 yinyang 极简主题，目前自定义的设置有：博客字体、markdown 布局、代码块高亮、math in markdown with katex、网站图标、相册系统等等，我还是挺喜欢静态博客的。
+
+同样的，也可以写一个 `alias` 实现：
+
+```bash
+alias gitfuck="cd ~/your/blog/path && hugo && cd ~/your/blog/path/public && git add . && git commit -m \"new\" && git push -u origin master && cd ~/your/blog/path"
+```
+
+## 后记
+
+> Rx: 只有足够的技术力才支撑得起你的优雅。
+
+其实一开始用 Arch Linux 的时候，远不如现在这么优雅：我搞不清楚自己的电脑显卡导致装错了驱动、误打误撞装了古早的 xfce、装了 aur 里的野鸡内核、想玩炉石传说却死活跑不起来...... 4 个月来我的 Arch Linux 完完整整从头重装了 4 次，其中有一次重装到人崩溃，可谓狼狈不堪。
+
+> 想要得到什么就必须付出同样的代价，这便是炼金术中的等价交换原则。
+
+我很喜欢 Arch Linux 之道 —— Keep It Simple，保持简洁。
+
+所以因此，我也收获了很多在 windows 环境下不会知道的知识，丰富了开发体验，提升了生产效率，练习了 debug 技能，学了不少 linux 相关知识，同时高度的可自定性与可扩展性给予了我足够的成就感。
+
+对技术的强迫症或者“技术洁癖”促使着我不断更新自己的 arch linux 生态，“不满足当下”，绝不是局限于“能跑就行”。
+
+我努力成为 Arch Linux target user，并希望越来越多的愿意折腾的小伙伴使用 Arch。
+
+> 坚持自己的道路，说到就要做到——哪怕为此付出相当的代价......可成长不正是如此吗？

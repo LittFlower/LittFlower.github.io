@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
+        const storageKey = "theme";
+        const root = document.documentElement;
+        const supportsMatchMedia = typeof window.matchMedia === "function";
+        const mediaQuery = supportsMatchMedia
+            ? window.matchMedia("(prefers-color-scheme: dark)")
+            : null;
+
+        const readStorage = () => {
+            try {
+                return window.localStorage.getItem(storageKey);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeStorage = (value) => {
+            try {
+                window.localStorage.setItem(storageKey, value);
+            } catch (error) {
+                return;
+            }
+        };
+
+        const applyTheme = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            if (document.body) {
+                document.body.setAttribute("data-theme", theme);
+            } else {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        if (document.body) {
+                            document.body.setAttribute("data-theme", theme);
+                        }
+                    },
+                    { once: true }
+                );
+            }
+            return theme;
+        };
+
+        const updateButton = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button) {
+                return;
+            }
+            const label = button.querySelector("[data-theme-toggle-label]");
+            const isDark = theme === "dark";
+            button.setAttribute("aria-pressed", isDark ? "true" : "false");
+            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
+            if (label) {
+                label.textContent = isDark ? "深色" : "浅色";
+            }
+        };
+
+        const stored = readStorage();
+        const initial =
+            stored === "light" || stored === "dark"
+                ? stored
+                : mediaQuery && mediaQuery.matches
+                  ? "dark"
+                  : "light";
+
+        const appliedTheme = applyTheme(initial);
+        updateButton(appliedTheme);
+
+        window.__setTheme = (value) => {
+            const theme = applyTheme(value);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        window.__toggleTheme = () => {
+            const current =
+                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const next = current === "dark" ? "light" : "dark";
+            const theme = applyTheme(next);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        const syncButtonState = () => {
+            updateButton(root.getAttribute("data-theme"));
+        };
+
+        const attachToggle = () => {
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button || button.__themeToggleBound) {
+                return;
+            }
+            button.__themeToggleBound = true;
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                if (typeof window.__toggleTheme === "function") {
+                    window.__toggleTheme();
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                syncButtonState();
+                attachToggle();
+            });
+        } else {
+            syncButtonState();
+            attachToggle();
+        }
+
+        const handleMediaChange = (event) => {
+            const storedTheme = readStorage();
+            if (storedTheme === "light" || storedTheme === "dark") {
+                updateButton(storedTheme);
+                return;
+            }
+            const next = event.matches ? "dark" : "light";
+            const theme = applyTheme(next);
+            updateButton(theme);
+        };
+
+        if (mediaQuery) {
+            if (typeof mediaQuery.addEventListener === "function") {
+                mediaQuery.addEventListener("change", handleMediaChange);
+            } else if (typeof mediaQuery.addListener === "function") {
+                mediaQuery.addListener(handleMediaChange);
+            }
+        }
+    })();
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>2024年度小结 | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="2024年度小结 | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/life/2024-annual-summary/"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="stylesheet" href="/fonts.css" type="text/css" preload/><link rel="stylesheet" href="/style.css" type="text/css" preload/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"><div class="file"><a href="./README.mdx" class="file-link"><img src="/icons/text.png" alt/><span>README.mdx</span></a><div class="file-meta"><span>7.17 KiB</span><span class="file-meta-date">2025-01-13 18:29</span></div></div></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="2024" class="scroll-target"><a href="#2024"><code class="hash inline-code">#</code>2024年度小结</a></h1>
+<p>日子过得好快（<del>终于放寒假了嘻嘻</del></p>
+<p>一转眼今年又结束了，今天坐在回家的高铁上，掀开笔记本开始写这个文档。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>时间线上的往事</a></h2>
+<p>按照时间线捋一捋今年吧，流水账了说是（</p>
+<h3 id="1" class="scroll-target"><a href="#1"><code class="hash inline-code">#</code>1 月</a></h3>
+<p>基本上在准备期末考试，20 号才放假。</p>
+<p>期间写了份简历，投给了 NAN，Tplus 和 Nightu 师傅人很好，教了我很多。</p>
+<p>回家休息了几天，看了几场新国辩，看哲理辩论，看肖磊 vs 黄执中。</p>
+<h3 id="2" class="scroll-target"><a href="#2"><code class="hash inline-code">#</code>2 月</a></h3>
+<p>打了几场 CTF，继续看堆。把新生赛的题复现了一遍，然后开心跨年。</p>
+<p>和女朋友一起在西安周边转了转，去了游乐园，玩了很多好玩的项目。</p>
+<p>对于小学生来说有点幼稚，对大学生来说刚刚好（（</p>
+<h3 id="3" class="scroll-target"><a href="#3"><code class="hash inline-code">#</code>3 月</a></h3>
+<p>返校之后看了很久，终于入了一台胶卷相机，买了个比机身贵的镜头，搞了几个胶卷库库拍。</p>
+<p>Arch Linux 时不时冒一些小问题，不过也有特别抽象的时候（</p>
+<p>打了几场线上赛，摸鱼ing</p>
+<p>把编辑器从 vscode 换成了 emacs.</p>
+<h3 id="4" class="scroll-target"><a href="#4"><code class="hash inline-code">#</code>4 月</a></h3>
+<p>炉石要回归了，很开心。</p>
+<p>开始准备转专业的事情，按理来说应该不需要准备什么，但是因为英语实在不是很能过关，还好专业能力过硬，也是轻松通过了。</p>
+<p>其实很焦虑，晚上会睡不着。感觉精神状态越来越不好了。但是我这人不太喜欢跟别人大倒苦水，负能量太多也不好。心里的情绪只能自己消化。现在变成 24 级小登了。</p>
+<p>很多事情既然已经发生了，就只能接受它。我只能尽量弥补以前犯的错。</p>
+<p>“往者不可谏，来着犹可追。已而已而！”</p>
+<p>跟着 NAN 打了几场 CTF 比赛，师傅们好厉害。</p>
+<h3 id="5" class="scroll-target"><a href="#5"><code class="hash inline-code">#</code>5 月</a></h3>
+<p>Rx 来了一趟 scu，和他面基了一趟，带他在江安转了一圈，去看了网络靶场和网安楼，基础设施还是蛮不错的。</p>
+<p>打了 SCU 校赛，做了 re 和 pwn，pwn 出了两个题，感觉还是不太行，主要是我的问题吧，师傅让我再沉淀沉淀。</p>
+<p>读了一些论文，CTF 先放一放，看看别的吧。</p>
+<h3 id="6" class="scroll-target"><a href="#6"><code class="hash inline-code">#</code>6 月</a></h3>
+<p>跟同学搞选修课的大作业，写了个 8000+ 字的推理剧本，手法带点抽象，拍摄水平也不行，演员数量也不够，但总体来说效果还行。对得起这个大作业，对得起我小学/初中很迷恋的推理。</p>
+<p>然后开始复习期末，英语又爆炸了。真学不会。</p>
+<p>报了 ospp，接到了项目，但是完全不会写 qml，然后 wayland 协议也还没读，人机交互也一点不会（</p>
+<h3 id="7" class="scroll-target"><a href="#7"><code class="hash inline-code">#</code>7 月</a></h3>
+<p>前 15 天在军训，牢底坐穿，每天回去就想躺着睡觉，闹麻了。</p>
+<p>军训完放假，一个人去了上海。上了 Gossip 暑期学校，面了很多师傅，7 天时间学了不少东西。</p>
+<p>月底去上海新国际博览中心参加炉石回归活动，见到了很多主播，尤其是 djw，合了很多照片，可惜神棍和墨衣还有夜吹没来，可惜。</p>
+<h3 id="8" class="scroll-target"><a href="#8"><code class="hash inline-code">#</code>8 月</a></h3>
+<p>在家里看 CSAPP，看完之后感觉很不错。好书。os 开了个头，打算开学继续看。</p>
+<p>8 月中旬跟女朋友又出去玩了一趟，真幸福。</p>
+<p>折腾了一下自己的编辑器，搞了搞 emacs，学了 elisp，这语言真抽象吧，最后还是换成了 neovim，比较满意自己现在的配置。</p>
+<h3 id="9" class="scroll-target"><a href="#9"><code class="hash inline-code">#</code>9 月</a></h3>
+<p>开学收拾了一堆东西，读了几篇论文，感觉挺好玩的。折腾了一下我的 arch linux，换了一套操作逻辑，用着越来越舒心了。</p>
+<p>继续看 os。</p>
+<p>开始肝 ospp，爆肝 12 天，写了四五千行代码吧，感觉是屎山，但是确实写了个 tiny example 出来，而这就是人家 deepin 要的。</p>
+<p>一万块钱到手喽。</p>
+<h3 id="10" class="scroll-target"><a href="#10"><code class="hash inline-code">#</code>10 月</a></h3>
+<p>继续看 os，感觉理论上的东西已经看的差不多了。又看了几篇论文。</p>
+<p>把 ospp deepin 的项目继续完善了一下，一直到被 merge 进去。</p>
+<p>CTF 该捡起来了，复健了一下，把之前看的一些论文的理论和实战结合起来，感觉更舒心了。</p>
+<p>十月底 linus 骂人，以后恐怕是不敢跟人说我喜欢用 linux 是因为开源精神了。</p>
+<p>真好，我们 linux-er 低了一辈子的头终于是断了。</p>
+<p>打了两场 CTF，一场网络赛一场新生赛，感觉挺好的。和 401 的晚秋师傅、zjl 师傅越来越熟络了，师傅们人都很好。</p>
+<h3 id="11" class="scroll-target"><a href="#11"><code class="hash inline-code">#</code>11 月</a></h3>
+<p>看了两本关于系统调优的书，做了几场报告分享。</p>
+<p>接触了一些超算方面的东西，第一次体验到了手上有个服务器集群是什么感觉。还挺不错的。</p>
+<p>参加了这辈子最后一次强网杯青少年初赛，pwn / re ak，成绩还不错，一度 rk1。</p>
+<p><del>主要还是 sb aura 没来打</del></p>
+<p>继续看堆上的手法，高版本打得越来越好了。</p>
+<p>GLIBC 源码越看越顺，晚秋爷爷对我帮助很多，真是大爹。（点个赞</p>
+<p>不过有的时候师傅会觉得我比较钻牛角尖，还真是哈（（（</p>
+<blockquote>
+<p>👴：那个什么为什么 balabala?</p>
+<p>晚秋：那东西有什么用么？</p>
+</blockquote>
+<p>哎哎，还是被薄纱了。</p>
+<p>不过我还是喜欢偶尔满足一下自己的好奇心，毕竟知其然更要知其所以然嘛。</p>
+<h3 id="12" class="scroll-target"><a href="#12"><code class="hash inline-code">#</code>12 月</a></h3>
+<p>把强网杯青少赛打完了，拿了一等奖，真不错。</p>
+<p>在线下赛面基了很多师傅，Nu1l 的师傅没见着，哎哎。</p>
+<p>回学校之后打了一场国赛，懒得喷，有傻逼。</p>
+<blockquote>
+<p>主办方：所有队伍的选手都要在同一个房间中，出去要报备。</p>
+<p>👴：没事我队友直接没来（红温</p>
+</blockquote>
+<p>纯出生，懒得喷，心态给我搞崩了，坐在麦想哭，闹麻了。</p>
+<p>开始慢慢接触 ai 的一些东西，开始啃《智能计算系统》，挺有意思的书。</p>
+<p>学期末又要开始选课，重新搞了一下选课脚本，确定能用就行。</p>
+<p>这学期一节微积分课没去，为了不考 17 分，我开始学微积分。</p>
+<p>但是其实复习的很拖沓（（（</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>时间之外的思考</a></h2>
+<p>说实话，今年真干了不少事情，挺有意义的一年。本科四年的大方向也基本确定下来了，感觉都挺好的。</p>
+<p>但是总感觉人有的时候有点不知所谓，难免会想以后要去干嘛、以后该去干嘛。</p>
+<p>很多路都是自己走的，无所谓后不后悔，毕竟知识都是学到脑子里的，我感觉在学习这事情上我这人还是挺不功利的，就比如 ctf to learn, not learn to ctf....</p>
+<p>不过这样也有缺点，不然高中成绩也不会那么差（</p>
+<p>话又说回来了，我们班主任当时还是很理解我的，他说人生路上没有白学的知识，学就完了。</p>
+<p>唉，感觉自己文笔越来越匮乏了，不上语文课导致的。高中的时候语文老师很喜欢给我们讲中国古代自然哲学，讲《论语》、讲《道德经》，讲儒家、道家，讲佛经。当时真的喜欢听这些东西，在很内耗的高三让自己不再内耗。</p>
+<p>说起来当时背了道德经全篇来着（</p>
+<h2 id="to-2025" class="scroll-target"><a href="#to-2025"><code class="hash inline-code">#</code>To 2025 的自己</a></h2>
+<p>在 CTF 上做出点拿得出手的成绩。</p>
+<p>卷一卷专业课的绩点，把专业课的几本书好好看一看，《计算机网络》《计算机体系结构》《操作系统》认真学一学。</p>
+<p>学几门比较有意义的新语言，haskell 想学很久了，rust 也想好好看看。</p>
+<p>♥️ 小花要努力变强 ♥️</p></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
+<a href="https://github.com/unvariant/blog">unvariant/blog</a>
+改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>

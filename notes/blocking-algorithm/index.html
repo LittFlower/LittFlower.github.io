@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
+        const storageKey = "theme";
+        const root = document.documentElement;
+        const supportsMatchMedia = typeof window.matchMedia === "function";
+        const mediaQuery = supportsMatchMedia
+            ? window.matchMedia("(prefers-color-scheme: dark)")
+            : null;
+
+        const readStorage = () => {
+            try {
+                return window.localStorage.getItem(storageKey);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeStorage = (value) => {
+            try {
+                window.localStorage.setItem(storageKey, value);
+            } catch (error) {
+                return;
+            }
+        };
+
+        const applyTheme = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            if (document.body) {
+                document.body.setAttribute("data-theme", theme);
+            } else {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        if (document.body) {
+                            document.body.setAttribute("data-theme", theme);
+                        }
+                    },
+                    { once: true }
+                );
+            }
+            return theme;
+        };
+
+        const updateButton = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button) {
+                return;
+            }
+            const label = button.querySelector("[data-theme-toggle-label]");
+            const isDark = theme === "dark";
+            button.setAttribute("aria-pressed", isDark ? "true" : "false");
+            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
+            if (label) {
+                label.textContent = isDark ? "深色" : "浅色";
+            }
+        };
+
+        const stored = readStorage();
+        const initial =
+            stored === "light" || stored === "dark"
+                ? stored
+                : mediaQuery && mediaQuery.matches
+                  ? "dark"
+                  : "light";
+
+        const appliedTheme = applyTheme(initial);
+        updateButton(appliedTheme);
+
+        window.__setTheme = (value) => {
+            const theme = applyTheme(value);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        window.__toggleTheme = () => {
+            const current =
+                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const next = current === "dark" ? "light" : "dark";
+            const theme = applyTheme(next);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        const syncButtonState = () => {
+            updateButton(root.getAttribute("data-theme"));
+        };
+
+        const attachToggle = () => {
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button || button.__themeToggleBound) {
+                return;
+            }
+            button.__themeToggleBound = true;
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                if (typeof window.__toggleTheme === "function") {
+                    window.__toggleTheme();
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                syncButtonState();
+                attachToggle();
+            });
+        } else {
+            syncButtonState();
+            attachToggle();
+        }
+
+        const handleMediaChange = (event) => {
+            const storedTheme = readStorage();
+            if (storedTheme === "light" || storedTheme === "dark") {
+                updateButton(storedTheme);
+                return;
+            }
+            const next = event.matches ? "dark" : "light";
+            const theme = applyTheme(next);
+            updateButton(theme);
+        };
+
+        if (mediaQuery) {
+            if (typeof mediaQuery.addEventListener === "function") {
+                mediaQuery.addEventListener("change", handleMediaChange);
+            } else if (typeof mediaQuery.addListener === "function") {
+                mediaQuery.addListener(handleMediaChange);
+            }
+        }
+    })();
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>分块思想 | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="分块思想 | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/notes/blocking-algorithm/"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="stylesheet" href="/fonts.css" type="text/css" preload/><link rel="stylesheet" href="/style.css" type="text/css" preload/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"><div class="file"><a href="./README.mdx" class="file-link"><img src="/icons/text.png" alt/><span>README.mdx</span></a><div class="file-meta"><span>4.86 KiB</span><span class="file-meta-date">2021-11-19 08:00</span></div></div></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>分块思想</a></h1>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>一、性质与证明</a></h2>
+<p><strong>分块</strong>，故名思意，是将一个区间分成几个块，然后对于每个询问，整合一个或多个（甚至全部区间）的信息，但这种分块和整合是有技巧性de，否则很难有效的降低时间复杂度。</p>
+<p>先来看一道例题：</p>
+<p>老方有一个长度为 <code class="language-math math-inline">n</code> 的序列，被她的学生拜托完成以下三个操作：</p>
+<ol>
+<li>修改某位置的元素值</li>
+<li>将一段区间的元素加上或减去一个值</li>
+<li>求一个区间内的最大最小值</li>
+</ol>
+<p>共有 <code class="language-math math-inline">m</code> 个这样的操作，保证 <code class="language-math math-inline">n, m &lt;= 50000​</code></p>
+<p>考虑分块。</p>
+<p>我们考虑将整个序列划分为 <code class="language-math math-inline">\sqrt n</code> 块，因为这样可以使得总查询时间最短。</p>
+<p>证明如下：</p>
+<p>​	设这个序列的完整分块数是 <code class="language-math math-inline">C</code> 块，每一个完整个分块都包含 <code class="language-math math-inline">S</code> 个元素，那么显然可能存在一种情况即在区间 <code class="language-math math-inline">[l, r]</code> 的两端包含有不完整的分块。</p>
+<p><img src="https://pic.imgdb.cn/item/630840ec16f2c2beb1b566a0.png" alt/></p>
+<p>如图，蓝色部分即为不完整的分块。</p>
+<p>可以发现该序列内有 <code class="language-math math-inline">C​</code> 个完整分块和两个不完整分块，且这两个不完整分块内元素数量之和小于 <code class="language-math math-inline">2S​</code> ，则对于一个序列而言，我们要进行的查询总数的极限为 <code class="language-math math-inline">C + 2S​</code> ，则时间复杂度为 <code class="language-math math-inline">O(C + 2S)​</code> ，也就相当于 <code class="language-math math-inline">O(max{ { C, S } } )​</code>.</p>
+<p>因此，由于 <code class="language-math math-inline">C * S + 2 * S >= r - l + 1</code> ，则可以近似的看作当且仅当 <code class="language-math math-inline">S = C</code> 时，时间复杂度可以取得最小上界， 此时 <code class="language-math math-inline">C = S = \sqrt n </code> .</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>二、具体实现</a></h2>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>初始化</a></h3>
+<p>考虑用 <code class="inline-code">belong[]</code> 来表示每个点与分块之间的关系。</p>
+<p>为了便于阅读，除最终整合实现的代码外，其余代码块一律<strong>省略头文件</strong>。</p>
+<p>且在 vscode 中，如出现 <code class="inline-code">&quot;end&quot;不明确</code> 这一类的报错，可以在相应变量名前加 <code class="language-math math-inline">::</code> 即区域标识符。</p>
+<p><code class="language-math math-inline">Code</code></p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-cpp language-cpp"><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> MAXN</span><span style="color:#2F798A"> 50000</span><span style="color:#AB5959"> +</span><span style="color:#2F798A"> 5</span><br><br><span style="color:#AB5959">int</span><span style="color:#393A34"> n</span><span style="color:#999999">,</span><span style="color:#B07D48"> a</span><span style="color:#2993a3">[</span><span style="color:#393A34">MAXN</span><span style="color:#2993a3">]</span><span style="color:#999999">;</span><br><span style="color:#AB5959">int</span><span style="color:#393A34"> S</span><span style="color:#999999">,</span><span style="color:#393A34"> C </span><span style="color:#999999">=</span><span style="color:#2F798A"> 0</span><span style="color:#999999">,</span><span style="color:#B07D48"> st</span><span style="color:#2993a3">[</span><span style="color:#393A34">MAXN</span><span style="color:#2993a3">]</span><span style="color:#999999">,</span><span style="color:#B07D48"> end</span><span style="color:#2993a3">[</span><span style="color:#393A34">MAXN</span><span style="color:#2993a3">]</span><span style="color:#999999">;</span><span style="color:#A0ADA0"> // st[]：每个块的左边界，end[]：每个块的右边界</span><br><span style="color:#AB5959">int</span><span style="color:#B07D48"> belong</span><span style="color:#2993a3">[</span><span style="color:#393A34">MAXN</span><span style="color:#2993a3">]</span><span style="color:#999999">;</span><span style="color:#A0ADA0"> // 记录每个元素与所分块的关系</span><br><br><span style="color:#AB5959">void</span><span style="color:#59873A"> init</span><span style="color:#2993a3">(</span><span style="color:#2993a3">)</span><span style="color:#999999"> </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">    S </span><span style="color:#999999">=</span><span style="color:#AB5959"> int</span><span style="color:#1e754f">(</span><span style="color:#59873A">sqrt</span><span style="color:#a65e2b">(</span><span style="color:#AB5959">double</span><span style="color:#a13865">(</span><span style="color:#393A34">n</span><span style="color:#a13865">)</span><span style="color:#a65e2b">)</span><span style="color:#1e754f">)</span><span style="color:#999999">;</span><br><br><span style="color:#1E754F">    for</span><span style="color:#1e754f">(</span><span style="color:#AB5959">int</span><span style="color:#393A34"> i </span><span style="color:#999999">=</span><span style="color:#2F798A"> 1</span><span style="color:#999999">;</span><span style="color:#393A34"> i </span><span style="color:#AB5959">&#x3C;</span><span style="color:#AB5959">=</span><span style="color:#393A34"> n</span><span style="color:#999999">;</span><span style="color:#393A34"> i </span><span style="color:#AB5959">+=</span><span style="color:#393A34"> S</span><span style="color:#1e754f">)</span><span style="color:#999999"> </span><span style="color:#1e754f">{</span><br><span style="color:#B07D48">        st</span><span style="color:#a65e2b">[</span><span style="color:#AB5959">++</span><span style="color:#393A34">C</span><span style="color:#a65e2b">]</span><span style="color:#999999"> =</span><span style="color:#393A34"> i</span><span style="color:#999999">;</span><br><span style="color:#B07D48">        end</span><span style="color:#a65e2b">[</span><span style="color:#393A34">C</span><span style="color:#a65e2b">]</span><span style="color:#999999"> =</span><span style="color:#59873A"> min</span><span style="color:#a65e2b">(</span><span style="color:#393A34">n</span><span style="color:#999999">,</span><span style="color:#393A34"> i </span><span style="color:#AB5959">+</span><span style="color:#393A34"> S </span><span style="color:#AB5959">-</span><span style="color:#2F798A"> 1</span><span style="color:#a65e2b">)</span><span style="color:#393A34">； </span><br><span style="color:#999999">    </span><span style="color:#1e754f">}</span><br><span style="color:#A0ADA0">    /*</span><br><span style="color:#A0ADA0">    也可以写成：C = n / S; if(n % S) C++;</span><br><span style="color:#A0ADA0">	*/</span><br><span style="color:#393A34">    </span><br><span style="color:#1E754F">    for</span><span style="color:#1e754f">(</span><span style="color:#AB5959">int</span><span style="color:#393A34"> i </span><span style="color:#999999">=</span><span style="color:#2F798A"> 1</span><span style="color:#999999">;</span><span style="color:#393A34"> i </span><span style="color:#AB5959">&#x3C;</span><span style="color:#AB5959">=</span><span style="color:#393A34"> C</span><span style="color:#999999">;</span><span style="color:#393A34"> i</span><span style="color:#AB5959">++</span><span style="color:#1e754f">)</span><span style="color:#999999"> </span><span style="color:#1e754f">{</span><br><span style="color:#1E754F">        for</span><span style="color:#a65e2b">(</span><span style="color:#AB5959">int</span><span style="color:#393A34"> j </span><span style="color:#999999">=</span><span style="color:#B07D48"> st</span><span style="color:#a13865">[</span><span style="color:#393A34">i</span><span style="color:#a13865">]</span><span style="color:#999999">;</span><span style="color:#393A34"> j </span><span style="color:#AB5959">&#x3C;</span><span style="color:#AB5959">=</span><span style="color:#B07D48"> end</span><span style="color:#a13865">[</span><span style="color:#393A34">i</span><span style="color:#a13865">]</span><span style="color:#999999">;</span><span style="color:#393A34"> j</span><span style="color:#AB5959">++</span><span style="color:#a65e2b">)</span><span style="color:#999999"> </span><span style="color:#a65e2b">{</span><br><span style="color:#B07D48">            belong</span><span style="color:#a13865">[</span><span style="color:#393A34">j</span><span style="color:#a13865">]</span><span style="color:#999999"> =</span><span style="color:#393A34"> i</span><span style="color:#999999">;</span><br><span style="color:#A0ADA0">            /*</span><br><span style="color:#A0ADA0">            我们还可以在这里进行其他一系列区间操作：</span><br><span style="color:#A0ADA0">            sum[i] += a[j];</span><br><span style="color:#A0ADA0">            maxx[i] = max(maxx[i], a[j]);</span><br><span style="color:#A0ADA0">            */</span><br><span style="color:#999999">        </span><span style="color:#a65e2b">}</span><br><span style="color:#999999">    </span><span style="color:#1e754f">}</span><br><span style="color:#2993a3">}</span><br></code></pre></div>
+<p>接下来是区间修改和查询操作。<del>似乎每个数据结构都绕不过这几个</del></p>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>修改操作</a></h3>
+<p>考虑对于原序列的单点 <code class="language-math math-inline">x​</code> 修改除了会影响到 <code class="language-math math-inline">a[x]​</code> ，还会影响到所在分块的和、最大值等系列区间信息。实际上很好实现。</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-cpp language-cpp"><span style="color:#AB5959">inline</span><span style="color:#AB5959"> void</span><span style="color:#59873A"> updata</span><span style="color:#2993a3">(</span><span style="color:#AB5959">int</span><span style="color:#B07D48"> x</span><span style="color:#999999">,</span><span style="color:#AB5959"> int</span><span style="color:#B07D48"> y</span><span style="color:#2993a3">)</span><span style="color:#999999"> </span><span style="color:#2993a3">{</span><span style="color:#393A34"> </span><br><span style="color:#AB5959">    int</span><span style="color:#393A34"> home </span><span style="color:#999999">=</span><span style="color:#B07D48"> belong</span><span style="color:#1e754f">[</span><span style="color:#393A34">x</span><span style="color:#1e754f">]</span><span style="color:#999999">;</span><br><span style="color:#B07D48">    a</span><span style="color:#1e754f">[</span><span style="color:#393A34">x</span><span style="color:#1e754f">]</span><span style="color:#AB5959"> +=</span><span style="color:#393A34"> y</span><span style="color:#999999">;</span><br><span style="color:#B07D48">    sum</span><span style="color:#1e754f">[</span><span style="color:#393A34">home</span><span style="color:#1e754f">]</span><span style="color:#AB5959"> +=</span><span style="color:#B07D48"> a</span><span style="color:#1e754f">[</span><span style="color:#393A34">y</span><span style="color:#1e754f">]</span><span style="color:#999999">;</span><br><span style="color:#1E754F">    return</span><span style="color:#999999">;</span><br><span style="color:#2993a3">}</span><br></code></pre></div>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>查询操作</a></h3>
+<p>考虑分治，分两种情况考虑：a. [x, y] 在一个块内；b.[x, y]不在一个块内。</p>
+<h4 id="a.-x-y" class="scroll-target"><a href="#a.-x-y"><code class="hash inline-code">#</code>a. [x, y] 在一个块内</a></h4>
+<p><img src="https://pic.imgdb.cn/item/630840ed16f2c2beb1b5676e.png" alt/></p>
+<p>如图所示，要查询区间[x, y]的信息，非常简单，直接暴力即可。</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-cpp language-cpp"><span style="color:#1E754F">    if</span><span style="color:#2993a3">(</span><span style="color:#B07D48">belong</span><span style="color:#1e754f">[</span><span style="color:#393A34">x</span><span style="color:#1e754f">]</span><span style="color:#AB5959"> ==</span><span style="color:#B07D48"> belong</span><span style="color:#1e754f">[</span><span style="color:#393A34">y</span><span style="color:#1e754f">]</span><span style="color:#2993a3">)</span><span style="color:#999999"> </span><span style="color:#2993a3">{</span><br><span style="color:#AB5959">        int</span><span style="color:#393A34"> ans </span><span style="color:#999999">=</span><span style="color:#2F798A"> 0</span><span style="color:#999999">;</span><br><span style="color:#1E754F">        for</span><span style="color:#1e754f">(</span><span style="color:#AB5959">int</span><span style="color:#393A34"> i </span><span style="color:#999999">=</span><span style="color:#393A34"> x</span><span style="color:#999999">;</span><span style="color:#393A34"> i </span><span style="color:#AB5959">&#x3C;</span><span style="color:#AB5959">=</span><span style="color:#393A34"> y</span><span style="color:#999999">;</span><span style="color:#393A34"> i</span><span style="color:#AB5959">++</span><span style="color:#1e754f">)</span><span style="color:#999999"> </span><span style="color:#1e754f">{</span><br><span style="color:#393A34">            ans </span><span style="color:#AB5959">+=</span><span style="color:#B07D48"> a</span><span style="color:#a65e2b">[</span><span style="color:#393A34">i</span><span style="color:#a65e2b">]</span><span style="color:#999999">;</span><br><span style="color:#999999">        </span><span style="color:#1e754f">}</span><br><span style="color:#1E754F">        return</span><span style="color:#393A34"> ans</span><span style="color:#999999">;</span><br><span style="color:#999999">    </span><span style="color:#2993a3">}</span><span style="color:#393A34"> </span><br></code></pre></div>
+<h4 id="b.x-y" class="scroll-target"><a href="#b.x-y"><code class="hash inline-code">#</code>b.[x, y]不在一个块内</a></h4>
+<p><img src="https://pic.imgdb.cn/item/630840f016f2c2beb1b5697d.png" alt/></p>
+<p>如图所示，我们发现，区间[x, y]的和即就是 <code class="inline-code">[x, 绿色块1尾] + 蓝色块 + [绿色块2头，y]​</code>。</p>
+<p>所以我们可以将绿色部分暴力，蓝色部分直接查询。</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-cpp language-cpp"><span style="color:#1E754F">    if</span><span style="color:#2993a3">(</span><span style="color:#B07D48">belong</span><span style="color:#1e754f">[</span><span style="color:#393A34">x</span><span style="color:#1e754f">]</span><span style="color:#AB5959"> !=</span><span style="color:#B07D48"> belong</span><span style="color:#1e754f">[</span><span style="color:#393A34">y</span><span style="color:#1e754f">]</span><span style="color:#2993a3">)</span><span style="color:#999999"> </span><span style="color:#2993a3">{</span><br><span style="color:#1E754F">        for</span><span style="color:#1e754f">(</span><span style="color:#AB5959">int</span><span style="color:#393A34"> i </span><span style="color:#999999">=</span><span style="color:#393A34"> x</span><span style="color:#999999">;</span><span style="color:#393A34"> i </span><span style="color:#AB5959">&#x3C;</span><span style="color:#AB5959">=</span><span style="color:#393A34"> ::</span><span style="color:#B07D48">end</span><span style="color:#a65e2b">[</span><span style="color:#B07D48">belong</span><span style="color:#a13865">[</span><span style="color:#393A34">x</span><span style="color:#a13865">]</span><span style="color:#a65e2b">]</span><span style="color:#999999">;</span><span style="color:#393A34"> i</span><span style="color:#AB5959">++</span><span style="color:#1e754f">)</span><span style="color:#999999"> </span><span style="color:#1e754f">{</span><br><span style="color:#393A34">            ans </span><span style="color:#AB5959">+=</span><span style="color:#B07D48"> a</span><span style="color:#a65e2b">[</span><span style="color:#393A34">i</span><span style="color:#a65e2b">]</span><span style="color:#999999">;</span><br><span style="color:#999999">        </span><span style="color:#1e754f">}</span><br><span style="color:#1E754F">        for</span><span style="color:#1e754f">(</span><span style="color:#AB5959">int</span><span style="color:#393A34"> i </span><span style="color:#999999">=</span><span style="color:#B07D48"> belong</span><span style="color:#a65e2b">[</span><span style="color:#393A34">x</span><span style="color:#a65e2b">]</span><span style="color:#AB5959"> +</span><span style="color:#2F798A"> 1</span><span style="color:#999999">;</span><span style="color:#393A34"> i </span><span style="color:#AB5959">&#x3C;</span><span style="color:#AB5959">=</span><span style="color:#B07D48"> belong</span><span style="color:#a65e2b">[</span><span style="color:#393A34">y</span><span style="color:#a65e2b">]</span><span style="color:#AB5959"> -</span><span style="color:#2F798A"> 1</span><span style="color:#999999">;</span><span style="color:#393A34"> i</span><span style="color:#AB5959">++</span><span style="color:#1e754f">)</span><span style="color:#999999"> </span><span style="color:#1e754f">{</span><br><span style="color:#393A34">            ans </span><span style="color:#AB5959">+=</span><span style="color:#B07D48"> sum</span><span style="color:#a65e2b">[</span><span style="color:#393A34">i</span><span style="color:#a65e2b">]</span><span style="color:#999999">;</span><br><span style="color:#999999">        </span><span style="color:#1e754f">}</span><br><span style="color:#1E754F">        for</span><span style="color:#1e754f">(</span><span style="color:#AB5959">int</span><span style="color:#393A34"> i </span><span style="color:#999999">=</span><span style="color:#B07D48"> st</span><span style="color:#a65e2b">[</span><span style="color:#B07D48">belong</span><span style="color:#a13865">[</span><span style="color:#393A34">y</span><span style="color:#a13865">]</span><span style="color:#a65e2b">]</span><span style="color:#999999">;</span><span style="color:#393A34"> i </span><span style="color:#AB5959">&#x3C;</span><span style="color:#AB5959">=</span><span style="color:#393A34"> y</span><span style="color:#999999">;</span><span style="color:#393A34"> i</span><span style="color:#AB5959">++</span><span style="color:#1e754f">)</span><span style="color:#999999"> </span><span style="color:#1e754f">{</span><br><span style="color:#393A34">            ans </span><span style="color:#AB5959">+=</span><span style="color:#B07D48"> a</span><span style="color:#a65e2b">[</span><span style="color:#393A34">i</span><span style="color:#a65e2b">]</span><span style="color:#999999">;</span><br><span style="color:#999999">        </span><span style="color:#1e754f">}</span><br><span style="color:#1E754F">        return</span><span style="color:#393A34"> ans</span><span style="color:#999999">;</span><br><span style="color:#999999">    </span><span style="color:#2993a3">}</span><br></code></pre></div>
+<p>这样便可以完美的解决查询问题。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>三、相应习题</a></h2>
+<p><a href="https://www.luogu.com.cn/problem/P3374" title="https://www.luogu.com.cn/problem/P3374" target="_blank" rel="noopener">[luogu P3374] 树状数组1</a></p>
+<p><a href="https://www.luogu.com.cn/problem/P2357" title="https://www.luogu.com.cn/problem/P2357" target="_blank" rel="noopener">[luogu P2357] 守墓人</a></p>
+<p>实际上，这两道题都是板子题，只要大家看懂了上面的知识，这两道题乱杀。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>四、后话</a></h2>
+<p><code class="inline-code">老方很开心，因为你们帮她解决了一个大难题.......（逃）</code></p>
+<p>其实分块的时间复杂度为 <code class="language-math math-inline">O(\sqrt n * m)</code> ，慢于树状数组和线段树，同学们可以在掌握分块思想后去学习树状数组和线段树。</p>
+<p><strong>注意，分块是种思想！</strong></p></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
+<a href="https://github.com/unvariant/blog">unvariant/blog</a>
+改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>

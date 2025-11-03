@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
+        const storageKey = "theme";
+        const root = document.documentElement;
+        const supportsMatchMedia = typeof window.matchMedia === "function";
+        const mediaQuery = supportsMatchMedia
+            ? window.matchMedia("(prefers-color-scheme: dark)")
+            : null;
+
+        const readStorage = () => {
+            try {
+                return window.localStorage.getItem(storageKey);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeStorage = (value) => {
+            try {
+                window.localStorage.setItem(storageKey, value);
+            } catch (error) {
+                return;
+            }
+        };
+
+        const applyTheme = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            if (document.body) {
+                document.body.setAttribute("data-theme", theme);
+            } else {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        if (document.body) {
+                            document.body.setAttribute("data-theme", theme);
+                        }
+                    },
+                    { once: true }
+                );
+            }
+            return theme;
+        };
+
+        const updateButton = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button) {
+                return;
+            }
+            const label = button.querySelector("[data-theme-toggle-label]");
+            const isDark = theme === "dark";
+            button.setAttribute("aria-pressed", isDark ? "true" : "false");
+            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
+            if (label) {
+                label.textContent = isDark ? "深色" : "浅色";
+            }
+        };
+
+        const stored = readStorage();
+        const initial =
+            stored === "light" || stored === "dark"
+                ? stored
+                : mediaQuery && mediaQuery.matches
+                  ? "dark"
+                  : "light";
+
+        const appliedTheme = applyTheme(initial);
+        updateButton(appliedTheme);
+
+        window.__setTheme = (value) => {
+            const theme = applyTheme(value);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        window.__toggleTheme = () => {
+            const current =
+                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const next = current === "dark" ? "light" : "dark";
+            const theme = applyTheme(next);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        const syncButtonState = () => {
+            updateButton(root.getAttribute("data-theme"));
+        };
+
+        const attachToggle = () => {
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button || button.__themeToggleBound) {
+                return;
+            }
+            button.__themeToggleBound = true;
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                if (typeof window.__toggleTheme === "function") {
+                    window.__toggleTheme();
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                syncButtonState();
+                attachToggle();
+            });
+        } else {
+            syncButtonState();
+            attachToggle();
+        }
+
+        const handleMediaChange = (event) => {
+            const storedTheme = readStorage();
+            if (storedTheme === "light" || storedTheme === "dark") {
+                updateButton(storedTheme);
+                return;
+            }
+            const next = event.matches ? "dark" : "light";
+            const theme = applyTheme(next);
+            updateButton(theme);
+        };
+
+        if (mediaQuery) {
+            if (typeof mediaQuery.addEventListener === "function") {
+                mediaQuery.addEventListener("change", handleMediaChange);
+            } else if (typeof mediaQuery.addListener === "function") {
+                mediaQuery.addListener(handleMediaChange);
+            }
+        }
+    })();
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>重读提问的智慧 | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="重读提问的智慧 | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/notes/reread-the-wisdom-of-questioning/"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="stylesheet" href="/fonts.css" type="text/css" preload/><link rel="stylesheet" href="/style.css" type="text/css" preload/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"><div class="file"><a href="./README.mdx" class="file-link"><img src="/icons/text.png" alt/><span>README.mdx</span></a><div class="file-meta"><span>5.34 KiB</span><span class="file-meta-date">2022-08-27 20:23</span></div></div></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>重读提问的智慧</a></h1>
+<h2 id="0x00" class="scroll-target"><a href="#0x00"><code class="hash inline-code">#</code>0x00</a></h2>
+<p>为什么叫”重读“呢......其实在这次读之前已经读过两三遍了......但是还是会在提问的时候被学长批评提的问题不好（</p>
+<p><img src="https://pic.imgdb.cn/item/630a4e5b16f2c2beb1dd5154.jpg" alt/></p>
+<p><img src="https://pic.imgdb.cn/item/630a4f1a16f2c2beb1ddbdfb.jpg" alt/></p>
+<p>qwq...学长为了让我长记性，，属实是”煞费苦心“。</p>
+<p>因此特地认认真真重读<a href="https://github.com/ryanhanwu/How-To-Ask-Questions-The-Smart-Way/blob/main/README-zh_CN.md" title="https://github.com/ryanhanwu/How-To-Ask-Questions-The-Smart-Way/blob/main/README-zh_CN.md" target="_blank" rel="noopener">《提问的智慧》</a>，同时做一些摘要，以飨读者。</p>
+<h2 id="0x01" class="scroll-target"><a href="#0x01"><code class="hash inline-code">#</code>0x01</a></h2>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>简介部分</a></h3>
+<ul>
+<li>大家都喜欢回答一个能激发思维、提高理解力、暴漏从未思考过的问题的”好问题“。</li>
+<li>帮助那些不愿意帮助自己的人是没有效率的。无知没有关系，但装白痴就是不行。</li>
+<li>不必在技术上很在行，但你必须表现出能引导你变得在行的特质 —— 机敏、有想法、善于观察、乐于主动参与解决问题。</li>
+<li>能立刻得到快速并有效答案的最好方法，就是像赢家那样提问 —— 聪明、自信、有解决问题的思路，只是偶尔在特定的问题上需要获得一点帮助。</li>
+</ul>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>在提问之前</a></h3>
+<ul>
+<li>应仔细做到：
+<ul>
+<li>尝试上网搜索以找到答案。</li>
+<li>翻一翻 github 等知名网站的 issue 等。</li>
+<li>尝试自己检查或试验以找到答案。</li>
+<li>尝试阅读常见问题文件（FAQ）。</li>
+<li>尝试阅读已有问题提示</li>
+<li>尝试阅读源代码。</li>
+</ul>
+</li>
+<li>不要将所有问题一股脑拋出。</li>
+<li>准备好你的问题，再将问题仔细的思考过一遍，因为草率的发问只能得到草率的回答，或者根本得不到任何答案。</li>
+<li>小心别问错了问题。</li>
+<li>绝不要自以为够格得到答案，你没有；你并没有。</li>
+</ul>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>提问时</a></h3>
+<h4 id="a." class="scroll-target"><a href="#a."><code class="hash inline-code">#</code>A.语气语态</a></h4>
+<ul>
+<li>不要妄想用自己的痛苦程度来打动他人，而应该是在这点空间中使用极简单扼要的描述方式来提出问题。</li>
+<li>不能粗鲁傲慢，也不该低声下气。</li>
+<li><strong>礼多人不怪</strong>，而且有时还很有帮助。</li>
+<li>使问题容易回复，因此要求通过电子邮件回复是非常无礼的，除非你认为回复的信息可能比较敏感。</li>
+</ul>
+<h4 id="b." class="scroll-target"><a href="#b."><code class="hash inline-code">#</code>B.内容</a></h4>
+<ul>
+<li>一个好标题范例是<code class="inline-code">目标 —— 差异式</code>的描述，许多技术支持组织就是这样做的。在<code class="inline-code">目标</code>部分指出是哪一个或哪一组东西有问题，在<code class="inline-code">差异</code>部分则描述与期望的行为不一致的地方。</li>
+<li>去掉无意义的提问句。</li>
+<li>如果你只是想让别人帮忙审查（Review）一下代码，在开头就要说出来，并且一定要提到你认为哪一部分特别需要关注以及为什么。</li>
+<li>精确地描述问题并言之有物，<strong>尽量去揣测一个黑客会怎样反问你</strong>，在你提问之前预先将黑客们可能提出的问题回答一遍。<strong>话不在多而在精</strong></li>
+<li>描述提问的最根本原因（需求），而不是描述一个自己解决方案中的问题。因为自己的解决方案不一定是最优解。</li>
+<li>要确信<strong>原原本本</strong>告诉了问题的症状</li>
+<li><strong>在开头就描述你的目标，然后才陈述重现你所卡住的特定步骤。</strong></li>
+</ul>
+<h4 id="c." class="scroll-target"><a href="#c."><code class="hash inline-code">#</code>C.提问方式</a></h4>
+<ul>
+<li>使用清晰、正确、精准且合乎语法的语句。</li>
+<li>正确的拼写、标点符号和大小写是很重要的。如果在使用非母语（英语）提问，可以犯点拼写和语法上的小错，但决不能在思考上马虎。</li>
+<li>English is not my native language; please excuse typing errors.</li>
+<li>使用易于读取且标准的文件格式发送问题，或者是截图（但尽量不要拍电脑屏幕）。</li>
+</ul>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>提问后</a></h3>
+<ul>
+<li>别让自己卷入口水战，最好不要理睬大多数的口水战。</li>
+</ul>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>一些好问题</a></h3>
+<blockquote>
+<p>我在 S2464 主机板上试过了 X 、 Y 和 Z ，但没什么作用，我又试了 A 、 B 和 C 。请注意当我尝试 C 时的奇怪现象。显然 florbish 正在 grommicking，但结果出人意料。通常在 Athlon MP 主机板上引起 grommicking 的原因是什么？有谁知道接下来我该做些什么测试才能找出问题？</p>
+</blockquote>
+<blockquote>
+<p>foo 项目代码在 Nulix 6.2 版下无法编译通过。我读过了 FAQ，但里面没有提到跟 Nulix 有关的问题。这是我编译过程的记录，我有什么做的不对的地方吗？</p>
+</blockquote>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>如何更好地回答问题</a></h3>
+<ul>
+<li>态度和善一点。</li>
+<li>对初犯者私下回复。</li>
+<li>如果不确定，一定要说出来；不要开错误地玩笑，因为会有人当真。</li>
+<li>适当的反问之外，要正面地回答问题。</li>
+</ul>
+<h2 id="0x03" class="scroll-target"><a href="#0x03"><code class="hash inline-code">#</code>0x03</a></h2>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>一些反思</a></h3>
+<p>记录下一些自己因为情商被骂的过程和错误：</p>
+<ul>
+<li>某一次搭博客的时候，问学长问题时没有原原本本地描述导致花了半个小时才搞明白问题是什么（（（... 然后学长血压...噌...就上去了（（（</li>
+<li>（这次不是我）机房一同学因为自己的原因吐槽出题人，被出题人骂了一顿...（引以为戒</li>
+<li>问学长问题的时候手贱喜欢打括号...不利于清晰地描述问题</li>
+<li>回答问题时没有动手实践...后来自己遇到这个问题才发现当时给的解决方案不完全对...</li>
+<li>机房一同学在其他 ctf 群问正在进行比赛题目，，，被干翻</li>
+<li>问问题的时候要注意学长/姐的血压问题...并提前买好降压药。。。</li>
+</ul></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
+<a href="https://github.com/unvariant/blog">unvariant/blog</a>
+改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>

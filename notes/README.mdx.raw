@@ -1,0 +1,9 @@
+export const layout = "#components/Page.js";
+export const title = "notes";
+export const description = "把零散的知识、课程记录与做题感想集中在这里，方便快速翻阅。";
+
+# Notes
+
+这些页面更像是实验记录本或速查表。
+
+欢迎留言或邮件分享你觉得有价值的资料。

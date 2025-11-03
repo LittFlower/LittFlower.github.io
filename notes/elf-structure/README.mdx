@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
+        const storageKey = "theme";
+        const root = document.documentElement;
+        const supportsMatchMedia = typeof window.matchMedia === "function";
+        const mediaQuery = supportsMatchMedia
+            ? window.matchMedia("(prefers-color-scheme: dark)")
+            : null;
+
+        const readStorage = () => {
+            try {
+                return window.localStorage.getItem(storageKey);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeStorage = (value) => {
+            try {
+                window.localStorage.setItem(storageKey, value);
+            } catch (error) {
+                return;
+            }
+        };
+
+        const applyTheme = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            if (document.body) {
+                document.body.setAttribute("data-theme", theme);
+            } else {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        if (document.body) {
+                            document.body.setAttribute("data-theme", theme);
+                        }
+                    },
+                    { once: true }
+                );
+            }
+            return theme;
+        };
+
+        const updateButton = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button) {
+                return;
+            }
+            const label = button.querySelector("[data-theme-toggle-label]");
+            const isDark = theme === "dark";
+            button.setAttribute("aria-pressed", isDark ? "true" : "false");
+            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
+            if (label) {
+                label.textContent = isDark ? "深色" : "浅色";
+            }
+        };
+
+        const stored = readStorage();
+        const initial =
+            stored === "light" || stored === "dark"
+                ? stored
+                : mediaQuery && mediaQuery.matches
+                  ? "dark"
+                  : "light";
+
+        const appliedTheme = applyTheme(initial);
+        updateButton(appliedTheme);
+
+        window.__setTheme = (value) => {
+            const theme = applyTheme(value);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        window.__toggleTheme = () => {
+            const current =
+                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const next = current === "dark" ? "light" : "dark";
+            const theme = applyTheme(next);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        const syncButtonState = () => {
+            updateButton(root.getAttribute("data-theme"));
+        };
+
+        const attachToggle = () => {
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button || button.__themeToggleBound) {
+                return;
+            }
+            button.__themeToggleBound = true;
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                if (typeof window.__toggleTheme === "function") {
+                    window.__toggleTheme();
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                syncButtonState();
+                attachToggle();
+            });
+        } else {
+            syncButtonState();
+            attachToggle();
+        }
+
+        const handleMediaChange = (event) => {
+            const storedTheme = readStorage();
+            if (storedTheme === "light" || storedTheme === "dark") {
+                updateButton(storedTheme);
+                return;
+            }
+            const next = event.matches ? "dark" : "light";
+            const theme = applyTheme(next);
+            updateButton(theme);
+        };
+
+        if (mediaQuery) {
+            if (typeof mediaQuery.addEventListener === "function") {
+                mediaQuery.addEventListener("change", handleMediaChange);
+            } else if (typeof mediaQuery.addListener === "function") {
+                mediaQuery.addListener(handleMediaChange);
+            }
+        }
+    })();
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>ELF 文件结构详解 | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="ELF 文件结构详解 | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/notes/elf-structure/README.mdx"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="stylesheet" href="/fonts.css" type="text/css" preload/><link rel="stylesheet" href="/style.css" type="text/css" preload/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="elf" class="scroll-target"><a href="#elf"><code class="hash inline-code">#</code>ELF 文件结构详解</a></h1>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>简介</a></h2>
+<p><strong>本文在不特殊声明的情况下，默认架构为 x86-64，操作系统内核为 linux</strong></p>
+<p>ELF（Executable and Linkable Format） 是 linux 平台上的目标文件，主要有以下三种类型：</p>
+<ul>
+<li>可重定位文件（Relocatable File），后缀名 <code class="inline-code">.o</code>，这种文件一般和其他目标文件一起被链接器链接成<strong>可执行文件</strong>或者<strong>共享目标文件</strong></li>
+<li>可执行文件（Executable File），一般无后缀名，就是我们平常在 linux 中可以运行的程序</li>
+<li>共享目标文件（Shared Object File），后缀名 <code class="inline-code">.so</code>，就是我们常说的“库文件”</li>
+</ul>
+<p>ELF 的文件结构如下图所示：</p>
+<p><img src="https://pic1.imgdb.cn/item/682b1ea858cb8da5c8fc750b.png" alt="ELF文件结构"/></p>
+<p>这是一张很经典的用来讲解 ELF 文件结构的图，ELF 文件结构主要是从两方面解析：执行视图和链接视图。从 ELF 文件的全名也可看出，一个合法的 ELF 文件既有可能参与链接，也有可能直接执行。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>文件结构</a></h2>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>宏观视图</a></h3>
+<p><strong>链接视图</strong></p>
+<p><img src="https://pic1.imgdb.cn/item/682b1f6658cb8da5c8fc7708.png" alt/></p>
+<ol>
+<li>文件开始处是 ELF Header</li>
+<li>接下来是程序头部表，不过在链接视图下（也就是 ELF 文件参与链接时），这个部分是可选的</li>
+<li>若干个节区（Section，简称“节”）</li>
+<li>节区头部表，包含了描述文件节区的信息，每个节区在表中都有一个表项，会给出节区名称、节区大小等信息。用于链接的目标文件必须有节区头部表。</li>
+</ol>
+<p><strong>执行视图</strong></p>
+<p><img src="https://pic1.imgdb.cn/item/682b201758cb8da5c8fc79a7.png" alt/></p>
+<ol>
+<li>文件开始处是 ELF Header</li>
+<li>程序头部表，它会告诉系统如何创建进程。用于生成进程的目标文件必须具有程序头部表。</li>
+<li>若干个段</li>
+<li>节区头部表，这个部分是可选的。</li>
+</ol>
+<p>注意，所谓“链接视图”和“执行视图”其实是看待 ELF 文件的两种不同的视角，实际上在一个合法的 ELF 文件中，二者是完全重合的，也就是本文第一张图。</p>
+<p>我们把上面两种视图结合起来分析，其实 sections 和 segments 在 ELF 中占用的是一样的地方，其中，sections 是程序员可见的，是给<strong>链接器</strong>使用的概念，而 segments 是程序员不可见的，是给<strong>加载器</strong>使用的概念。一般来讲，<strong>一个 segement 可以包含多个 sections</strong></p>
+<p>另外，尽管这些图中是按照 ELF 头，程序头部表，节区，节区头部表的顺序排列的，但实际上<strong>除了 ELF 头部表以外，其它部分都没有严格的的顺序</strong>。</p>
+<h3 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>数据结构</a></h3>
+<p>这部分可以直接参考 elf.h 里的源码。</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-c language-c"><span style="color:#A0ADA0">/* 32-bit ELF base types. */</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __u32	Elf32_Addr</span><span style="color:#999999">;</span><span style="color:#A0ADA0">    // unsigned int</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __u16	Elf32_Half</span><span style="color:#999999">;</span><span style="color:#A0ADA0">    // unsigned short</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __u32	Elf32_Off</span><span style="color:#999999">;</span><span style="color:#A0ADA0">     // unsigned int</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __s32	Elf32_Sword</span><span style="color:#999999">;</span><span style="color:#A0ADA0">   // __signed__ int</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __u32	Elf32_Word</span><span style="color:#999999">;</span><span style="color:#A0ADA0">    // unsigned int</span><br><br><span style="color:#A0ADA0">/* 64-bit ELF base types. */</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __u64	Elf64_Addr</span><span style="color:#999999">;</span><span style="color:#A0ADA0">    // unsigned long long</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __u16	Elf64_Half</span><span style="color:#999999">;</span><span style="color:#A0ADA0">    // unsigned short</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __s16	Elf64_SHalf</span><span style="color:#999999">;</span><span style="color:#A0ADA0">   // __signed__ short</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __u64	Elf64_Off</span><span style="color:#999999">;</span><span style="color:#A0ADA0">     // unsigned long long</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __s32	Elf64_Sword</span><span style="color:#999999">;</span><span style="color:#A0ADA0">   // __signed__ int</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __u32	Elf64_Word</span><span style="color:#999999">;</span><span style="color:#A0ADA0">    // unsigned int</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __u64	Elf64_Xword</span><span style="color:#999999">;</span><span style="color:#A0ADA0">   // unsigned long long</span><br><span style="color:#1E754F">typedef</span><span style="color:#393A34"> __s64	Elf64_Sxword</span><span style="color:#999999">;</span><span style="color:#A0ADA0">  // __signed__ long long</span><br></code></pre></div>
+<p>很清楚了。</p>
+<h3 id="elf-header" class="scroll-target"><a href="#elf-header"><code class="hash inline-code">#</code>ELF Header</a></h3>
+<p>源码如下</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-c language-c"><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> EI_NIDENT</span><span style="color:#2F798A">	16</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf32_hdr </span><span style="color:#2993a3">{</span><br><span style="color:#AB5959">  unsigned</span><span style="color:#AB5959"> char</span><span style="color:#B07D48">	e_ident</span><span style="color:#1e754f">[</span><span style="color:#393A34">EI_NIDENT</span><span style="color:#1e754f">]</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Half	e_type</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Half	e_machine</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	e_version</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Addr	e_entry</span><span style="color:#999999">;</span><span style="color:#A0ADA0">  /* Entry point */</span><br><span style="color:#393A34">  Elf32_Off	e_phoff</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Off	e_shoff</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	e_flags</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Half	e_ehsize</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Half	e_phentsize</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Half	e_phnum</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Half	e_shentsize</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Half	e_shnum</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Half	e_shstrndx</span><span style="color:#999999">;</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf32_Ehdr</span><span style="color:#999999">;</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf64_hdr </span><span style="color:#2993a3">{</span><br><span style="color:#AB5959">  unsigned</span><span style="color:#AB5959"> char</span><span style="color:#B07D48">	e_ident</span><span style="color:#1e754f">[</span><span style="color:#393A34">EI_NIDENT</span><span style="color:#1e754f">]</span><span style="color:#999999">;</span><span style="color:#A0ADA0">	/* ELF "magic number" */</span><br><span style="color:#393A34">  Elf64_Half e_type</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf64_Half e_machine</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf64_Word e_version</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf64_Addr e_entry</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Entry point virtual address */</span><br><span style="color:#393A34">  Elf64_Off e_phoff</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Program header table file offset */</span><br><span style="color:#393A34">  Elf64_Off e_shoff</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Section header table file offset */</span><br><span style="color:#393A34">  Elf64_Word e_flags</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf64_Half e_ehsize</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf64_Half e_phentsize</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf64_Half e_phnum</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf64_Half e_shentsize</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf64_Half e_shnum</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf64_Half e_shstrndx</span><span style="color:#999999">;</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf64_Ehdr</span><span style="color:#999999">;</span><br></code></pre></div>
+<p>以 64 位架构为例分析一下：</p>
+<table><thead><tr><th>字段名</th><th>解释</th><th>字节数</th></tr></thead><tbody><tr><td>e_ident</td><td>ELF的一些标识信息，固定值</td><td>16</td></tr><tr><td>e_type</td><td>目标文件类型：1-可重定位文件，2-可执行文件，3-共享目标文件</td><td>2</td></tr><tr><td>e_machine</td><td>文件的目标系统架构</td><td>2</td></tr><tr><td>e_version</td><td>目标文件版本：1-当前版本</td><td>4</td></tr><tr><td>e_entry</td><td>程序入口的虚拟地址，没有可为0</td><td>8</td></tr><tr><td>e_phoff</td><td>程序头表(segment header table)的偏移量，没有可为0</td><td>8</td></tr><tr><td>e_shoff</td><td>节区头表(section header table)的偏移量，没有可为0</td><td>8</td></tr><tr><td>e_flags</td><td>与文件相关的，特定于处理器的标志</td><td>4</td></tr><tr><td>e_ehsize</td><td>ELF头部的大小，单位字节</td><td>2</td></tr><tr><td>e_phentsize</td><td>程序头表每个表项的大小，单位字节</td><td>2</td></tr><tr><td>e_phnum</td><td>程序头表表项的个数</td><td>2</td></tr><tr><td>e_shentsize</td><td>节区头表每个表项的大小，单位字节</td><td>2</td></tr><tr><td>e_shnum</td><td>节区头表表项的数目</td><td>2</td></tr><tr><td>e_shstrndx</td><td>某些节区中包含固定大小的项目，如符号表。对于这类节区，此成员给出每个表项的长度字节数</td><td>2</td></tr></tbody></table>
+<h3 id="program-header-table" class="scroll-target"><a href="#program-header-table"><code class="hash inline-code">#</code>program header table</a></h3>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-c language-c"><span style="color:#A0ADA0">/* These constants define the permissions on sections in the program</span><br><span style="color:#A0ADA0">   header, p_flags. */</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> PF_R</span><span style="color:#AB5959">		0x</span><span style="color:#2F798A">4</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> PF_W</span><span style="color:#AB5959">		0x</span><span style="color:#2F798A">2</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> PF_X</span><span style="color:#AB5959">		0x</span><span style="color:#2F798A">1</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf32_phdr </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">  Elf32_Word	p_type</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Off	p_offset</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Addr	p_vaddr</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Addr	p_paddr</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	p_filesz</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	p_memsz</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	p_flags</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	p_align</span><span style="color:#999999">;</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf32_Phdr</span><span style="color:#999999">;</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf64_phdr </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">  Elf64_Word p_type</span><span style="color:#999999">;</span><span style="color:#A0ADA0">        /* 段类型 */</span><br><span style="color:#393A34">  Elf64_Word p_flags</span><span style="color:#999999">;</span><span style="color:#A0ADA0">       /* 段的权限标记 */</span><br><span style="color:#393A34">  Elf64_Off p_offset</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* 从文件开始到该段开头的第一个字节的偏移 */</span><br><span style="color:#393A34">  Elf64_Addr p_vaddr</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* 该段第一个字节在内存中的虚拟地址 */</span><br><span style="color:#393A34">  Elf64_Addr p_paddr</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* 该字段仅用于物理地址寻址相关的系统中 */</span><br><span style="color:#A0ADA0">							/* 由于”System V”忽略了应用程序的物理寻址 */</span><br><span style="color:#A0ADA0">							/* 可执行文件和共享目标文件的该项内容并未被限定 */</span><br><span style="color:#393A34">  Elf64_Xword p_filesz</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* 文件镜像中该段的大小，可能为0 */</span><br><span style="color:#393A34">  Elf64_Xword p_memsz</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* 内存镜像中该段的大小，可能为0 */</span><br><span style="color:#393A34">  Elf64_Xword p_align</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* 可加载的程序的段的 p_vaddr 以及 p_offset 的大小必须是 page 的整数倍。该成员给出了段在文件以及内存中的对齐方式。如果该值为 0 或 1 的话，表示不需要对齐。除此之外，p_align 应该是 2 的整数指数次方，并且 p_vaddr 与 p_offset 在模 p_align 的意义下，应该相等。 */</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf64_Phdr</span><span style="color:#999999">;</span><br></code></pre></div>
+<p>依然是以 x64 为例，对于执行视图下的 ELF 文件，它的程序头表记录了程序的所有段，每个记录有 8 个属性，对于这 8 种属性的介绍可以看注释。</p>
+<p>关于段的类型，下面是一些常见类型的介绍：</p>
+<ul>
+<li>PHDR：保存程序头表</li>
+<li>INTERP：此类型段给出了一个以 NULL 结尾的字符串的位置和长度，该字符串将被当作解释器调用。这种段类型仅对可执行文件有意义（也可能出现在共享目标文件中）。此外，这种段在一个文件中最多出现一次。而且这种类型的段存在的话，它必须在所有可加载段项的前面。</li>
+<li>LOAD：此类型段为一个可加载的段，大小由 p_filesz 和 p_memsz 描述。文件中的字节被映射到相应内存段开始处。如果 p_memsz 大于 p_filesz，“剩余”的字节都要被置为0。p_filesz 不能大于 p_memsz。可加载的段在程序头部中按照 p_vaddr 的升序排列。</li>
+<li>DYNAMIC：段保存了由动态链接器（即，INTERP中指定的解释器）使用的信息。</li>
+<li>NOTE：保存了专有信息。</li>
+</ul>
+<p>此外，还有一些名称为 GNU_STACK、GNU_EH_FRAME、GNU_RELRO 的段。</p>
+<p>关于段的内容，由于一个段可以包含多个节区，所以详见下一节。</p>
+<p>一个小细节：通常情况下，没有被初始化的数据在段的尾部，因此，p_memsz 才会比 p_filesz 大。</p>
+<h3 id="section-header-table" class="scroll-target"><a href="#section-header-table"><code class="hash inline-code">#</code>section header table</a></h3>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-c language-c"><span style="color:#A0ADA0">/* sh_type */</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_NULL</span><span style="color:#2F798A">	0</span><span style="color:#A0ADA0">               // 非活动的，这种类型的节头中的其它成员取值无意义。</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_PROGBITS</span><span style="color:#2F798A">	1</span><span style="color:#A0ADA0">           // 包含程序定义的信息，它的格式和含义都由程序来决定。</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_SYMTAB</span><span style="color:#2F798A">	2</span><span style="color:#A0ADA0">               // 符号表</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_STRTAB</span><span style="color:#2F798A">	3</span><span style="color:#A0ADA0">               // 字符串表</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_RELA</span><span style="color:#2F798A">	4</span><span style="color:#A0ADA0">               // 包含显式指定位数的重定位项，目标文件可以有多个重定位节</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_HASH</span><span style="color:#2F798A">	5</span><span style="color:#A0ADA0">               // 符号哈希表</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_DYNAMIC</span><span style="color:#2F798A">	6</span><span style="color:#A0ADA0">               // 动态链接的信息</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_NOTE</span><span style="color:#2F798A">	7</span><span style="color:#A0ADA0">               // 包含以某种方式标记文件的信息</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_NOBITS</span><span style="color:#2F798A">	8</span><span style="color:#A0ADA0">               // 不占用文件的空间的节区，其它方面和SHT_PROGBITS相似</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_REL</span><span style="color:#2F798A">		9</span><span style="color:#A0ADA0">               // 包含重定位表项，不过没有显式指定位数</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_SHLIB</span><span style="color:#2F798A">	10</span><span style="color:#A0ADA0">              // 保留节区，语义未定义</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_DYNSYM</span><span style="color:#2F798A">	11</span><span style="color:#A0ADA0">              // 完整的符号表，可能包含很多对动态链接不必要的符号。目标文件可以包含一个 SHT_DYNSYM 节区，其中保存动态链接符号的一个最小集合，以节省空间。</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_NUM</span><span style="color:#2F798A">		12</span><span style="color:#A0ADA0">              // 没找到资料。。。</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_LOPROC</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">70000000</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_HIPROC</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">7fffffff</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_LOUSER</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">80000000</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHT_HIUSER</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">ffffffff</span><br><br><span style="color:#A0ADA0">/* sh_flags */</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHF_WRITE</span><span style="color:#AB5959">		0x</span><span style="color:#2F798A">1</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHF_ALLOC</span><span style="color:#AB5959">		0x</span><span style="color:#2F798A">2</span><span style="color:#A0ADA0">                  // 该部分在进程执行期间占用内存</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHF_EXECINSTR</span><span style="color:#AB5959">		0x</span><span style="color:#2F798A">4</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHF_RELA_LIVEPATCH</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">00100000</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHF_RO_AFTER_INIT</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">00200000</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHF_MASKPROC</span><span style="color:#AB5959">		0x</span><span style="color:#2F798A">f0000000</span><br><br><span style="color:#A0ADA0">/* special section indexes */</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHN_UNDEF</span><span style="color:#2F798A">	0</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHN_LORESERVE</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">ff00</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHN_LOPROC</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">ff00</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHN_HIPROC</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">ff1f</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHN_LIVEPATCH</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">ff20</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHN_ABS</span><span style="color:#AB5959">		0x</span><span style="color:#2F798A">fff1</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHN_COMMON</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">fff2</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> SHN_HIRESERVE</span><span style="color:#AB5959">	0x</span><span style="color:#2F798A">ffff</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf32_shdr </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">  Elf32_Word	sh_name</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	sh_type</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	sh_flags</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Addr	sh_addr</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Off	sh_offset</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	sh_size</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	sh_link</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	sh_info</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	sh_addralign</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	sh_entsize</span><span style="color:#999999">;</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf32_Shdr</span><span style="color:#999999">;</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf64_shdr </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">  Elf64_Word sh_name</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Section name, index in string tbl */</span><br><span style="color:#393A34">  Elf64_Word sh_type</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Type of section */</span><br><span style="color:#393A34">  Elf64_Xword sh_flags</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Miscellaneous section attributes */</span><br><span style="color:#393A34">  Elf64_Addr sh_addr</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Section virtual addr at execution */</span><br><span style="color:#393A34">  Elf64_Off sh_offset</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Section file offset */</span><br><span style="color:#393A34">  Elf64_Xword sh_size</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Size of section in bytes */</span><br><span style="color:#393A34">  Elf64_Word sh_link</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Index of another section */</span><br><span style="color:#393A34">  Elf64_Word sh_info</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* Additional section information */</span><br><span style="color:#393A34">  Elf64_Xword sh_addralign</span><span style="color:#999999">;</span><span style="color:#A0ADA0">	/* Section alignment */</span><br><span style="color:#393A34">  Elf64_Xword sh_entsize</span><span style="color:#999999">;</span><span style="color:#A0ADA0">	/* Entry size if section holds table */</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf64_Shdr</span><span style="color:#999999">;</span><br></code></pre></div>
+<p>以 64 位 ELF 为例，节头表的每个字段的含义和取值范围以及对应取值的含义都可以看注释。</p>
+<h3 id="sections-and-segements" class="scroll-target"><a href="#sections-and-segements"><code class="hash inline-code">#</code>Sections and Segements</a></h3>
+<p>在链接视图下，节区包含目标文件中除了 ELF 头部、程序头部表、节区头部表的所有信息，而加载视图下，段可以细分为多个节区，所以这里把节区（下文简称的节都是指节区）和段放在一起讲。</p>
+<p>首先看节，对于一个合法的节，满足以下条件：</p>
+<ul>
+<li>每个节区都有对应的节头来描述它。但是反过来，节区头部并不一定会对应着一个节区。</li>
+<li>每个节区在目标文件中是连续的，但是大小可能为 0。</li>
+<li>任意两个节区不能重叠，即一个字节不能同时存在于两个节区中。</li>
+<li>目标文件中可能会有闲置空间（inactive space），各种头和节不一定会覆盖到目标文件中的所有字节，闲置区域的内容未指定。</li>
+</ul>
+<p>注意：</p>
+<ul>
+<li>以 “.” 开头的节区名称是系统保留的，由于节是对程序员可见的（一开始就提到过），所以应用程序也可以自己注册节区。为了避免与系统节区冲突，应用程序应该尽量使用没有前缀的节区名称。</li>
+<li>目标文件格式可以包含多个名字相同的节区。</li>
+<li>保留给处理器体系结构的节区名称一般命名规则为：处理器体系结构名称简写+ 节区名称。其中，处理器名称应该与 e_machine 中使用的名称相同。例如 .FOO.psect 节区是 FOO 体系结构中的 psect 节区。</li>
+</ul>
+<p>一些比较常见的节的介绍如下：</p>
+<ul>
+<li>.bss：这个节保存的是未初始化的全局定义。根据定义，当程序开始运行时，系统会将这些数据初始化为零。该部分的类型为 SHT_NOBITS。属性类型为 SHF_ALLOC 和 SHF_WRITE。</li>
+<li>.data：这个节保存初始化数据，用于生成程序的内存。该部分的类型为 SHT_PROGBITS。属性类型为 SHF_ALLOC 和 SHF_WRITE。</li>
+<li>.dynamic：该部分包含动态链接信息。该部分的属性包括 SHF_ALLOC 位。是否设置 SHF_WRITE 位取决于处理器。该部分的类型为 SHT_DYNAMIC。</li>
+<li>.dynstr：该部分包含动态链接所需的字符串，最常见的是表示符号表项相关名称的字符串。该部分的类型为 SHT_STRTAB。使用的属性类型是 SHF_ALLOC。</li>
+<li>.dynsym：该部分保存动态连接符号表。该部分的类型为 SHT_DYNSYM。使用的属性是 SHF_ALLOC。</li>
+<li>.fini：该部分包含有助于进程终止代码的可执行指令。当程序正常退出时，系统会安排执行该部分的代码。该部分的类型为 SHT_PROGBITS。使用的属性是 SHF_ALLOC 和 SHF_EXECINSTR。</li>
+<li>.got：该部分包含全局偏移表。该部分的类型为 SHT_PROGBITS。其属性与处理器有关。</li>
+<li>.hash：该部分包含一个符号哈希表。该部分的类型为 SHT_HASH。使用的属性是 SHF_ALLOC。</li>
+<li>.init：这部分包含有助于进程初始化代码的可执行指令。当程序开始运行时，系统会在调用主程序入口点之前执行该部分的代码。该部分的类型为 SHT_PROGBITS。使用的属性是 SHF_ALLOC 和 SHF_EXECINSTR。</li>
+<li>.interp：该部分包含程序解释器的路径名。如果文件中有包含该部分的可加载段，则该部分的属性将包括 SHF_ALLOC 位。否则，就不会设置这个位。该部分的类型为 SHT_PROGBITS。</li>
+<li>.plt：该部分包含过程链接表（procedure linkage table）。该部分的类型为 SHT_PROGBITS。其属性与处理器有关。</li>
+<li>.rel(a)NAME：该部分包含重定位信息，如果文件有包含重定位的可加载段，该部分的属性将包括 SHF_ALLOC 位，否则就不会有。按照惯例，&quot;NAME&quot; 由被重定位的部分提供，例如 .text 的重定位部分通常称为 .rel(a).text。该部分的类型为 SHT_REL。</li>
+<li>.rodata：该部分保存只读数据，通常用于进程映像中的非写段。该部分的类型为 SHT_PROGBITS。使用的属性是 SHF_ALLOC。</li>
+<li>.shstrtab：该部分包含部分名称。该部分的类型为 SHT_STRTAB。不使用属性类型。</li>
+<li>.strtab：这部分存放字符串，最常见的是表示与符号表项相关名称的字符串。如果文件有一个包含符号字符串表的可加载段，该部分的属性将包括 SHF_ALLOC 位。否则，不会设置这个位。该部分的类型为 SHT_STRTAB。</li>
+<li>.symtab：该部分包含一个符号表。如果文件有一个包含符号表的可加载段，该部分的属性将包括 SHF_ALLOC 位，否则不会设置该位。该部分的类型为 SHT_SYMTAB。</li>
+</ul>
+<p>这里重点说一下符号表、字符串表、重定位表等动态链接是经常使用的部分，一个经典的应用场景就是ret2dlresolve 手法。</p>
+<h4 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>字符串表</a></h4>
+<p>常见的字符串表有 .dynstr，.shstrtab 和 .strtab，其中：</p>
+<ul>
+<li>.dynstr：是动态字符串表，是动态符号表 .dynsym 的辅助节</li>
+<li>.shstrtab：是ELF文件的“目录索引”，用于定位各节的名称。</li>
+<li>.strtab：是静态字符串表，是静态符号表 .symtab 的辅助节。</li>
+</ul>
+<h4 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>符号表</a></h4>
+<p>符号名是函数名和变量名的统称。</p>
+<p>目标文件的符号表保存着定位和重新定位程序的符号定义和引用所需的信息。</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-c language-c"><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf32_sym </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">  Elf32_Word	st_name</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Addr	st_value</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	st_size</span><span style="color:#999999">;</span><br><span style="color:#AB5959">  unsigned</span><span style="color:#AB5959"> char</span><span style="color:#393A34">	st_info</span><span style="color:#999999">;</span><br><span style="color:#AB5959">  unsigned</span><span style="color:#AB5959"> char</span><span style="color:#393A34">	st_other</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Half	st_shndx</span><span style="color:#999999">;</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf32_Sym</span><span style="color:#999999">;</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf64_sym </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">  Elf64_Word st_name</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* 一个字符串表的索引值，如果为0说明符号没有名称 */</span><br><span style="color:#AB5959">  unsigned</span><span style="color:#AB5959"> char</span><span style="color:#393A34">	st_info</span><span style="color:#999999">;</span><span style="color:#A0ADA0">	/* 指定符号的类型和绑定的属性 */</span><br><span style="color:#AB5959">  unsigned</span><span style="color:#AB5959"> char</span><span style="color:#393A34">	st_other</span><span style="color:#999999">;</span><span style="color:#A0ADA0">	/* 定义了符号的可见性 */</span><br><span style="color:#393A34">  Elf64_Half st_shndx</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* 每个符号表条目都与某个部分相关。该成员保存相关的段头表索引。 */</span><br><span style="color:#393A34">  Elf64_Addr st_value</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* 相关符号的地址 */</span><br><span style="color:#393A34">  Elf64_Xword st_size</span><span style="color:#999999">;</span><span style="color:#A0ADA0">		/* 符号的大小 */</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf64_Sym</span><span style="color:#999999">;</span><br></code></pre></div>
+<p>注意到，32 位和 64 位下符号表的结构中成员是相同的，只是顺序不同。</p>
+<p>常见的符号表包括：.symtab 和 .dynsym，这两个节都是我们常说的“符号表”，只不过前者在所有目标文件上都会存在，除非进行 strip 剥离，而后者只会出现在动态链接的目标文件上，且无法被剥离，这是因为后者在动态链接解析符号的过程中起到了非常关键的作用，如果被剥离程序将无法运行。</p>
+<p>另外，.dynsym 保存的符号是 .symtab 所保存的符号的子集，且前者具有 ALLOC 标记后者没有，意味着前者在运行时需要被装载入内存，后者不需要。</p>
+<p>两个重要的成员：</p>
+<ul>
+<li><code class="inline-code">st_name</code> 保存着动态符号在 .dynstr 表里的偏移；</li>
+<li><code class="inline-code">st_value</code> 保存着动态符号的虚拟地址。</li>
+</ul>
+<h4 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>重定位表</a></h4>
+<p>重定位表包括 .rel 和 .rela，是将符号引用与符号定义连接起来的过程，在动态链接解析函数符号的过程中非常重要。</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-c language-c"><span style="color:#A0ADA0">/* The following are used with relocations */</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> ELF32_R_SYM</span><span style="color:#2993a3">(</span><span style="color:#B07D48">x</span><span style="color:#2993a3">)</span><span style="color:#999999"> </span><span style="color:#2993a3">(</span><span style="color:#1e754f">(</span><span style="color:#393A34">x</span><span style="color:#1e754f">)</span><span style="color:#AB5959"> </span><span style="color:#AB5959">></span><span style="color:#AB5959">></span><span style="color:#2F798A"> 8</span><span style="color:#2993a3">)</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> ELF32_R_TYPE</span><span style="color:#2993a3">(</span><span style="color:#B07D48">x</span><span style="color:#2993a3">)</span><span style="color:#999999"> </span><span style="color:#2993a3">(</span><span style="color:#1e754f">(</span><span style="color:#393A34">x</span><span style="color:#1e754f">)</span><span style="color:#AB5959"> &#x26;</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">ff</span><span style="color:#2993a3">)</span><br><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> ELF64_R_SYM</span><span style="color:#2993a3">(</span><span style="color:#B07D48">i</span><span style="color:#2993a3">)</span><span style="color:#999999">			</span><span style="color:#2993a3">(</span><span style="color:#1e754f">(</span><span style="color:#393A34">i</span><span style="color:#1e754f">)</span><span style="color:#AB5959"> </span><span style="color:#AB5959">></span><span style="color:#AB5959">></span><span style="color:#2F798A"> 32</span><span style="color:#2993a3">)</span><br><span style="color:#999999">#</span><span style="color:#1E754F">define</span><span style="color:#59873A"> ELF64_R_TYPE</span><span style="color:#2993a3">(</span><span style="color:#B07D48">i</span><span style="color:#2993a3">)</span><span style="color:#999999">			</span><span style="color:#2993a3">(</span><span style="color:#1e754f">(</span><span style="color:#393A34">i</span><span style="color:#1e754f">)</span><span style="color:#AB5959"> &#x26;</span><span style="color:#AB5959"> 0x</span><span style="color:#2F798A">ffffffff</span><span style="color:#2993a3">)</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf32_rel </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">  Elf32_Addr	r_offset</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	r_info</span><span style="color:#999999">;</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf32_Rel</span><span style="color:#999999">;</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf64_rel </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">  Elf64_Addr r_offset</span><span style="color:#999999">;</span><span style="color:#A0ADA0">	/* Location at which to apply the action */</span><br><span style="color:#393A34">  Elf64_Xword r_info</span><span style="color:#999999">;</span><span style="color:#A0ADA0">	/* index and type of relocation */</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf64_Rel</span><span style="color:#999999">;</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf32_rela </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">  Elf32_Addr	r_offset</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Word	r_info</span><span style="color:#999999">;</span><br><span style="color:#393A34">  Elf32_Sword	r_addend</span><span style="color:#999999">;</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf32_Rela</span><span style="color:#999999">;</span><br><br><span style="color:#1E754F">typedef</span><span style="color:#AB5959"> struct</span><span style="color:#393A34"> elf64_rela </span><span style="color:#2993a3">{</span><br><span style="color:#393A34">  Elf64_Addr r_offset</span><span style="color:#999999">;</span><span style="color:#A0ADA0">	/* Location at which to apply the action */</span><br><span style="color:#393A34">  Elf64_Xword r_info</span><span style="color:#999999">;</span><span style="color:#A0ADA0">	/* index and type of relocation */</span><br><span style="color:#393A34">  Elf64_Sxword r_addend</span><span style="color:#999999">;</span><span style="color:#A0ADA0">	/* Constant addend used to compute value */</span><br><span style="color:#2993a3">}</span><span style="color:#393A34"> Elf64_Rela</span><span style="color:#999999">;</span><br></code></pre></div>
+<p>要理解重定位表的结构，先要搞明白“重定位”是什么。</p>
+<p>在程序从“代码”到“可执行文件”这个过程中，要经历<strong>编译器</strong>，<strong>汇编器</strong>和<strong>链接器</strong>对代码的处理。然而编译器和汇编器通常创建的是一个地址从 0 开始的目标代码，但几乎没有计算机会允许从地址 0 加载某个程序。如果一个程序是由多个子程序组成的，那么所有的子程序也必须要加载到互不重叠的地址上。“重定位”就是为程序不同部分分配加载地址，调整程序中的数据和代码以反映所分配地址的过程。简而言之，<strong>程序的重定位是将程序中的各个部分映射到合理的地址上的过程</strong>。</p>
+<p>还有一种说法是，<strong>重定位是将符号引用与符号定义连接起来的过程</strong>。在 ELF 文件中，对于每一个需要重定位的 ELF 节都有对应的重定位表，比如说 .text 节如果需要重定位，那么其对应的重定位表为 .rel.text。</p>
+<p>例如，当程序调用了一个函数时，相关的调用指令必须把控制传输到适当的目标执行地址。在这个程序倒入某个函数时，.dynstr 就会包含对应函数名称的字符串，.dynsym 中就会包含一个相应的结构（Elf64_Sym），然后在 .rel.dyn 里就会包含一个指向这个符号的重定位表项。</p>
+<p>理解了上面的概念，再来看源码，在动态链接的程序中，同时有 .rel(a).dyn 节和 .rel(a).plt 节，这两个节都使用如上源码的结构。</p>
+<ul>
+<li><code class="inline-code">r_offset</code> 是重定位动作需要用到的地址</li>
+<li><code class="inline-code">r_info</code> 要进行重定位的符号表索引，以及相应的重定位类型（哪些位需要修改，以及如何计算它们的取值）</li>
+<li><code class="inline-code">r_addend</code> 给出一个常量补齐，用来计算将被填充到可重定位字段的数值。</li>
+</ul>
+<p><code class="inline-code">r_info</code> 的计算依赖于上面的那两个宏。</p>
+<p>一般来说，32 位程序只使用 Elf32_Rel，64 位程序只使用 Elf32_Rela。</p>
+<p>重定位类型有很多，这里不再赘述。</p>
+<h4 id="got" class="scroll-target"><a href="#got"><code class="hash inline-code">#</code>GOT 全局偏移表</a></h4>
+<p>GOT 表在 ELF 文件中分为两个部分</p>
+<ul>
+<li>.got，存储全局变量的引用。</li>
+<li>.got.plt，存储函数的引用。</li>
+</ul>
+<p>其相应的值由能够解析 .rel.plt 段中的重定位的动态链接器来填写。</p>
+<p>GOT 表的功能是储存外部符号在动态链接之后的绝对地址。</p>
+<blockquote>
+<p>通常来说，地址无关代码不能包含绝对虚拟地址，理由很简单。然而 GOT 表中可以包含“隐藏的绝对虚拟地址”，这使得在不违背位置无关性以及程序代码段兼容的情况下，得到相关符号的绝对地址。</p>
+</blockquote>
+<p>一般来说，GOT 表的内容如下：</p>
+<ul>
+<li>GOT[0]：包含动态结构的地址，用符号 _DYNAMIC 来进行引用。这使得一个程序，例如动态链接器，在没有执行其重定向前可以找到对应的动态结构。这对于动态链接器来说是非常重要的，因为它必须在不依赖其它程序的情况下可以重定位自己的内存镜像。</li>
+<li>GOT[1]：指向内部类型为 <code class="inline-code">link_map</code> 的指针，这个结构只会在动态装载器中使用，包含了进行符号解析需要的当前 ELF 对象的信息。每个 link_map 都是一条双向链表的一个节点，而这个链表保存了所有加载的 ELF 对象的信息。</li>
+<li>GOT[2]：指向动态装载器中 <code class="inline-code">_dl_runtime_resolve</code> 函数的指针。</li>
+<li>GOT[3] 也就是 .got.plt 后面的项则是程序中不同 .so 中函数的引用地址，如果一个程序需要直接访问一个符号的绝对地址，那么这个符号将会有一个 got 表项。</li>
+</ul>
+<p>至于通过谁来完成“填写 GOT 表中的绝对地址”这个工作呢？答案是 PLT 表。</p>
+<h4 id="plt" class="scroll-target"><a href="#plt"><code class="hash inline-code">#</code>PLT 过程链接表</a></h4>
+<p>PLT 表是用来实现惰性加载的关键部分。</p>
+<p>动态链接器和程序按照如下方式解析过程链接表和全局偏移表的符号引用：</p>
+<p>第一次执行时：</p>
+<p><img src="https://pic1.imgdb.cn/item/682d7cb858cb8da5c8018b96.png" alt="首次执行"/></p>
+<p>第二次执行时：</p>
+<p><img src="https://pic1.imgdb.cn/item/682d7cfe58cb8da5c8018bcf.png" alt="第二次以后执行"/></p>
+<p>而 PLT[0] 是什么呢？举个例子：</p>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-bash language-bash"><span style="color:#59873A">$</span><span style="color:#B56959"> objdump</span><span style="color:#A65E2B"> -d</span><span style="color:#A65E2B"> -j</span><span style="color:#B56959"> .plt</span><span style="color:#B56959"> main</span><br><br><span style="color:#59873A">main：</span><span style="color:#B56959">     文件格式</span><span style="color:#B56959"> elf64-x86-64</span><br><br><br><span style="color:#59873A">Disassembly</span><span style="color:#B56959"> of</span><span style="color:#B56959"> section</span><span style="color:#B56959"> .plt:</span><br><br><span style="color:#59873A">0000000000003020</span><span style="color:#AB5959"> </span><span style="color:#AB5959">&#x3C;</span><span style="color:#B56959">.pl</span><span style="color:#393A34">t</span><span style="color:#AB5959">></span><span style="color:#B56959">:</span><br><span style="color:#A0ADA0"># PLE[0]</span><br><span style="color:#59873A">3020:</span><span style="color:#B56959">       ff</span><span style="color:#2F798A"> 35</span><span style="color:#2F798A"> 72</span><span style="color:#B56959"> 4d</span><span style="color:#2F798A"> 01</span><span style="color:#2F798A"> 00</span><span style="color:#B56959">       push</span><span style="color:#2F798A">   0x14d72</span><span style="color:#2993a3">(</span><span style="color:#59873A">%rip</span><span style="color:#2993a3">)</span><span style="color:#A0ADA0">        # 17d98 &#x3C;_GLOBAL_OFFSET_TABLE_+0x8></span><br><span style="color:#59873A">3026:</span><span style="color:#B56959">       f2</span><span style="color:#B56959"> ff</span><span style="color:#2F798A"> 25</span><span style="color:#2F798A"> 73</span><span style="color:#B56959"> 4d</span><span style="color:#2F798A"> 01</span><span style="color:#2F798A"> 00</span><span style="color:#B56959">    bnd</span><span style="color:#B56959"> jmp</span><span style="color:#A65E2B"> *</span><span style="color:#B56959">0x14d73</span><span style="color:#2993a3">(</span><span style="color:#59873A">%rip</span><span style="color:#2993a3">)</span><span style="color:#A0ADA0">        # 17da0 &#x3C;_GLOBAL_OFFSET_TABLE_+0x10></span><br><span style="color:#59873A">302d:</span><span style="color:#B56959">       0f</span><span style="color:#B56959"> 1f</span><span style="color:#2F798A"> 00</span><span style="color:#B56959">                nopl</span><span style="color:#393A34">   </span><span style="color:#2993a3">(</span><span style="color:#393A34">%rax</span><span style="color:#2993a3">)</span><br><span style="color:#A0ADA0"># PLT[1]</span><br><span style="color:#59873A">3030:</span><span style="color:#B56959">       f3</span><span style="color:#B56959"> 0f</span><span style="color:#B56959"> 1e</span><span style="color:#B56959"> fa</span><span style="color:#B56959">             endbr64</span><br><span style="color:#59873A">3034:</span><span style="color:#2F798A">       68</span><span style="color:#2F798A"> 00</span><span style="color:#2F798A"> 00</span><span style="color:#2F798A"> 00</span><span style="color:#2F798A"> 00</span><span style="color:#B56959">          push</span><span style="color:#B07D48">   $0x0</span><br><span style="color:#59873A">3039:</span><span style="color:#B56959">       f2</span><span style="color:#B56959"> e9</span><span style="color:#B56959"> e1</span><span style="color:#B56959"> ff</span><span style="color:#B56959"> ff</span><span style="color:#B56959"> ff</span><span style="color:#B56959">       bnd</span><span style="color:#B56959"> jmp</span><span style="color:#2F798A"> 3020</span><span style="color:#AB5959"> </span><span style="color:#AB5959">&#x3C;</span><span style="color:#B56959">_init+0x2</span><span style="color:#AB5959">0</span><span style="color:#AB5959">></span><br><span style="color:#59873A">303f:</span><span style="color:#2F798A">       90</span><span style="color:#B56959">                      nop</span><br><span style="color:#998418">...</span><br></code></pre></div>
+<p>可以看到，PLT[0] 的内容其实就是去将 <code class="inline-code">link_map</code> 压栈，然后调用 <code class="inline-code">_dl_runtime_resolve</code> 函数，这一部分的内容会在 ret2dlresolve 手法总结 那篇博客里详细解释。</p>
+<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>参考</a></h2>
+<ol>
+<li><a href="https://ciphersaw.me/ctf-wiki/executable/elf/elf_structure/" title="https://ciphersaw.me/ctf-wiki/executable/elf/elf_structure/" target="_blank" rel="noopener">ELF文件基本结构</a></li>
+<li><a href="https://man7.org/linux/man-pages/man5/elf.5.html" title="https://man7.org/linux/man-pages/man5/elf.5.html" target="_blank" rel="noopener">elf(5) —— linux manual page</a></li>
+<li><a href="https://blog.csdn.net/mergerly/article/details/94585901" title="https://blog.csdn.net/mergerly/article/details/94585901" target="_blank" rel="noopener">ELF文件格式解析</a></li>
+</ol></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
+<a href="https://github.com/unvariant/blog">unvariant/blog</a>
+改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>

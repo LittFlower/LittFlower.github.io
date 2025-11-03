@@ -1,0 +1,539 @@
+export const layout = "#components/Page.js";
+export const title = "2022强网杯青少赛题解";
+export const created = "2023-02-03 21:27:43";
+
+# Qwb-青少赛-2022-WP
+
+## 前言
+
+蒟蒻来写 WP 了...... 本来应该是可以进线下的...奈何工具太老旧...明年再努力吧.
+
+顺带一提，没补 pwn 题（（（
+
+~~别问我为什么现在才发~~
+
+## Misc
+
+~~misc题实在是做麻了~~
+
+misc 题思路都是对的...脚本假了...
+
+### Misc1
+
+题目链接：[Link](https://pic.imgdb.cn/item/638eee95b1fccdcd360d0c19.jpg)
+
+首先拿到一个 png 图片，用 010 editor 查看，根据文件头可以发现它是交换了奇偶数位顺序后的加密图片。
+
+```yaml
+50 89 47 4E 0A 0D 0A 1A 00 00 0D 00 48 49 52 44
+00 00 BD 02 00 00 6D 02 06 08 00 00 3B 00 C8 1A
+00 F7 00 01 49 00 41 44 78 54 EC 9C D9 FD 1C 93
+```
+
+于是第一步解密：
+
+```python
+with open('E:\CTF-Hub\Promblems\Misc\qwxbs2022\misc1\\aa.png', 'rb') as file:
+    ans = open('E:\CTF-Hub\Promblems\Misc\qwxbs2022\misc1\\bb.png', 'wb')
+    while cnt <= length:
+        tmp1 = file.read(1)
+        tmp2 = file.read(1)
+        ans.write(tmp2)
+        ans.write(tmp1)
+        cnt = cnt + 2
+    ans.close()
+    file.close()
+```
+
+得到新图片为：
+
+![bb](https://pic.imgdb.cn/item/638eee95b1fccdcd360d0c19.jpg)
+
+关键词“音乐的财富密码”，搜索得万能和弦：4536251
+
+再结合 lsb 隐写，使用 [cloacked-pixel](https://github.com/livz/cloacked-pixel) 进行带密码的 lsb 解密即可得到 flag。
+
+### Misc2
+
+题目附件：[Link](![1672020979619](image/qwb-青少赛-2022-WP/1672020979619.png))
+
+~~没太明白，挖坑（~~
+
+明白了，填坑。
+
+要做明白这道题，我们就不得不提一下 2021 年祥云杯上我以为神题的 [shuffle_code](https://pan.baidu.com/s/17JzskKNyFEVx79Ozo-dQzQ "提取码：GAME")，Misc2 与这道题目同理，甚至是它的弱化版（因此建议去做做原版）。
+
+得到的 29 * 29 的打乱的二维码后，通过观察二维码的横向特征或者竖向特征，可以确定这个二维码的打乱方式：如果保留了横向特征，则为打乱行；如果保留了竖向特征，则为打乱列。
+
+在 [这篇文章](https://merricx.github.io/qrazybox/help/getting-started/about-qr-code.html)（可能需要挂梯子）中较为详细地讲解了二维码的特征，同时也可以在这个网站生成一个 29 * 29 的二维码调一调体验一下。
+
+![定位码](https://pic.imgdb.cn/item/63a8f2f408b683016327c12f.jpg)
+
+[这篇文章](https://blog.csdn.net/weixin_45246254/article/details/120491620)中展示了如何用 excel 操作二维码。
+
+可以通过确定定位码的方式，确定出题目给的二维码应该是纠错等级为 M，Mask Pattern 为 6 的二维码，根据这个可以确定出前 9 行和后 9 行的二维码。
+
+然后再根据第七列的特征，可以大致填充一下。
+
+![e](https://pic.imgdb.cn/item/63a9031908b68301633b6b44.jpg)
+
+然后把黑白色的还原后的二维码转为 01 矩阵即可。
+
+```python
+from PIL import Image
+
+SCALE = 0.05
+#等比例缩放
+
+def get_char(pixel, blank_char='1', fill_char='0'):
+    if pixel == 0:
+        return blank_char
+    else:
+        return fill_char
+
+im = Image.open(r"code.png")
+size = im.size
+#获取图片的像素
+#size[0]*size[1] 横宽像素
+width, height = int(size[0] * SCALE), int(size[1] * SCALE)
+im = im.resize((width, height))#修改图片尺寸
+im = im.convert('1')#获得二值图像
+
+txt = ""
+for i in range(height):
+    txt += '['
+    for j in range(width):
+        txt += get_char(im.getpixel((j, i)))#getpixel是获取图像中某一点像素的RGB颜色值
+        if j == width - 1:
+            txt += '],'
+            continue
+        txt += ','
+    txt += '\n'
+#print(txt)
+f = open(r'C.txt', 'w')
+
+print(txt, file=f)
+
+f.close()
+
+
+```
+
+再交给脚本爆破，共有 $5!*6!$ 共 86400 种可能，脚本参考自 GZTime 大佬：
+
+```python
+data = [[1,1,1,1,1,1,1,0,1,0,1,1,0,1,1,0,0,1,0,0,1,0,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,1,1,0,1,0,0,0,0,0,1],
+[1,0,1,1,1,0,1,0,1,0,1,0,0,0,0,0,0,0,1,1,0,0,1,0,1,1,1,0,1],
+[1,0,1,1,1,0,1,0,0,1,0,0,1,1,1,0,0,1,1,0,1,0,1,0,1,1,1,0,1],
+[1,0,1,1,1,0,1,0,1,0,1,1,1,1,1,0,0,0,0,1,1,0,1,0,1,1,1,0,1],
+[1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1,0,0,1,0,1,0,0,0,0,0,1],
+[1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
+[0,0,0,0,0,0,0,0,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,0,0,1,1,1,1,1,1,0,1,0,0,0,0,1,1,1,1,1,1,1,0,0,1,0,1,1,1],
+[1,1,1,0,1,0,0,0,0,1,0,1,1,0,0,1,0,1,0,1,0,0,0,1,1,1,0,0,0],
+[1,1,0,0,1,0,1,1,0,0,1,1,1,1,0,1,0,1,0,1,1,0,0,1,1,0,1,0,1],
+[1,1,1,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,1,0,1,1,0,1,1,1,1,0,1],
+[1,0,1,1,1,1,1,1,0,0,1,0,1,0,1,1,1,0,1,1,0,1,1,1,0,0,0,1,1],
+[0,1,1,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,1,1,0,1,1,1,0,1],
+[1,1,0,0,1,0,1,1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,1,1,0,1,0,0,1],
+[1,1,1,1,0,0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,1,0,1,1,1,1,0,0,1],
+[0,1,1,1,0,1,1,1,1,0,0,1,0,1,0,1,0,0,1,1,1,0,0,0,0,0,0,0,1],
+[1,0,0,1,1,0,0,0,1,1,1,0,1,1,0,1,0,1,0,1,1,1,0,0,1,1,1,0,0],
+[0,0,0,0,1,0,1,1,0,0,1,0,1,0,1,1,0,1,1,0,1,1,1,0,1,1,0,0,0],
+[1,0,1,1,1,1,0,0,1,1,0,1,1,0,1,0,0,1,1,0,1,1,1,1,1,1,0,1,1],
+[1,1,1,1,1,0,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1],
+[0,0,0,0,0,0,0,0,1,0,1,1,0,1,0,1,0,0,0,1,1,0,0,0,1,0,1,0,0],
+[1,1,1,1,1,1,1,0,1,0,0,0,1,0,0,1,0,1,1,1,1,0,1,0,1,1,0,0,0],
+[1,0,0,0,0,0,1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,0,0,0,1,0,0,0,0],
+[1,0,1,1,1,0,1,0,1,0,0,0,1,1,1,0,0,0,1,1,1,1,1,1,1,0,0,1,0],
+[1,0,1,1,1,0,1,0,1,0,1,1,0,0,1,1,0,1,1,0,1,0,0,1,0,1,1,0,1],
+[1,0,1,1,1,0,1,0,0,1,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,1,1],
+[1,0,0,0,0,0,1,0,0,0,1,0,0,1,0,0,1,0,0,1,0,1,1,0,1,0,1,0,1],
+[1,1,1,1,1,1,1,0,1,0,0,1,0,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0]]
+
+import pyzbar.pyzbar as pyzbar
+from itertools import permutations
+from PIL import Image, ImageDraw as draw
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+
+shuffle_1 = [9, 11, 13, 15, 17, 19]
+shuffle_2 = [10, 12, 14, 16, 18]
+
+head = data[:9]
+tail = data[20:]
+
+def body(body_1, body_2): # 获取中间部分的一种排列
+    body = []
+    for i in range(5):
+        body.append(body_1[i])
+        body.append(body_2[i])
+    body.append(body_1[5])
+    return [data[i] for i in body]
+
+def draw_img(data): # 生成二维码图片
+    assert len(data) == 29 and len(data[0]) == 29
+    img = Image.new('RGB', (31, 31), (255,255,255))
+    for i, row in enumerate(data):
+        for j, pixel in enumerate(row):
+            img.putpixel((j + 1, i + 1), (0,0,0) if pixel == 1 else (255,255,255))
+    return img
+
+with tqdm(total=720 * 120) as pbar:
+    for body_1 in permutations(shuffle_1):
+        for body_2 in permutations(shuffle_2):
+            im = draw_img(head + body(body_1, body_2) + tail)
+            barcodes = pyzbar.decode(im)
+            pbar.update(1)
+  
+            if(len(barcodes) == 0):
+                continue
+            print('?')
+  
+            for barcode in barcodes:
+                print('1')
+                barcodeData = barcode.data.decode("utf-8")
+                print(barcodeData)
+                plt.imshow(im)
+                plt.show()
+```
+
+大概跑到 80% 左右就可以爆破出答案。
+
+### Misc3
+
+题目附件：[Link](https://pic.imgdb.cn/item/638ef086b1fccdcd36115f1c.jpg)
+
+根据提示，用 foremost 查看后分离得到 zip，打开得到 secret.png。
+
+依然是带密码 lsb 隐写。~~（话说考点重复了啊歪）~~
+
+cloacked-pixel 直接解就可以，通过 010 可以查看密码是 `7his_1s_p4s5w0rd`。
+
+```shell
+python2 lsb.py extract ./secret.png flag.txt 7his_1s_p4s5w0rd
+```
+
+可以得到 flag。
+
+## **Crypto**
+
+### **Crypto**1
+
+先用莫尔斯密码解第一步：
+
+```
+BKJOGDTKFOEJ PV GEX OKFBGPBX FSM VGRMJ DI GXBESPZRXV IDK VXBRKX BDHHRSPBFGPDS PS GEX OKXVXSBX DI FMCXKVFKPFW QXEFCPDK, NEPBE PV MPCPMXM PSGD BWFVVPBFW BKJOGDTKFOEJ FSM HDMXKS BKJOGDTKFOEJ. GEX HFPS BWFVVPBFW BPOEXK GJOXV FKX GKFSVODVPGPDS BPOEXKV, NEPBE KXFKKFSTX GEX DKMXK DI WXGGXKV PS F HXVVFTX. FS XFKWJ VRQVGPGRGPDS BPOEXK NFV GEX BFXVFK BPOEXK, PS NEPBE XFBE WXGGXK PS GEX OWFPSGXYG NFV KXOWFBXM QJ F WXGGXK VDHX IPYXM SRHQXK DI ODVPGPDSV IRKGEXK MDNS GEX FWOEFQXG. VPSBX GEX MXCXWDOHXSG DI KDGDK BPOEXK HFBEPSXV PS NDKWM NFK P FSM GEX FMCXSG DI BDHORGXKV PS NDKWM NFK PP, BKJOGDTKFOEJ HXGEDMV EFCX QXBDHX PSBKXFVPSTWJ BDHOWXY FSM PGV FOOWPBFGPDSV HDKX CFKPXM. HDMXKS BKJOGDTKFOEJ PV EXFCPWJ QFVXM DS HFGEXHFGPBFW GEXDKJ FSM BDHORGXK VBPXSBX OKFBGPBX; BKJOGDTKFOEPB FWTDKPGEHV FKX MXVPTSXM FKDRSM BDHORGFGPDSFW EFKMSXVV FVVRHOGPDSV. GEX TKDNGE DI BKJOGDTKFOEPB GXBESDWDTJ EFV KFPVXM F SRHQXK DI WXTFW PVVRXV PS GEX PSIDKHFGPDS FTX. BKJOGDTKFOEJ'V ODGXSGPFW IDK RVX FV F GDDW IDK XVOPDSFTX FSM VXMPGPDS EFV WXM HFSJ TDCXKSHXSGV GD BWFVVPIJ PG FV F NXFODS FSM GD WPHPG DK XCXS OKDEPQPG PGV RVX FSM XYODKG. PS VDHX ARKPVMPBGPDSV NEXKX GEX RVX DI BKJOGDTKFOEJ PV WXTFW, WFNV OXKHPG PSCXVGPTFGDKV GD BDHOXW GEX MPVBWDVRKX DI XSBKJOGPDS LXJV IDK MDBRHXSGV KXWXCFSG GD FS PSCXVGPTFGPDS. BKJOGDTKFOEJ FWVD OWFJV F HFADK KDWX PS MPTPGFW KPTEGV HFSFTXHXSG FSM BDOJKPTEG PSIKPSTXHXSG MPVORGXV PS KXTFKM GD MPTPGFW HXMPF.GEX IWFT PV 1M817I23-4X20-9405-QI6M-X83M055316M6, OWXFVX FMM IWFT VGKPST FSM QKFBXV JDRKVXWI, FSM FWW WXGGXKV FKX WDNXKBFVX. 
+```
+
+然后使用 [quipquip](http://quipqiup.com/) 进行词频分析即可得到 flag。
+
+`flag{1d817f23-4e20-9405-bf6d-e83d055316d6}`
+
+### Crypto2
+
+~~想不明白，不会，先咕~~
+
+flag 格式 uuid，存在 – 字符
+
+多次尝试发现仅需小写字母变动，再把大写字母转为小写...
+
+感觉是 rot 臭题，就硬猜呗？
+
+## Reverse
+
+有一说一感觉逆向题目还挺好的（
+
+### re1
+
+go 逆向题，在 ida main_client 中注意到：
+
+```go
+  InputRegisters = github_com_goburrow_modbus__ptr_client_ReadInputRegisters(&v17, 1000, 32);
+  if ( *(&v5 + 1) )
+  {
+    github_com_goburrow_modbus__ptr_tcpTransporter_Close(v20[0]);
+  }
+  else
+  {
+    *v13 = 0LL;
+    v14 = 0LL;
+    v7 = main_enc(v13, 32LL, 32LL, InputRegisters, *(&v3 + 1), v5, &v8, 8LL, 8LL, v9);
+    v10[0] = 0xEABC70C38A32299FLL;
+    v10[1] = 0x40FDE86917F14020LL;
+    v11 = 0xBFD31EB797A3E603LL;
+    v12 = 0x37252879AB328324LL;
+    if ( runtime_memequal(v13, v10, 32LL) )
+    {
+      HIWORD(v7) = 19279;
+      github_com_goburrow_modbus__ptr_client_WriteMultipleRegisters(&v17, 0, 1, &v7 + 6, 2LL, 2LL);
+      if ( !v6 )
+      {
+        while ( 1 )
+LABEL_8:
+          time_Sleep(99999000000000LL);
+      }
+    }
+```
+
+其中 `InputRegisters` 即为输入的 flag，接下来重点在于 main_enc。
+
+使用 find_crypt 插件 注意到 main_enc 使用的加密算法是 salsa20，一种流加密算法。[这篇文章](https://www.cnblogs.com/init0ne/p/14772868.html "salsa20")详细介绍了这种算法。
+
+参考一般流加密题目的解法，加密过程即是将密钥流与明文逐字节异或得到密文，反之，解密是将密文再与密钥流做一次异或运算得到明文。
+
+动态调试，随便输入 32 位 flag 获得题目程序中的密文，用 ida 把密文数据扣出来，发现其中有不少不可见字符。。。
+
+```c
+unsigned char miwen[] =
+{
+  159,  41,  50, 138, 195, 112, 188, 234,  32,  64, 
+  241,  23, 105, 232, 253,  64,   3, 230, 163, 151, 
+  183,  30, 211, 191,  36, 131,  50, 171, 121,  40, 
+   37,  55
+};
+```
+
+也即：`9F29328AC370BCEA2040F11769E8FD4003E6A397B71ED3BF248332AB79282537`
+
+重新开一次动调，断点到输入之后，目标是把修改的数据改成标准密文。
+
+![a](https://pic.imgdb.cn/item/63c82cb5be43e0d30e463e65.jpg)
+
+在下方16进制框中同步寄存器 RAX：
+
+![b](https://pic.imgdb.cn/item/63c82d26be43e0d30e472af9.jpg)
+
+![c](https://pic.imgdb.cn/item/63c82da6be43e0d30e482f22.jpg)
+
+用之前获得的标准密文覆盖，然后步过到判断即可。
+
+注意一下大小端序（直接观察也可以），重新修正一下顺序就是 flag。
+
+### re2
+
+经典的迷宫题。
+
+拿到题目，ida pro 反编译，阅读并修改源码：
+
+```c
+__int64 __fastcall main(__int64 a1, char **a2, char **a3)
+{
+  int scr; // [rsp+0h] [rbp-80h]
+  int judge; // [rsp+4h] [rbp-7Ch]
+  int i; // [rsp+8h] [rbp-78h]
+  int len; // [rsp+Ch] [rbp-74h]
+  char s[104]; // [rsp+10h] [rbp-70h] BYREF
+  unsigned __int64 v9; // [rsp+78h] [rbp-8h]
+
+  v9 = __readfsqword(0x28u);
+  scr = 0;
+  judge = 0;
+  nothing();
+  scanff(s);
+  len = strlen(s);
+  for ( i = 0; i < len; ++i )
+    scr = calc(scr, s[i]);
+  if ( scr == 511 && len )
+    judge = 1;
+  if ( !judge || key )
+    printf("Wrong way. There is nothing but maybe a lucky string?\nflag{");
+  else
+    printf("Conguatulation!\nflag{");
+  printff(s);
+  return 0LL;
+}
+
+```
+
+flag 长度为 60，注意到 calc 函数的逻辑：
+
+```c
+__int64 __fastcall calc(int scr, char flag_i)
+{
+  unsigned int tmp; // [rsp+Ch] [rbp-14h]
+
+  switch ( flag_i )
+  {
+    case 'a':
+      tmp = scr + 8;
+      goto here;
+    case 'b':
+      tmp = scr - 8;
+      goto here;
+    case 'l':
+      tmp = scr - 1;
+      goto here;
+    case 'r':
+      tmp = scr + 1;
+      goto here;
+    case 'u':
+      tmp = scr + 64;
+      if ( ++cnt > 7 )
+      {
+        key = 1;
+        return 0LL;
+      }
+LABEL_12:
+      made_map();
+      goto here;
+    case 'd':
+      tmp = scr - 64;
+      if ( --cnt < 0 )
+      {
+        key = 1;
+        return 0LL;
+      }
+      goto LABEL_12;
+  }
+  tmp = -1;
+here:
+  if ( tmp < 512 )
+  {
+    if ( map[8 * (tmp % 64 / 8) + tmp % 64 % 8] )
+    {
+      key = 1;
+      return 0LL;
+    }
+    else
+    {
+      return tmp;
+    }
+  }
+  else
+  {
+    key = 1;
+    return 0LL;
+  }
+}
+```
+
+读到这里就基本可以确定是一个迷宫题目了，并且它的地图是用 tea 生成的。
+
+```c
+  for ( i = 0; i < len; ++i )
+    scr = calc(scr, s[i]);
+```
+
+由于这个 for 循环的性质，所以迷宫的地图是一边跑一边生成，总共有八张地图。
+
+动态调试，输入 `uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu` 以获得所有地图。
+
+```cpp
+int mp[1000] = {
+0, 1, 1, 1, 1, 1, 1, 1, 
+0, 0, 0, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 0, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 0, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 0, 1, 1, 
+1, 1, 1, 1, 1, 0, 1, 1, 
+1, 1, 1, 1, 1, 0, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 0, 0, 1, 1, 1, 1, 
+1, 1, 1, 0, 1, 1, 1, 1, 
+1, 1, 1, 0, 1, 1, 1, 1, 
+1, 1, 1, 0, 1, 0, 1, 1, 
+1, 1, 1, 0, 1, 1, 1, 1, 
+1, 1, 1, 0, 0, 0, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 0, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 0, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 0, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 0, 0, 0, 
+1, 1, 1, 1, 1, 1, 1, 0,
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 1, 
+1, 1, 1, 1, 1, 0, 1, 1, 
+1, 1, 1, 1, 1, 0, 1, 1, 
+1, 1, 1, 1, 1, 0, 1, 1, 
+1, 1, 1, 1, 1, 1, 1, 0 };
+```
+
+然后写个 bfs 走迷宫就好了。
+
+```cpp
+int dir[6] = {8, -8, -1, 1, 64, -64};
+queue<int> q;
+bool vis[1000];
+int ans[1000];
+map<int, char> opt;
+
+int nn[1000];
+
+int bfs(int st = 0)
+{
+    opt[8] = 'a'; opt[-8] = 'b';
+    opt[-1] = 'l'; opt[1] = 'r';
+    opt[64] = 'u'; opt[-64] = 'd';
+
+    vis[st] = true;
+    q.push(st);
+    ans[st] = 0;
+
+    while (!q.empty()) {
+        int now = q.front();
+        q.pop();
+        if (now == 511) { return ans[now]; }
+        for (int i = 0; i < 6; ++i) {
+            int nxt = now + dir[i];
+            if (nxt < 0 || nxt > 511 || vis[nxt] || mp[nxt]) continue;
+            vis[nxt] = true;
+            ans[nxt] = ans[now] + 1;
+            cout << opt[dir[i]];
+            q.push(nxt);
+        }
+    }
+}
+```
+
+接得 flag: `arruuuraaaaarrdbbuuuuuaadrrau`
+
+## 总结
+
+1. 可以加/解密码的 lsb 隐写脚本；
+2. 词频分析 quipquip；
+3. ida 修改程序内存；
+4. 二维码相关知识及爆破脚本的写法。
+
+深刻理解了“你电脑上的程序你肯定想怎么改怎么改啊，没有你不知道的。”
+
+太合理了（（

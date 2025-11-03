@@ -1,0 +1,76 @@
+import config, { posts } from "#utils/config.js";
+import { getInfo } from "#utils/info.js";
+export const created = "2025-10-13T10:37:19+08:00"
+export const layout = "#components/Page.js";
+export const title = "所有文章";
+export const description = "根据发布时间倒序展示博客的全部内容。";
+export const pickReadmeFile = (info) => {
+    const children = info.children || [];
+    for (let i = 0; i < children.length; i++) {
+        const c = children[i];
+        if (c.stats && c.stats.isFile && c.stats.isFile()) {
+            const name = (c.basename || "").toLowerCase();
+            if (name.indexOf("readme") === 0 && (c.extname || "").toLowerCase() === ".mdx") {
+                return c;
+            }
+        }
+    }
+    return undefined;
+}
+
+export const extractFrontmatterValue = (src, key) => {
+    const re = new RegExp("^\\s*export\\s+const\\s+" + key + "\\s*=\\s*([`\"'])(.*?)\\1\\s*;?\\s*$", "m");
+    const m = re.exec(src);
+    return m ? m[2] : undefined;
+}
+
+export const recentByDate = posts
+    .map((p) => getInfo(p))
+    // Exclude top-level aggregate directories like writeups/notes/life
+    .filter((info) => {
+        const rp = info.relativePath || '';
+        return rp !== 'writeups' && rp !== 'notes' && rp !== 'life';
+    })
+    .map((info) => {
+        const readme = pickReadmeFile(info);
+        let title = info.filename;
+        let created = new Date(0);
+        if (readme && readme.source) {
+            const src = String(readme.source);
+            const t = extractFrontmatterValue(src, "title");
+            const c = extractFrontmatterValue(src, "created");
+            if (t && t.length > 0) {
+                title = t;
+            }
+            if (c && c.length > 0) {
+                const d = new Date(c);
+                if (!isNaN(d)) created = d;
+            }
+        }
+        return { info, title, created };
+    })
+    .sort((a, b) => {
+        // reverse sort by created
+        if (a.created == b.created) return 0;
+        return a.created > b.created ? -1 : 1;
+    });
+
+export function formatDate(date) {
+    return date.toISOString().slice(0, 10);
+}
+
+# 所有文章
+
+以下列表按照发布时间倒序排列，方便快速查找最近的更新。
+
+{recentByDate.map(({ info, title, created }) => (
+    <div
+        className="fullwidth"
+        style={{ display: 'flex', justifyContent: 'space-between' }}
+    >
+        <a href={`/${info.relativePath}${info.stats.isDirectory && info.stats.isDirectory() ? '/' : ''}`}>
+            {title}
+        </a>
+        {formatDate(created)}
+    </div>
+))}
