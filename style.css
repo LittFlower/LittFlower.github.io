@@ -1,9 +1,15 @@
 :root {
   --max-file-width: 110ch;
-  --max-blog-width: 80ch;
+  --max-blog-width: var(--max-file-width);
   --left-padding: 12px;
   --right-padding: 12px;
   --top-bar-height: 48px;
+  --content-max-width: min(
+    calc(100vw - var(--left-padding) - var(--right-padding)),
+    var(--max-file-width)
+  );
+  --toc-width: 250px;
+  --toc-gap: 2rem;
   --body-font: "JetBrains Mono", "Noto Sans SC", "PingFang SC",
     "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
   --mono-font: "JetBrains Mono", monospace;
@@ -108,18 +114,14 @@ body .code-snippet,
 body .file,
 .fullwidth {
   max-width: var(--max-file-width);
-  width: min(
-    calc(100vw - var(--left-padding) - var(--right-padding)),
-    var(--max-file-width)
-  );
+  width: var(--content-max-width);
 }
 
 .blogwidth {
   max-width: var(--max-blog-width);
-  min-width: min(
-    100vw - var(--left-padding) - var(--right-padding),
-    var(--max-blog-width)
-  );
+  width: var(--content-max-width);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 body .code-snippet,
@@ -131,10 +133,7 @@ hr {
   border: 0;
   border-top: 1px solid var(--color-border);
   max-width: var(--max-file-width);
-  width: min(
-    calc(100vw - var(--left-padding) - var(--right-padding)),
-    var(--max-file-width)
-  );
+  width: var(--content-max-width);
   margin: 2rem 0;
 }
 
@@ -174,19 +173,23 @@ hr {
 .page-main {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 2rem;
+  gap: var(--toc-gap);
   align-items: flex-start;
   /* Constrain to same width as top bar inner */
-  width: min(
-    calc(100vw - var(--left-padding) - var(--right-padding)),
-    var(--max-file-width)
-  );
+  width: var(--content-max-width);
   max-width: var(--max-file-width);
   margin: 0 auto;
 }
 
 .page-main--toc {
-  grid-template-columns: minmax(0, 1fr) 250px;
+  grid-template-columns:
+    minmax(0, var(--max-file-width))
+    minmax(0, var(--toc-width));
+  width: min(
+    calc(100vw - var(--left-padding) - var(--right-padding)),
+    calc(var(--max-file-width) + var(--toc-width) + var(--toc-gap))
+  );
+  max-width: calc(var(--max-file-width) + var(--toc-width) + var(--toc-gap));
 }
 
 .page-article {
@@ -284,6 +287,8 @@ hr {
 @media screen and (max-width: 1024px) {
   .page-main--toc {
     grid-template-columns: 1fr;
+    width: var(--content-max-width);
+    max-width: var(--max-file-width);
   }
 
   .toc {
@@ -335,10 +340,7 @@ hr {
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  width: min(
-    calc(100vw - var(--left-padding) - var(--right-padding)),
-    var(--max-file-width)
-  );
+  width: var(--content-max-width);
   max-width: var(--max-file-width);
   margin: 0 auto;
   box-sizing: border-box;
@@ -374,9 +376,9 @@ hr {
   font-size: 0.9rem;
 }
 
-/* 80ch magic number is derived from --max-blog-width */
+/* 110ch matches --max-file-width (top bar width) */
 /* TODO: fix sidebar on mobile */
-@media screen and (max-width: calc(80ch + 40ch)) {
+@media screen and (max-width: calc(110ch + 40ch)) {
   .side-bar {
     flex-direction: column;
   }
@@ -788,7 +790,7 @@ html[data-theme="dark"] .code-snippet__pre[data-theme="dark"] {
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
-  max-width: var(--max-blog-width);
+  max-width: var(--max-file-width);
   text-align: center;
   line-height: 1.6;
 }
