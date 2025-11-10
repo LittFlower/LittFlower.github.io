@@ -1,5 +1,5 @@
 export const layout = "#components/Page.js";
-export const title = "Infobahn2025 Writeup";
+export const title = "InfobahnCTF2025 Writeup";
 export const description = "";
 export const created = "2025-11-10T14:30:29+08:00";
 
