@@ -4,7 +4,7 @@
         <title>花盆</title>
         <link>https://blog.littflower.top</link>
         <description>记录安全研究、开发工具和生活观察的中文博客</description>
-        <lastBuildDate>Thu, 20 Nov 2025 13:19:49 GMT</lastBuildDate>
+        <lastBuildDate>Thu, 27 Nov 2025 10:59:04 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>zh-CN</language>
@@ -12,6 +12,12 @@
             <title><![CDATA[/writeups/N1CTF-2025-Pwn-Writeup]]></title>
             <link>https://blog.littflower.top/writeups/N1CTF-2025-Pwn-Writeup</link>
             <guid>https://blog.littflower.top/writeups/N1CTF-2025-Pwn-Writeup</guid>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups/Qwb-2025-final-Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/Qwb-2025-final-Writeup</link>
+            <guid>https://blog.littflower.top/writeups/Qwb-2025-final-Writeup</guid>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
@@ -268,6 +274,13 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
+            <title><![CDATA[Qwb2025 final Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/Qwb-2025-final-Writeup</link>
+            <guid>https://blog.littflower.top/writeups/Qwb-2025-final-Writeup</guid>
+            <pubDate>Thu, 27 Nov 2025 10:09:20 GMT</pubDate>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
             <title><![CDATA[RCTF2025 Pwn 部分题 Writeup]]></title>
             <link>https://blog.littflower.top/writeups/RCTF-2025-Pwn-Writeup</link>
             <guid>https://blog.littflower.top/writeups/RCTF-2025-Pwn-Writeup</guid>
@@ -420,6 +433,24 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
+            <title><![CDATA[/life]]></title>
+            <link>https://blog.littflower.top/life</link>
+            <guid>https://blog.littflower.top/life</guid>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
             <title><![CDATA[/notes]]></title>
             <link>https://blog.littflower.top/notes</link>
             <guid>https://blog.littflower.top/notes</guid>
@@ -492,12 +523,6 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
             <title><![CDATA[/writeups]]></title>
             <link>https://blog.littflower.top/writeups</link>
             <guid>https://blog.littflower.top/writeups</guid>
@@ -510,9 +535,9 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
@@ -612,21 +637,15 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/life]]></title>
-            <link>https://blog.littflower.top/life</link>
-            <guid>https://blog.littflower.top/life</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/life]]></title>
-            <link>https://blog.littflower.top/life</link>
-            <guid>https://blog.littflower.top/life</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
             <title><![CDATA[/notes]]></title>
             <link>https://blog.littflower.top/notes</link>
             <guid>https://blog.littflower.top/notes</guid>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/life]]></title>
+            <link>https://blog.littflower.top/life</link>
+            <guid>https://blog.littflower.top/life</guid>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>

