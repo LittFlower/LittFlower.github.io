@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
+        const storageKey = "theme";
+        const root = document.documentElement;
+        const supportsMatchMedia = typeof window.matchMedia === "function";
+        const mediaQuery = supportsMatchMedia
+            ? window.matchMedia("(prefers-color-scheme: dark)")
+            : null;
+
+        const readStorage = () => {
+            try {
+                return window.localStorage.getItem(storageKey);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeStorage = (value) => {
+            try {
+                window.localStorage.setItem(storageKey, value);
+            } catch (error) {
+                return;
+            }
+        };
+
+        const applyTheme = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            root.setAttribute("data-theme", theme);
+            if (document.body) {
+                document.body.setAttribute("data-theme", theme);
+            } else {
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    () => {
+                        if (document.body) {
+                            document.body.setAttribute("data-theme", theme);
+                        }
+                    },
+                    { once: true }
+                );
+            }
+            return theme;
+        };
+
+        const updateButton = (value) => {
+            const theme = value === "dark" ? "dark" : "light";
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button) {
+                return;
+            }
+            const label = button.querySelector("[data-theme-toggle-label]");
+            const isDark = theme === "dark";
+            button.setAttribute("aria-pressed", isDark ? "true" : "false");
+            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
+            if (label) {
+                label.textContent = isDark ? "深色" : "浅色";
+            }
+        };
+
+        const stored = readStorage();
+        const initial =
+            stored === "light" || stored === "dark"
+                ? stored
+                : mediaQuery && mediaQuery.matches
+                  ? "dark"
+                  : "light";
+
+        const appliedTheme = applyTheme(initial);
+        updateButton(appliedTheme);
+
+        window.__setTheme = (value) => {
+            const theme = applyTheme(value);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        window.__toggleTheme = () => {
+            const current =
+                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
+            const next = current === "dark" ? "light" : "dark";
+            const theme = applyTheme(next);
+            writeStorage(theme);
+            updateButton(theme);
+        };
+
+        const syncButtonState = () => {
+            updateButton(root.getAttribute("data-theme"));
+        };
+
+        const attachToggle = () => {
+            const button = document.querySelector("[data-theme-toggle]");
+            if (!button || button.__themeToggleBound) {
+                return;
+            }
+            button.__themeToggleBound = true;
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                if (typeof window.__toggleTheme === "function") {
+                    window.__toggleTheme();
+                }
+            });
+        };
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                syncButtonState();
+                attachToggle();
+            });
+        } else {
+            syncButtonState();
+            attachToggle();
+        }
+
+        const handleMediaChange = (event) => {
+            const storedTheme = readStorage();
+            if (storedTheme === "light" || storedTheme === "dark") {
+                updateButton(storedTheme);
+                return;
+            }
+            const next = event.matches ? "dark" : "light";
+            const theme = applyTheme(next);
+            updateButton(theme);
+        };
+
+        if (mediaQuery) {
+            if (typeof mediaQuery.addEventListener === "function") {
+                mediaQuery.addEventListener("change", handleMediaChange);
+            } else if (typeof mediaQuery.addListener === "function") {
+                mediaQuery.addListener(handleMediaChange);
+            }
+        }
+    })();
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>awesome pwn reading lists | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="awesome pwn reading lists | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/notes/awesome-pwn-reading-lists/README.mdx"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="preload" as="style" href="/style.css" type="text/css"/><link rel="preload" as="style" href="/fonts.css" type="text/css"/><link rel="stylesheet" href="/style.css" type="text/css"/><link rel="stylesheet" href="/fonts.css" type="text/css"/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt loading="lazy" decoding="async"/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt loading="lazy" decoding="async"/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="pwn" class="scroll-target"><a href="#pwn"><code class="hash inline-code">#</code>Pwn 学习资源整理</a></h1>
+<h2 id="pwn-envirment" class="scroll-target"><a href="#pwn-envirment"><code class="hash inline-code">#</code>Pwn Envirment</a></h2>
+<blockquote>
+<p>主要是一些环境搭建相关的资源
+因为有一些学弟偶尔会私信我 vmware 坏了（</p>
+</blockquote>
+<ol>
+<li><a href="https://ltfa1l.top/2024/05/01/system/unsorted/%E4%B8%80%E6%AD%A5%E4%B8%80%E6%AD%A5%E9%85%8D%E7%BD%AEPwn%E6%89%8B%E7%9A%84wsl2/" title="https://ltfa1l.top/2024/05/01/system/unsorted/%E4%B8%80%E6%AD%A5%E4%B8%80%E6%AD%A5%E9%85%8D%E7%BD%AEPwn%E6%89%8B%E7%9A%84wsl2/" target="_blank" rel="noopener">一步一步配置wsl2 for pwn</a></li>
+<li><a href="https://www.roderickchan.cn/zh-cn/2023-02-13-%E4%BD%BF%E7%94%A8docker%E8%B0%83%E8%AF%95pwn%E9%A2%98/" title="https://www.roderickchan.cn/zh-cn/2023-02-13-%E4%BD%BF%E7%94%A8docker%E8%B0%83%E8%AF%95pwn%E9%A2%98/" target="_blank" rel="noopener">使用 docker 调试和部署 pwn 题</a></li>
+<li><a href="https://github.com/the-soloist/pwn-env-docker" title="https://github.com/the-soloist/pwn-env-docker" target="_blank" rel="noopener">pwn-env-docker</a></li>
+<li><a href="https://ctf-wiki.org/pwn/linux/user-mode/environment/" title="https://ctf-wiki.org/pwn/linux/user-mode/environment/" target="_blank" rel="noopener">Envirment - ctfwiki</a></li>
+<li><a href="https://blog.csdn.net/kelxLZ/article/details/120160036" title="https://blog.csdn.net/kelxLZ/article/details/120160036" target="_blank" rel="noopener">PWNDBG/PWNDBG联合使用</a></li>
+<li><a href="https://blog.littflower.top/life/the-taste-of-ArchLinux/" title="https://blog.littflower.top/life/the-taste-of-ArchLinux/" target="_blank" rel="noopener">在使用 ArchLinux 4 个月后</a></li>
+</ol>
+<h2 id="pwn-basic" class="scroll-target"><a href="#pwn-basic"><code class="hash inline-code">#</code>Pwn Basic</a></h2>
+<blockquote>
+<p>Pwn 的基础知识
+主要是各种 ROP、格式化字符串技术</p>
+</blockquote>
+<ol>
+<li><a href="https://ctf-wiki.org/pwn/linux/user-mode/stackoverflow/x86/basic-rop/" title="https://ctf-wiki.org/pwn/linux/user-mode/stackoverflow/x86/basic-rop/" target="_blank" rel="noopener">basic_rop - ctfwiki</a></li>
+<li><a href="https://sashactf.gitbook.io/pwn-notes/pwn/rop-2.34+" title="https://sashactf.gitbook.io/pwn-notes/pwn/rop-2.34+" target="_blank" rel="noopener">2.34以上的一些 rop 技术</a></li>
+<li><a href="https://blog.littflower.top/notes/ret2dlresolve-summary/" title="https://blog.littflower.top/notes/ret2dlresolve-summary/" target="_blank" rel="noopener">Ret2dlresolve 手法总结</a></li>
+<li><a href="https://ltfa1l.top/2023/08/21/system/format_string/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/" title="https://ltfa1l.top/2023/08/21/system/format_string/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/" target="_blank" rel="noopener">一步一步从栈的视角看格式化字符串漏洞</a></li>
+<li><a href="https://ltfa1l.top/2023/09/21/system/unsorted/orw/" title="https://ltfa1l.top/2023/09/21/system/unsorted/orw/" target="_blank" rel="noopener">ORW小记</a></li>
+<li><a href="https://www.youtube.com/user/scwuaptx/videos" title="https://www.youtube.com/user/scwuaptx/videos" target="_blank" rel="noopener">angelboy PWN 123</a></li>
+<li><a href="https://github.com/Naetw/CTF-pwn-tips" title="https://github.com/Naetw/CTF-pwn-tips" target="_blank" rel="noopener">CTF-pwn-tips</a></li>
+</ol>
+<h2 id="pwn-advance" class="scroll-target"><a href="#pwn-advance"><code class="hash inline-code">#</code>Pwn Advance</a></h2>
+<blockquote>
+<p>介绍一下堆入门</p>
+</blockquote>
+<ol>
+<li><a href="https://github.com/shellphish/how2heap" title="https://github.com/shellphish/how2heap" target="_blank" rel="noopener">how2heap</a></li>
+<li><a href="https://sploitfun.wordpress.com/2015/02/10/understanding-glibc-malloc/" title="https://sploitfun.wordpress.com/2015/02/10/understanding-glibc-malloc/" target="_blank" rel="noopener">Understanding glibc malloc</a></li>
+<li><a href="https://0x434b.dev/overview-of-glibc-heap-exploitation-techniques/" title="https://0x434b.dev/overview-of-glibc-heap-exploitation-techniques/" target="_blank" rel="noopener">Overview of GLIBC heap exploitation techniques</a></li>
+<li><a href="https://sensepost.com/blog/2017/painless-intro-to-the-linux-userland-heap/" title="https://sensepost.com/blog/2017/painless-intro-to-the-linux-userland-heap/" target="_blank" rel="noopener">Painless intro to the Linux userland heap</a></li>
+<li><a href="https://heap-exploitation.dhavalkapil.com/" title="https://heap-exploitation.dhavalkapil.com/" target="_blank" rel="noopener">heap-exploitation</a></li>
+<li><a href="https://ltfa1l.top/2023/12/25/system/Heap/bins%E9%93%BE%E8%A1%A8%E6%9C%BA%E5%88%B6/" title="https://ltfa1l.top/2023/12/25/system/Heap/bins%E9%93%BE%E8%A1%A8%E6%9C%BA%E5%88%B6/" target="_blank" rel="noopener">glibc中的bins链表详解</a></li>
+<li><a href="https://ltfa1l.top/2023/09/23/system/Heap/understanding_glibc_malloc/" title="https://ltfa1l.top/2023/09/23/system/Heap/understanding_glibc_malloc/" target="_blank" rel="noopener">经典文章阅读：Understanding glibc malloc</a></li>
+<li><a href="https://ltfa1l.top/2024/07/01/system/tricks/%E5%9B%BE%E8%A7%A3glibc%E5%A0%86%E5%88%A9%E7%94%A8/" title="https://ltfa1l.top/2024/07/01/system/tricks/%E5%9B%BE%E8%A7%A3glibc%E5%A0%86%E5%88%A9%E7%94%A8/" target="_blank" rel="noopener">图解glibc堆利用</a></li>
+</ol></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
+<a href="https://github.com/unvariant/blog">unvariant/blog</a>
+改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>

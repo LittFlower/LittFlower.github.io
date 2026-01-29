@@ -1,0 +1,45 @@
+export const layout = "#components/Page.js";
+export const title = "awesome pwn reading lists";
+export const description = "";
+export const created = "2025-12-08T19:17:51+08:00";
+
+# Pwn 学习资源整理
+
+## Pwn Envirment
+
+> 主要是一些环境搭建相关的资源
+> 因为有一些学弟偶尔会私信我 vmware 坏了（
+
+1. [一步一步配置wsl2 for pwn](https://ltfa1l.top/2024/05/01/system/unsorted/%E4%B8%80%E6%AD%A5%E4%B8%80%E6%AD%A5%E9%85%8D%E7%BD%AEPwn%E6%89%8B%E7%9A%84wsl2/)
+2. [使用 docker 调试和部署 pwn 题](https://www.roderickchan.cn/zh-cn/2023-02-13-%E4%BD%BF%E7%94%A8docker%E8%B0%83%E8%AF%95pwn%E9%A2%98/)
+3. [pwn-env-docker](https://github.com/the-soloist/pwn-env-docker)
+4. [Envirment - ctfwiki](https://ctf-wiki.org/pwn/linux/user-mode/environment/)
+5. [PWNDBG/PWNDBG联合使用](https://blog.csdn.net/kelxLZ/article/details/120160036)
+6. [在使用 ArchLinux 4 个月后](https://blog.littflower.top/life/the-taste-of-ArchLinux/)
+
+
+## Pwn Basic
+
+> Pwn 的基础知识
+> 主要是各种 ROP、格式化字符串技术
+
+1. [basic_rop - ctfwiki](https://ctf-wiki.org/pwn/linux/user-mode/stackoverflow/x86/basic-rop/)
+2. [2.34以上的一些 rop 技术](https://sashactf.gitbook.io/pwn-notes/pwn/rop-2.34+)
+3. [Ret2dlresolve 手法总结](https://blog.littflower.top/notes/ret2dlresolve-summary/)
+4. [一步一步从栈的视角看格式化字符串漏洞](https://ltfa1l.top/2023/08/21/system/format_string/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/)
+5. [ORW小记](https://ltfa1l.top/2023/09/21/system/unsorted/orw/)
+6. [angelboy PWN 123](https://www.youtube.com/user/scwuaptx/videos)
+7. [CTF-pwn-tips](https://github.com/Naetw/CTF-pwn-tips)
+
+## Pwn Advance
+
+> 介绍一下堆入门
+
+1. [how2heap](https://github.com/shellphish/how2heap)
+2. [Understanding glibc malloc](https://sploitfun.wordpress.com/2015/02/10/understanding-glibc-malloc/)
+3. [Overview of GLIBC heap exploitation techniques](https://0x434b.dev/overview-of-glibc-heap-exploitation-techniques/)
+4. [Painless intro to the Linux userland heap](https://sensepost.com/blog/2017/painless-intro-to-the-linux-userland-heap/)
+5. [heap-exploitation](https://heap-exploitation.dhavalkapil.com/)
+6. [glibc中的bins链表详解](https://ltfa1l.top/2023/12/25/system/Heap/bins%E9%93%BE%E8%A1%A8%E6%9C%BA%E5%88%B6/)
+8. [经典文章阅读：Understanding glibc malloc](https://ltfa1l.top/2023/09/23/system/Heap/understanding_glibc_malloc/)
+9. [图解glibc堆利用](https://ltfa1l.top/2024/07/01/system/tricks/%E5%9B%BE%E8%A7%A3glibc%E5%A0%86%E5%88%A9%E7%94%A8/)
