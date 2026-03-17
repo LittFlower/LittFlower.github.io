@@ -1,140 +1,21 @@
 <!DOCTYPE html>
-<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
-        const storageKey = "theme";
-        const root = document.documentElement;
-        const supportsMatchMedia = typeof window.matchMedia === "function";
-        const mediaQuery = supportsMatchMedia
-            ? window.matchMedia("(prefers-color-scheme: dark)")
-            : null;
-
-        const readStorage = () => {
-            try {
-                return window.localStorage.getItem(storageKey);
-            } catch (error) {
-                return null;
-            }
-        };
-
-        const writeStorage = (value) => {
-            try {
-                window.localStorage.setItem(storageKey, value);
-            } catch (error) {
-                return;
-            }
-        };
-
-        const applyTheme = (value) => {
-            const theme = value === "dark" ? "dark" : "light";
-            root.setAttribute("data-theme", theme);
-            if (document.body) {
-                document.body.setAttribute("data-theme", theme);
-            } else {
-                document.addEventListener(
-                    "DOMContentLoaded",
-                    () => {
-                        if (document.body) {
-                            document.body.setAttribute("data-theme", theme);
-                        }
-                    },
-                    { once: true }
-                );
-            }
-            return theme;
-        };
-
-        const updateButton = (value) => {
-            const theme = value === "dark" ? "dark" : "light";
-            const button = document.querySelector("[data-theme-toggle]");
-            if (!button) {
-                return;
-            }
-            const label = button.querySelector("[data-theme-toggle-label]");
-            const isDark = theme === "dark";
-            button.setAttribute("aria-pressed", isDark ? "true" : "false");
-            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
-            if (label) {
-                label.textContent = isDark ? "深色" : "浅色";
-            }
-        };
-
-        const stored = readStorage();
-        const initial =
-            stored === "light" || stored === "dark"
-                ? stored
-                : mediaQuery && mediaQuery.matches
-                  ? "dark"
-                  : "light";
-
-        const appliedTheme = applyTheme(initial);
-        updateButton(appliedTheme);
-
-        window.__setTheme = (value) => {
-            const theme = applyTheme(value);
-            writeStorage(theme);
-            updateButton(theme);
-        };
-
-        window.__toggleTheme = () => {
-            const current =
-                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
-            const next = current === "dark" ? "light" : "dark";
-            const theme = applyTheme(next);
-            writeStorage(theme);
-            updateButton(theme);
-        };
-
-        const syncButtonState = () => {
-            updateButton(root.getAttribute("data-theme"));
-        };
-
-        const attachToggle = () => {
-            const button = document.querySelector("[data-theme-toggle]");
-            if (!button || button.__themeToggleBound) {
-                return;
-            }
-            button.__themeToggleBound = true;
-            button.addEventListener("click", (event) => {
-                event.preventDefault();
-                if (typeof window.__toggleTheme === "function") {
-                    window.__toggleTheme();
-                }
-            });
-        };
-
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", () => {
-                syncButtonState();
-                attachToggle();
-            });
-        } else {
-            syncButtonState();
-            attachToggle();
-        }
-
-        const handleMediaChange = (event) => {
-            const storedTheme = readStorage();
-            if (storedTheme === "light" || storedTheme === "dark") {
-                updateButton(storedTheme);
-                return;
-            }
-            const next = event.matches ? "dark" : "light";
-            const theme = applyTheme(next);
-            updateButton(theme);
-        };
-
-        if (mediaQuery) {
-            if (typeof mediaQuery.addEventListener === "function") {
-                mediaQuery.addEventListener("change", handleMediaChange);
-            } else if (typeof mediaQuery.addListener === "function") {
-                mediaQuery.addListener(handleMediaChange);
-            }
-        }
-    })();
-    if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-            navigator.serviceWorker.register("/sw.js").catch(() => {});
-        });
-    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>写在入校前 | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="写在入校前 | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/life/Written-before-enrollment/"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="preload" as="style" href="/style.css" type="text/css"/><link rel="preload" as="style" href="/fonts.css" type="text/css"/><link rel="stylesheet" href="/style.css" type="text/css"/><link rel="stylesheet" href="/fonts.css" type="text/css"/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt loading="lazy" decoding="async"/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt loading="lazy" decoding="async"/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"><div class="file"><a href="./README.mdx" class="file-link"><img src="/icons/text.png" alt loading="lazy" decoding="async"/><span>README.mdx</span></a><div class="file-meta"><span>4.28 KiB</span><span class="file-meta-date">2023-09-22 08:00</span></div></div></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>写在小花大一开学前</a></h1>
+<html id="_top" lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>写在入校前 | 花盆</title><meta name="author" content="LittFlower"/><meta name="description" content="三个月的暑假瞬间就过去了… 让人不禁感慨自己即将步入大学的校门。"/><meta property="og:type" content="article"/><meta property="og:title" content="写在入校前 | 花盆"/><meta property="og:url" content="https://blog.littflower.top/life/Written-before-enrollment/"/><meta property="og:description" content="三个月的暑假瞬间就过去了… 让人不禁感慨自己即将步入大学的校门。"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="写在入校前 | 花盆"/><meta name="twitter:description" content="三个月的暑假瞬间就过去了… 让人不禁感慨自己即将步入大学的校门。"/><link rel="canonical" href="https://blog.littflower.top/life/Written-before-enrollment/"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><script>(function () {
+    var storageKey = "theme";
+    var root = document.documentElement;
+    var theme = "light";
+    try {
+      var stored = window.localStorage.getItem(storageKey);
+      if (stored === "light" || stored === "dark") {
+        theme = stored;
+      } else if (
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ) {
+        theme = "dark";
+      }
+    } catch (_) {}
+    root.setAttribute("data-theme", theme);
+  })();</script><script defer src="/theme.js?v=d3b88eea84"></script><link rel="preload" as="style" href="/style.css" type="text/css"/><link rel="preload" as="style" href="/fonts.css" type="text/css"/><link rel="stylesheet" href="/style.css" type="text/css"/><link rel="stylesheet" href="/fonts.css" type="text/css"/></head><body><nav aria-label="页面导航" class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt width="20" height="22" aria-hidden="true" decoding="async" loading="eager" class="icon icon--dir"/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt width="20" height="22" aria-hidden="true" decoding="async" loading="eager" class="icon icon--dir"/><span>..</span></a></div><div class="top-bar-group"><a href="#_content" class="top-bar-link"><code class="hash inline-code">#</code>内容</a><a href="#_top" class="top-bar-link"><code class="hash inline-code">#</code>回到顶部</a><button type="button" data-theme-toggle="true" aria-pressed="false" title="切换为深色主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色主题</span></button></div></div></nav><div class="page-shell"><nav aria-label="当前目录文件" class="page-files"><div class="file"><a href="./README.mdx" class="file-link"><img src="/icons/text.png" alt width="20" height="22" aria-hidden="true" decoding="async" loading="eager" class="icon icon--file"/><span>README.mdx</span></a><div class="file-meta"><span>4.28 KiB</span><span class="file-meta-date">2023-09-22 08:00</span></div></div></nav><main class="page-main"><article id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="写在小花大一开学前" class="scroll-target"><a href="#%E5%86%99%E5%9C%A8%E5%B0%8F%E8%8A%B1%E5%A4%A7%E4%B8%80%E5%BC%80%E5%AD%A6%E5%89%8D"><code class="hash inline-code">#</code>写在小花大一开学前</a></h1>
 <p>三个月的暑假瞬间就过去了… 让人不禁感慨自己即将步入大学的校门。</p>
 <p>说起来自高考出成绩之后，自己先是伤心失意了两三周，虽然没有在深夜默默流泪这种狗血桥段，但是相当一段时间内还是被不甘心、不情愿等等负面情绪充斥着。在报志愿之前，一看自己的成绩，再看看各个曾经想去的、不想去的学校的最低录取位次，无数个瞬间都感觉自己完蛋了：似乎… 我没学上了？</p>
 <p>大概沉浸在这种负面情绪里低落了相当一段时间，把自己整日泡在图书馆里做题、写代码、挨学长批评，我真该死啊…</p>
@@ -163,6 +44,4 @@
 <p>从长春回来之后，感觉自己心情似乎好了一些，今天入校把东西收拾好之后发了条说说：</p>
 <img src="https://s2.loli.net/2023/09/08/iqImnbDY2cSr8B9.jpg" width="60%"/>
 <p>确实是这样… 慢慢的慢慢的，日子依然可以过得下去、我依然可以乐观的起来…… 尽管现实已经变得面目全非了，但是也并非完全没有希望？</p>
-<p>每每看到自己的昵称，都在心中默默提醒自己要像一朵花一样绽放。</p></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
-<a href="https://github.com/unvariant/blog">unvariant/blog</a>
-改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>
+<p>每每看到自己的昵称，都在心中默默提醒自己要像一朵花一样绽放。</p></article></main></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link">xzy1476569428@163.com</a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link">GitHub</a></div><div class="footer-row footer-meta"><span>本站基于 <a href="https://github.com/unvariant/blog">unvariant/blog</a> 改造，除特别说明外内容以 CC BY 4.0 协议共享。</span></div></footer></body></html>

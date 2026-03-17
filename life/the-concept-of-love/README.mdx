@@ -1,141 +1,22 @@
 <!DOCTYPE html>
-<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
-        const storageKey = "theme";
-        const root = document.documentElement;
-        const supportsMatchMedia = typeof window.matchMedia === "function";
-        const mediaQuery = supportsMatchMedia
-            ? window.matchMedia("(prefers-color-scheme: dark)")
-            : null;
-
-        const readStorage = () => {
-            try {
-                return window.localStorage.getItem(storageKey);
-            } catch (error) {
-                return null;
-            }
-        };
-
-        const writeStorage = (value) => {
-            try {
-                window.localStorage.setItem(storageKey, value);
-            } catch (error) {
-                return;
-            }
-        };
-
-        const applyTheme = (value) => {
-            const theme = value === "dark" ? "dark" : "light";
-            root.setAttribute("data-theme", theme);
-            if (document.body) {
-                document.body.setAttribute("data-theme", theme);
-            } else {
-                document.addEventListener(
-                    "DOMContentLoaded",
-                    () => {
-                        if (document.body) {
-                            document.body.setAttribute("data-theme", theme);
-                        }
-                    },
-                    { once: true }
-                );
-            }
-            return theme;
-        };
-
-        const updateButton = (value) => {
-            const theme = value === "dark" ? "dark" : "light";
-            const button = document.querySelector("[data-theme-toggle]");
-            if (!button) {
-                return;
-            }
-            const label = button.querySelector("[data-theme-toggle-label]");
-            const isDark = theme === "dark";
-            button.setAttribute("aria-pressed", isDark ? "true" : "false");
-            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
-            if (label) {
-                label.textContent = isDark ? "深色" : "浅色";
-            }
-        };
-
-        const stored = readStorage();
-        const initial =
-            stored === "light" || stored === "dark"
-                ? stored
-                : mediaQuery && mediaQuery.matches
-                  ? "dark"
-                  : "light";
-
-        const appliedTheme = applyTheme(initial);
-        updateButton(appliedTheme);
-
-        window.__setTheme = (value) => {
-            const theme = applyTheme(value);
-            writeStorage(theme);
-            updateButton(theme);
-        };
-
-        window.__toggleTheme = () => {
-            const current =
-                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
-            const next = current === "dark" ? "light" : "dark";
-            const theme = applyTheme(next);
-            writeStorage(theme);
-            updateButton(theme);
-        };
-
-        const syncButtonState = () => {
-            updateButton(root.getAttribute("data-theme"));
-        };
-
-        const attachToggle = () => {
-            const button = document.querySelector("[data-theme-toggle]");
-            if (!button || button.__themeToggleBound) {
-                return;
-            }
-            button.__themeToggleBound = true;
-            button.addEventListener("click", (event) => {
-                event.preventDefault();
-                if (typeof window.__toggleTheme === "function") {
-                    window.__toggleTheme();
-                }
-            });
-        };
-
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", () => {
-                syncButtonState();
-                attachToggle();
-            });
-        } else {
-            syncButtonState();
-            attachToggle();
-        }
-
-        const handleMediaChange = (event) => {
-            const storedTheme = readStorage();
-            if (storedTheme === "light" || storedTheme === "dark") {
-                updateButton(storedTheme);
-                return;
-            }
-            const next = event.matches ? "dark" : "light";
-            const theme = applyTheme(next);
-            updateButton(theme);
-        };
-
-        if (mediaQuery) {
-            if (typeof mediaQuery.addEventListener === "function") {
-                mediaQuery.addEventListener("change", handleMediaChange);
-            } else if (typeof mediaQuery.addListener === "function") {
-                mediaQuery.addListener(handleMediaChange);
-            }
-        }
-    })();
-    if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-            navigator.serviceWorker.register("/sw.js").catch(() => {});
-        });
-    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>关于爱情观 | 花盆</title><meta name="author" content="LittFlower"/><meta name="description" content="关于爱情观"/><meta property="og:title" content="关于爱情观 | 花盆"/><meta property="og:description" content="关于爱情观"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/life/the-concept-of-love/README.mdx"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="preload" as="style" href="/style.css" type="text/css"/><link rel="preload" as="style" href="/fonts.css" type="text/css"/><link rel="stylesheet" href="/style.css" type="text/css"/><link rel="stylesheet" href="/fonts.css" type="text/css"/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt loading="lazy" decoding="async"/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt loading="lazy" decoding="async"/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>关于爱情观</a></h1>
-<h3 id="0x01." class="scroll-target"><a href="#0x01."><code class="hash inline-code">#</code>0x01.起点</a></h3>
+<html id="_top" lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>关于爱情观 | 花盆</title><meta name="author" content="LittFlower"/><meta name="description" content="关于爱情观"/><meta property="og:type" content="article"/><meta property="og:title" content="关于爱情观 | 花盆"/><meta property="og:url" content="https://blog.littflower.top/life/the-concept-of-love/README.mdx"/><meta property="og:description" content="关于爱情观"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="关于爱情观 | 花盆"/><meta name="twitter:description" content="关于爱情观"/><link rel="canonical" href="https://blog.littflower.top/life/the-concept-of-love/README.mdx"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><script>(function () {
+    var storageKey = "theme";
+    var root = document.documentElement;
+    var theme = "light";
+    try {
+      var stored = window.localStorage.getItem(storageKey);
+      if (stored === "light" || stored === "dark") {
+        theme = stored;
+      } else if (
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ) {
+        theme = "dark";
+      }
+    } catch (_) {}
+    root.setAttribute("data-theme", theme);
+  })();</script><script defer src="/theme.js?v=d3b88eea84"></script><link rel="preload" as="style" href="/style.css" type="text/css"/><link rel="preload" as="style" href="/fonts.css" type="text/css"/><link rel="stylesheet" href="/style.css" type="text/css"/><link rel="stylesheet" href="/fonts.css" type="text/css"/></head><body><nav aria-label="页面导航" class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt width="20" height="22" aria-hidden="true" decoding="async" loading="eager" class="icon icon--dir"/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt width="20" height="22" aria-hidden="true" decoding="async" loading="eager" class="icon icon--dir"/><span>..</span></a></div><div class="top-bar-group"><a href="#_content" class="top-bar-link"><code class="hash inline-code">#</code>内容</a><a href="#_top" class="top-bar-link"><code class="hash inline-code">#</code>回到顶部</a><button type="button" data-theme-toggle="true" aria-pressed="false" title="切换为深色主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色主题</span></button></div></div></nav><div class="page-shell"><nav aria-label="当前目录文件" class="page-files"></nav><main class="page-main page-main--toc"><article id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="关于爱情观" class="scroll-target"><a href="#%E5%85%B3%E4%BA%8E%E7%88%B1%E6%83%85%E8%A7%82"><code class="hash inline-code">#</code>关于爱情观</a></h1>
+<h3 id="0x01-起点" class="scroll-target"><a href="#0x01-%E8%B5%B7%E7%82%B9"><code class="hash inline-code">#</code>0x01.起点</a></h3>
 <p>说起来有些僵硬，我一度深陷于一个困境，一个难以破开的墙壁。</p>
 <p>它竖在我面前，一次次使我质疑我的选择。若我本性如此，难道是我本性错矣？</p>
 <blockquote>
@@ -148,7 +29,7 @@
 <p>多想想。</p>
 <p>半夜翻起身来抱着一本《三体Ⅱ》开始看，半睡半醒中看到罗辑和白蓉的对话，感觉这人的感情线好棒。</p>
 <p><code class="language-math math-inline">20min</code> 后，我睡意全无。</p>
-<h3 id="0x02." class="scroll-target"><a href="#0x02."><code class="hash inline-code">#</code>0x02. 思考</a></h3>
+<h3 id="0x02-思考" class="scroll-target"><a href="#0x02-%E6%80%9D%E8%80%83"><code class="hash inline-code">#</code>0x02. 思考</a></h3>
 <p>如此思想产生于约两个月前，那时我正在读《三体Ⅱ》，书中写道：主人公罗辑与自己的梦中情人“生活”在一起，他如此痴迷于她以至于几乎要和自己现实生活中的女朋友分手，罗辑去看了心理医生......</p>
 <blockquote>
 <p>罗辑没有回学校，开着车径直去看心理医生。</p>
@@ -234,7 +115,7 @@
 <p>可以自己品味。</p>
 <p>——当我结束上述的思考后，突然，我仿佛听到，我在对自己说：</p>
 <p>——“面壁者许江一墨，我是你的破壁人。”</p>
-<h3 id="0x03." class="scroll-target"><a href="#0x03."><code class="hash inline-code">#</code>0x03. 未止</a></h3>
+<h3 id="0x03-未止" class="scroll-target"><a href="#0x03-%E6%9C%AA%E6%AD%A2"><code class="hash inline-code">#</code>0x03. 未止</a></h3>
 <blockquote>
 <p>什么时候才会意识到真的爱上了她呢？
 大概是在无数个夜晚从心底油然而生一股使命感——我就是为与她相遇而存在于世的吧。</p>
@@ -251,9 +132,7 @@
 <p>尽管我真的很喜欢啊......</p>
 <p>子曰：“发乎情，止乎礼。”</p>
 <p>我要站在高山之巅。</p>
-<h3 id="0x04." class="scroll-target"><a href="#0x04."><code class="hash inline-code">#</code>0x04.终</a></h3>
+<h3 id="0x04-终" class="scroll-target"><a href="#0x04-%E7%BB%88"><code class="hash inline-code">#</code>0x04.终</a></h3>
 <p>至此，完整结束。</p>
 <p>以上。</p>
-<p>这就是我的爱情观。</p></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
-<a href="https://github.com/unvariant/blog">unvariant/blog</a>
-改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>
+<p>这就是我的爱情观。</p></article><nav aria-label="文章目录" id="article-toc" class="toc"><div class="toc-title">目录</div><ul class="toc-list"><li class="toc-item toc-l3"><a href="#0x01-起点">0x01.起点</a></li><li class="toc-item toc-l3"><a href="#0x02-思考">0x02. 思考</a></li><li class="toc-item toc-l3"><a href="#0x03-未止">0x03. 未止</a></li><li class="toc-item toc-l3"><a href="#0x04-终">0x04.终</a></li></ul></nav></main></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link">xzy1476569428@163.com</a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link">GitHub</a></div><div class="footer-row footer-meta"><span>本站基于 <a href="https://github.com/unvariant/blog">unvariant/blog</a> 改造，除特别说明外内容以 CC BY 4.0 协议共享。</span></div></footer></body></html>

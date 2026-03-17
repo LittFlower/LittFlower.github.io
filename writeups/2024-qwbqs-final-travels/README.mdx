@@ -1,140 +1,21 @@
 <!DOCTYPE html>
-<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
-        const storageKey = "theme";
-        const root = document.documentElement;
-        const supportsMatchMedia = typeof window.matchMedia === "function";
-        const mediaQuery = supportsMatchMedia
-            ? window.matchMedia("(prefers-color-scheme: dark)")
-            : null;
-
-        const readStorage = () => {
-            try {
-                return window.localStorage.getItem(storageKey);
-            } catch (error) {
-                return null;
-            }
-        };
-
-        const writeStorage = (value) => {
-            try {
-                window.localStorage.setItem(storageKey, value);
-            } catch (error) {
-                return;
-            }
-        };
-
-        const applyTheme = (value) => {
-            const theme = value === "dark" ? "dark" : "light";
-            root.setAttribute("data-theme", theme);
-            if (document.body) {
-                document.body.setAttribute("data-theme", theme);
-            } else {
-                document.addEventListener(
-                    "DOMContentLoaded",
-                    () => {
-                        if (document.body) {
-                            document.body.setAttribute("data-theme", theme);
-                        }
-                    },
-                    { once: true }
-                );
-            }
-            return theme;
-        };
-
-        const updateButton = (value) => {
-            const theme = value === "dark" ? "dark" : "light";
-            const button = document.querySelector("[data-theme-toggle]");
-            if (!button) {
-                return;
-            }
-            const label = button.querySelector("[data-theme-toggle-label]");
-            const isDark = theme === "dark";
-            button.setAttribute("aria-pressed", isDark ? "true" : "false");
-            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
-            if (label) {
-                label.textContent = isDark ? "深色" : "浅色";
-            }
-        };
-
-        const stored = readStorage();
-        const initial =
-            stored === "light" || stored === "dark"
-                ? stored
-                : mediaQuery && mediaQuery.matches
-                  ? "dark"
-                  : "light";
-
-        const appliedTheme = applyTheme(initial);
-        updateButton(appliedTheme);
-
-        window.__setTheme = (value) => {
-            const theme = applyTheme(value);
-            writeStorage(theme);
-            updateButton(theme);
-        };
-
-        window.__toggleTheme = () => {
-            const current =
-                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
-            const next = current === "dark" ? "light" : "dark";
-            const theme = applyTheme(next);
-            writeStorage(theme);
-            updateButton(theme);
-        };
-
-        const syncButtonState = () => {
-            updateButton(root.getAttribute("data-theme"));
-        };
-
-        const attachToggle = () => {
-            const button = document.querySelector("[data-theme-toggle]");
-            if (!button || button.__themeToggleBound) {
-                return;
-            }
-            button.__themeToggleBound = true;
-            button.addEventListener("click", (event) => {
-                event.preventDefault();
-                if (typeof window.__toggleTheme === "function") {
-                    window.__toggleTheme();
-                }
-            });
-        };
-
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", () => {
-                syncButtonState();
-                attachToggle();
-            });
-        } else {
-            syncButtonState();
-            attachToggle();
-        }
-
-        const handleMediaChange = (event) => {
-            const storedTheme = readStorage();
-            if (storedTheme === "light" || storedTheme === "dark") {
-                updateButton(storedTheme);
-                return;
-            }
-            const next = event.matches ? "dark" : "light";
-            const theme = applyTheme(next);
-            updateButton(theme);
-        };
-
-        if (mediaQuery) {
-            if (typeof mediaQuery.addEventListener === "function") {
-                mediaQuery.addEventListener("change", handleMediaChange);
-            } else if (typeof mediaQuery.addListener === "function") {
-                mediaQuery.addListener(handleMediaChange);
-            }
-        }
-    })();
-    if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-            navigator.serviceWorker.register("/sw.js").catch(() => {});
-        });
-    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>2024 强网杯青少赛线下游记 | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="2024 强网杯青少赛线下游记 | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/writeups/2024-qwbqs-final-travels/README.mdx"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="preload" as="style" href="/style.css" type="text/css"/><link rel="preload" as="style" href="/fonts.css" type="text/css"/><link rel="stylesheet" href="/style.css" type="text/css"/><link rel="stylesheet" href="/fonts.css" type="text/css"/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt loading="lazy" decoding="async"/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt loading="lazy" decoding="async"/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><p>去郑州玩了两天，线下面了一堆师傅</p>
+<html id="_top" lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>2024 强网杯青少赛线下游记 | 花盆</title><meta name="author" content="LittFlower"/><meta name="description" content="本来都不记得这个事情了，但是 Aura 上离散数学课的时候突然问我来着，于是跟 Aura 和树木一起组队打了线上赛。"/><meta property="og:type" content="article"/><meta property="og:title" content="2024 强网杯青少赛线下游记 | 花盆"/><meta property="og:url" content="https://blog.littflower.top/writeups/2024-qwbqs-final-travels/README.mdx"/><meta property="og:description" content="本来都不记得这个事情了，但是 Aura 上离散数学课的时候突然问我来着，于是跟 Aura 和树木一起组队打了线上赛。"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="2024 强网杯青少赛线下游记 | 花盆"/><meta name="twitter:description" content="本来都不记得这个事情了，但是 Aura 上离散数学课的时候突然问我来着，于是跟 Aura 和树木一起组队打了线上赛。"/><link rel="canonical" href="https://blog.littflower.top/writeups/2024-qwbqs-final-travels/README.mdx"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><script>(function () {
+    var storageKey = "theme";
+    var root = document.documentElement;
+    var theme = "light";
+    try {
+      var stored = window.localStorage.getItem(storageKey);
+      if (stored === "light" || stored === "dark") {
+        theme = stored;
+      } else if (
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ) {
+        theme = "dark";
+      }
+    } catch (_) {}
+    root.setAttribute("data-theme", theme);
+  })();</script><script defer src="/theme.js?v=d3b88eea84"></script><link rel="preload" as="style" href="/style.css" type="text/css"/><link rel="preload" as="style" href="/fonts.css" type="text/css"/><link rel="stylesheet" href="/style.css" type="text/css"/><link rel="stylesheet" href="/fonts.css" type="text/css"/></head><body><nav aria-label="页面导航" class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt width="20" height="22" aria-hidden="true" decoding="async" loading="eager" class="icon icon--dir"/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt width="20" height="22" aria-hidden="true" decoding="async" loading="eager" class="icon icon--dir"/><span>..</span></a></div><div class="top-bar-group"><a href="#_content" class="top-bar-link"><code class="hash inline-code">#</code>内容</a><a href="#_top" class="top-bar-link"><code class="hash inline-code">#</code>回到顶部</a><button type="button" data-theme-toggle="true" aria-pressed="false" title="切换为深色主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色主题</span></button></div></div></nav><div class="page-shell"><nav aria-label="当前目录文件" class="page-files"></nav><main class="page-main page-main--toc"><article id="_content" style="scroll-margin-top:48px;" class="page-article"><p>去郑州玩了两天，线下面了一堆师傅</p>
 <h2 id="day" class="scroll-target"><a href="#day"><code class="hash inline-code">#</code>Day-?</a></h2>
 <p>本来都不记得这个事情了，但是 Aura 上离散数学课的时候突然问我来着，于是跟 Aura 和树木一起组队打了线上赛。</p>
 <p>但是话又说回来了，Aura 打线上那天咕咕了，去打他那个 b 鹏城杯了，导致我跟树木 2 打 3，web 基本上没做，好在不影响进线下。这是前话。</p>
@@ -164,7 +45,7 @@
 </blockquote>
 <p>好好好，于是去晚秋和 zjl 的房间，学了一会 awdp，然后聊了一下发展规划（（</p>
 <p>剩下的一个小时看人机 zjl 玩瓦被 t1d 薄纱，闹麻了（</p>
-<h2 id="day-1" class="scroll-target"><a href="#day-1"><code class="hash inline-code">#</code>Day 1</a></h2>
+<h2 id="day-1-2" class="scroll-target"><a href="#day-1-2"><code class="hash inline-code">#</code>Day 1</a></h2>
 <p>由于早上完全没事情，只用领物资，所以我一觉睡到了 11 点。</p>
 <p>早上领了物资，吃过午饭，下午准备去打那个逆天创新赛。</p>
 <p>说是创新赛，但我感觉很像定向体育（</p>
@@ -184,7 +65,7 @@
 <h2 id="day-2" class="scroll-target"><a href="#day-2"><code class="hash inline-code">#</code>Day 2</a></h2>
 <p>sb 主办方，7 点比赛，睡了 6 个小时，脑子是晕的。</p>
 <p>开赛前发了个 demo，pwn 的 update.sh 是这么写的：</p>
-<div class="code-snippet"><pre data-theme="light" class="code-snippet__pre code-snippet__pre--light"><code class="language-bash language-bash"><span style="color:#A0ADA0">#!/bin/bash</span><br><span style="color:#59873A">mv</span><span style="color:#B56959"> file1</span><span style="color:#B56959"> /home/ctf/pwn</span><br><span style="color:#59873A">chmod</span><span style="color:#2F798A"> 777</span><span style="color:#B56959"> /home/ctf/pwn</span><br></code></pre><pre data-theme="dark" class="code-snippet__pre code-snippet__pre--dark"><code class="language-bash language-bash"><span style="color:#758575DD">#!/bin/bash</span><br><span style="color:#80A665">mv</span><span style="color:#C98A7D"> file1</span><span style="color:#C98A7D"> /home/ctf/pwn</span><br><span style="color:#80A665">chmod</span><span style="color:#4C9A91"> 777</span><span style="color:#C98A7D"> /home/ctf/pwn</span><br></code></pre></div>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-bash language-bash"><span style="--shiki-light:#66707B;--shiki-dark:#BDC4CC">#!/bin/bash</span><br><span style="--shiki-light:#702C00;--shiki-dark:#FFB757">mv</span><span style="--shiki-light:#032563;--shiki-dark:#ADDCFF"> file1</span><span style="--shiki-light:#032563;--shiki-dark:#ADDCFF"> /home/ctf/pwn</span><br><span style="--shiki-light:#702C00;--shiki-dark:#FFB757">chmod</span><span style="--shiki-light:#023B95;--shiki-dark:#91CBFF"> 777</span><span style="--shiki-light:#032563;--shiki-dark:#ADDCFF"> /home/ctf/pwn</span><br></code></pre></div>
 <p>好好好，开赛之后，pwn 的附件都是各有各的名字，第一道题是 fmt，我一上手就把 <code class="inline-code">printf</code> patch 成 <code class="inline-code">puts</code>，然后想了想：</p>
 <blockquote>
 <p>👴：那应该是按 demo 写，交一发再说</p>
@@ -210,7 +91,7 @@
 <p>👴：？</p>
 </blockquote>
 <p>这个时候 aura 和树木手头的题都做的差不多了，过来看我，他俩想了想，说让我试试把 update.sh 写成：</p>
-<div class="code-snippet"><pre data-theme="light" class="code-snippet__pre code-snippet__pre--light"><code class="language-bash language-bash"><span style="color:#A0ADA0">#!/bin/bash</span><br><span style="color:#59873A">mv</span><span style="color:#AB5959"> </span><span style="color:#AB5959">&#x3C;</span><span style="color:#B56959">第一道题的名</span><span style="color:#393A34">字</span><span style="color:#AB5959">></span><span style="color:#B56959"> /home/ctf/</span><span style="color:#AB5959">&#x3C;</span><span style="color:#B56959">第一道题的名</span><span style="color:#393A34">字</span><span style="color:#AB5959">></span><br><span style="color:#59873A">chmod</span><span style="color:#2F798A"> 777</span><span style="color:#B56959"> /home/ctf/</span><span style="color:#AB5959">&#x3C;</span><span style="color:#B56959">第一道题的名</span><span style="color:#393A34">字</span><span style="color:#AB5959">></span><br></code></pre><pre data-theme="dark" class="code-snippet__pre code-snippet__pre--dark"><code class="language-bash language-bash"><span style="color:#758575DD">#!/bin/bash</span><br><span style="color:#80A665">mv</span><span style="color:#CB7676"> </span><span style="color:#CB7676">&#x3C;</span><span style="color:#C98A7D">第一道题的名</span><span style="color:#DBD7CAEE">字</span><span style="color:#CB7676">></span><span style="color:#C98A7D"> /home/ctf/</span><span style="color:#CB7676">&#x3C;</span><span style="color:#C98A7D">第一道题的名</span><span style="color:#DBD7CAEE">字</span><span style="color:#CB7676">></span><br><span style="color:#80A665">chmod</span><span style="color:#4C9A91"> 777</span><span style="color:#C98A7D"> /home/ctf/</span><span style="color:#CB7676">&#x3C;</span><span style="color:#C98A7D">第一道题的名</span><span style="color:#DBD7CAEE">字</span><span style="color:#CB7676">></span><br></code></pre></div>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-bash language-bash"><span style="--shiki-light:#66707B;--shiki-dark:#BDC4CC">#!/bin/bash</span><br><span style="--shiki-light:#702C00;--shiki-dark:#FFB757">mv</span><span style="--shiki-light:#A0111F;--shiki-dark:#FF9492"> </span><span style="--shiki-light:#A0111F;--shiki-dark:#FF9492">&#x3C;</span><span style="--shiki-light:#032563;--shiki-dark:#ADDCFF">第一道题的名</span><span style="--shiki-light:#0E1116;--shiki-dark:#F0F3F6">字</span><span style="--shiki-light:#A0111F;--shiki-dark:#FF9492">></span><span style="--shiki-light:#032563;--shiki-dark:#ADDCFF"> /home/ctf/</span><span style="--shiki-light:#A0111F;--shiki-dark:#FF9492">&#x3C;</span><span style="--shiki-light:#032563;--shiki-dark:#ADDCFF">第一道题的名</span><span style="--shiki-light:#0E1116;--shiki-dark:#F0F3F6">字</span><span style="--shiki-light:#A0111F;--shiki-dark:#FF9492">></span><br><span style="--shiki-light:#702C00;--shiki-dark:#FFB757">chmod</span><span style="--shiki-light:#023B95;--shiki-dark:#91CBFF"> 777</span><span style="--shiki-light:#032563;--shiki-dark:#ADDCFF"> /home/ctf/</span><span style="--shiki-light:#A0111F;--shiki-dark:#FF9492">&#x3C;</span><span style="--shiki-light:#032563;--shiki-dark:#ADDCFF">第一道题的名</span><span style="--shiki-light:#0E1116;--shiki-dark:#F0F3F6">字</span><span style="--shiki-light:#A0111F;--shiki-dark:#FF9492">></span><br></code></pre></div>
 <p>fmt 交上去，一遍过；UAF 交上去，也过了。</p>
 <blockquote>
 <p>👴：？？？？？？？？？？？？cnm</p>
@@ -224,8 +105,6 @@
 <p>下午 7:55 的飞机，等飞机的时候跟 Aura 打了会 MC，还不错。</p>
 <p>话说郑州飞机场的快餐店和成都的完全不是一个价格啊，一个汉堡 52，aura 说比他半期微积分成绩乘以 2 还多（（</p>
 <p>我俩都没绷住（</p>
-<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>总结</a></h2>
+<h2 id="总结" class="scroll-target"><a href="#%E6%80%BB%E7%BB%93"><code class="hash inline-code">#</code>总结</a></h2>
 <p><img loading="lazy" decoding="async" fetchpriority="auto" src="https://pic.imgdb.cn/item/6756b1b4d0e0a243d4e05bbd.png" alt/></p>
-<p>还真是。</p></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
-<a href="https://github.com/unvariant/blog">unvariant/blog</a>
-改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>
+<p>还真是。</p></article><nav aria-label="文章目录" id="article-toc" class="toc"><div class="toc-title">目录</div><ul class="toc-list"><li class="toc-item toc-l2"><a href="#day">Day-?</a></li><li class="toc-item toc-l2"><a href="#day-1">Day -1</a></li><li class="toc-item toc-l2"><a href="#day-0">Day 0</a></li><li class="toc-item toc-l2"><a href="#day-1-2">Day 1</a></li><li class="toc-item toc-l2"><a href="#day-2">Day 2</a></li><li class="toc-item toc-l2"><a href="#总结">总结</a></li></ul></nav></main></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link">xzy1476569428@163.com</a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link">GitHub</a></div><div class="footer-row footer-meta"><span>本站基于 <a href="https://github.com/unvariant/blog">unvariant/blog</a> 改造，除特别说明外内容以 CC BY 4.0 协议共享。</span></div></footer></body></html>

@@ -1,140 +1,21 @@
 <!DOCTYPE html>
-<html id="_top" lang="zh-CN" data-theme="light"><head><script>(function () {
-        const storageKey = "theme";
-        const root = document.documentElement;
-        const supportsMatchMedia = typeof window.matchMedia === "function";
-        const mediaQuery = supportsMatchMedia
-            ? window.matchMedia("(prefers-color-scheme: dark)")
-            : null;
-
-        const readStorage = () => {
-            try {
-                return window.localStorage.getItem(storageKey);
-            } catch (error) {
-                return null;
-            }
-        };
-
-        const writeStorage = (value) => {
-            try {
-                window.localStorage.setItem(storageKey, value);
-            } catch (error) {
-                return;
-            }
-        };
-
-        const applyTheme = (value) => {
-            const theme = value === "dark" ? "dark" : "light";
-            root.setAttribute("data-theme", theme);
-            if (document.body) {
-                document.body.setAttribute("data-theme", theme);
-            } else {
-                document.addEventListener(
-                    "DOMContentLoaded",
-                    () => {
-                        if (document.body) {
-                            document.body.setAttribute("data-theme", theme);
-                        }
-                    },
-                    { once: true }
-                );
-            }
-            return theme;
-        };
-
-        const updateButton = (value) => {
-            const theme = value === "dark" ? "dark" : "light";
-            const button = document.querySelector("[data-theme-toggle]");
-            if (!button) {
-                return;
-            }
-            const label = button.querySelector("[data-theme-toggle-label]");
-            const isDark = theme === "dark";
-            button.setAttribute("aria-pressed", isDark ? "true" : "false");
-            button.setAttribute("title", isDark ? "切换为浅色主题" : "切换为深色主题");
-            if (label) {
-                label.textContent = isDark ? "深色" : "浅色";
-            }
-        };
-
-        const stored = readStorage();
-        const initial =
-            stored === "light" || stored === "dark"
-                ? stored
-                : mediaQuery && mediaQuery.matches
-                  ? "dark"
-                  : "light";
-
-        const appliedTheme = applyTheme(initial);
-        updateButton(appliedTheme);
-
-        window.__setTheme = (value) => {
-            const theme = applyTheme(value);
-            writeStorage(theme);
-            updateButton(theme);
-        };
-
-        window.__toggleTheme = () => {
-            const current =
-                root.getAttribute("data-theme") === "dark" ? "dark" : "light";
-            const next = current === "dark" ? "light" : "dark";
-            const theme = applyTheme(next);
-            writeStorage(theme);
-            updateButton(theme);
-        };
-
-        const syncButtonState = () => {
-            updateButton(root.getAttribute("data-theme"));
-        };
-
-        const attachToggle = () => {
-            const button = document.querySelector("[data-theme-toggle]");
-            if (!button || button.__themeToggleBound) {
-                return;
-            }
-            button.__themeToggleBound = true;
-            button.addEventListener("click", (event) => {
-                event.preventDefault();
-                if (typeof window.__toggleTheme === "function") {
-                    window.__toggleTheme();
-                }
-            });
-        };
-
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", () => {
-                syncButtonState();
-                attachToggle();
-            });
-        } else {
-            syncButtonState();
-            attachToggle();
-        }
-
-        const handleMediaChange = (event) => {
-            const storedTheme = readStorage();
-            if (storedTheme === "light" || storedTheme === "dark") {
-                updateButton(storedTheme);
-                return;
-            }
-            const next = event.matches ? "dark" : "light";
-            const theme = applyTheme(next);
-            updateButton(theme);
-        };
-
-        if (mediaQuery) {
-            if (typeof mediaQuery.addEventListener === "function") {
-                mediaQuery.addEventListener("change", handleMediaChange);
-            } else if (typeof mediaQuery.addListener === "function") {
-                mediaQuery.addListener(handleMediaChange);
-            }
-        }
-    })();
-    if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-            navigator.serviceWorker.register("/sw.js").catch(() => {});
-        });
-    }</script><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>2025 年度小结 | 花盆</title><meta name="author" content="LittFlower"/><meta property="og:title" content="2025 年度小结 | 花盆"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><link rel="canonical" href="https://blog.littflower.top/life/2025-annual-summary/README.mdx"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><link rel="preload" as="style" href="/style.css" type="text/css"/><link rel="preload" as="style" href="/fonts.css" type="text/css"/><link rel="stylesheet" href="/style.css" type="text/css"/><link rel="stylesheet" href="/fonts.css" type="text/css"/></head><body><div class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt loading="lazy" decoding="async"/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt loading="lazy" decoding="async"/><span>..</span></a></div><div class="top-bar-group"><h3><a href="#_content"><code class="hash inline-code">#</code>内容</a></h3><h3><a href="#_top"><code class="hash inline-code">#</code>回到顶部</a></h3><button type="button" data-theme-toggle="true" aria-label="切换亮暗主题" aria-pressed="false" title="切换主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色</span></button></div></div></div><div class="page-shell"><div class="page-files"></div><div class="page-main"><div id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="2025" class="scroll-target"><a href="#2025"><code class="hash inline-code">#</code>2025 年度小结</a></h1>
+<html id="_top" lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="color-scheme" content="light dark"/><meta name="language" content="zh-CN"/><title>2025 年度小结 | 花盆</title><meta name="author" content="LittFlower"/><meta name="description" content="按理来说年终总结应该在年底都写好，但是我每年都能拖到放寒假才开始写，属实是绷不住了。。"/><meta property="og:type" content="article"/><meta property="og:title" content="2025 年度小结 | 花盆"/><meta property="og:url" content="https://blog.littflower.top/life/2025-annual-summary/README.mdx"/><meta property="og:description" content="按理来说年终总结应该在年底都写好，但是我每年都能拖到放寒假才开始写，属实是绷不住了。。"/><meta property="og:site_name" content="花盆"/><meta property="og:locale" content="zh-CN"/><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="2025 年度小结 | 花盆"/><meta name="twitter:description" content="按理来说年终总结应该在年底都写好，但是我每年都能拖到放寒假才开始写，属实是绷不住了。。"/><link rel="canonical" href="https://blog.littflower.top/life/2025-annual-summary/README.mdx"/><link rel="alternate" type="application/rss+xml" title="花盆" href="/rss.xml"/><script>(function () {
+    var storageKey = "theme";
+    var root = document.documentElement;
+    var theme = "light";
+    try {
+      var stored = window.localStorage.getItem(storageKey);
+      if (stored === "light" || stored === "dark") {
+        theme = stored;
+      } else if (
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ) {
+        theme = "dark";
+      }
+    } catch (_) {}
+    root.setAttribute("data-theme", theme);
+  })();</script><script defer src="/theme.js?v=d3b88eea84"></script><link rel="preload" as="style" href="/style.css" type="text/css"/><link rel="preload" as="style" href="/fonts.css" type="text/css"/><link rel="stylesheet" href="/style.css" type="text/css"/><link rel="stylesheet" href="/fonts.css" type="text/css"/></head><body><nav aria-label="页面导航" class="top-bar fullwidth"><div class="top-bar-inner fullwidth"><div class="top-bar-group"><a href="/" aria-label="root" class="file-link"><img src="/icons/dir.png" alt width="20" height="22" aria-hidden="true" decoding="async" loading="eager" class="icon icon--dir"/><span>/</span></a><a href=".." aria-label="parent" class="file-link"><img src="/icons/dir.png" alt width="20" height="22" aria-hidden="true" decoding="async" loading="eager" class="icon icon--dir"/><span>..</span></a></div><div class="top-bar-group"><a href="#_content" class="top-bar-link"><code class="hash inline-code">#</code>内容</a><a href="#_top" class="top-bar-link"><code class="hash inline-code">#</code>回到顶部</a><button type="button" data-theme-toggle="true" aria-pressed="false" title="切换为深色主题" class="theme-toggle"><code aria-hidden="true" class="hash inline-code">#</code>  <span data-theme-toggle-label="true" class="theme-toggle-label">浅色主题</span></button></div></div></nav><div class="page-shell"><nav aria-label="当前目录文件" class="page-files"></nav><main class="page-main page-main--toc"><article id="_content" style="scroll-margin-top:48px;" class="page-article"><h1 id="2025-年度小结" class="scroll-target"><a href="#2025-%E5%B9%B4%E5%BA%A6%E5%B0%8F%E7%BB%93"><code class="hash inline-code">#</code>2025 年度小结</a></h1>
 <p>按理来说年终总结应该在年底都写好，但是我每年都能拖到放寒假才开始写，属实是绷不住了。。</p>
 <h2 id="ctf" class="scroll-target"><a href="#ctf"><code class="hash inline-code">#</code>CTF</a></h2>
 <p>今年是正式开始打 CTF 的一年，年初打了几场国内的比赛，分别是 VNCTF 和 N1Junior CTF，打得都还行，后者打完了之后去给 n1 投了简历，之后被 tplus 师傅拉进 n1junior 计划，然后就开始用 MNGA 的 ID 跟着大🔥打国际赛。</p>
@@ -143,17 +24,17 @@
 <p>从 6 月份正式加入 0x401 之后开始打国内比赛，下半年从 9 月份开始，先后打了湾区杯、四川省赛、强网杯初赛、强网杯线下赛、国赛...基本上成绩都还不赖，省赛包揽冠亚军，比前两年强，强网杯也刷新了校队史上最好成绩。</p>
 <p>（照片就不放了喵）</p>
 <p>感觉打比赛确实是让我感到既坐牢又开心的一件事，今年的 CTF 比赛让我更加坚定了自己对网络安全的兴趣与热爱（而且我也确实拿了不少一等/二等奖，还拿了冠军，去年年终总结里的目标基本实现了）。</p>
-<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>朋友们</a></h2>
+<h2 id="朋友们" class="scroll-target"><a href="#%E6%9C%8B%E5%8F%8B%E4%BB%AC"><code class="hash inline-code">#</code>朋友们</a></h2>
 <p>因为打 CTF 的缘故，今年在 CTF 圈子里认识了不少师傅，像是东秦的 daimi 和星坠师傅、吉大的 misaka 师傅、成信工的 sakura 和 Samsara 师傅，还有加入 401 后认识的一些跨年级的学长学姐们，感觉有这么一帮志同道合的同龄的伙伴们一起打比赛，很对劲</p>
 <p>daimi 和 samsara 还送了我生日礼物，daimi 送了我一个唐音未来的娃娃，samsara 送了我一包吃不到白巧克力的巧克力，好吃耶。</p>
 <p>t1d 也送了我一个小小小的蛋糕，其实吃着也挺开心的...</p>
 <p>校内的话，今年因为转专业的缘故搬了新宿舍，感觉舍友们有点内向，给我也干的不太敢说话，平常只好在靶场自习到十点半再回去。</p>
-<h2 id class="scroll-target"><a href="#"><code class="hash inline-code">#</code>一些乱七八糟有意思的事情</a></h2>
+<h2 id="一些乱七八糟有意思的事情" class="scroll-target"><a href="#%E4%B8%80%E4%BA%9B%E4%B9%B1%E4%B8%83%E5%85%AB%E7%B3%9F%E6%9C%89%E6%84%8F%E6%80%9D%E7%9A%84%E4%BA%8B%E6%83%85"><code class="hash inline-code">#</code>一些乱七八糟有意思的事情</a></h2>
 <p>今年给自己博客换了个主题，用 ai 自己设计 + 写了一套，抛弃了原先的 Hugo 引擎，用纯 nodejs 实现，感觉还彳亍</p>
 <p>今年暑假收到了 Deepin 的感谢信，算是我为数不多的开源经历了。</p>
 <p>今年写了不少代码，学会了 github actions 的用法，确实很方便，给同学们写了一个蹲课脚本，并用 github actions 自动打包成 windows exe 发布到 release 里，好使</p>
 <p>年底跟转专业的同学一起组队申报了大创，不知道能不能立上国家级</p>
-<h2 id="flag" class="scroll-target"><a href="#flag"><code class="hash inline-code">#</code>今年的 flag</a></h2>
+<h2 id="今年的-flag" class="scroll-target"><a href="#%E4%BB%8A%E5%B9%B4%E7%9A%84-flag"><code class="hash inline-code">#</code>今年的 flag</a></h2>
 <p><del>给自己新的一年立点 flag</del></p>
 <ol>
 <li>成为 n1 的主力 pwn 手，成为 kernel (or v8) master</li>
@@ -161,6 +42,4 @@
 <li>大创最好能推到国家级</li>
 <li>国赛要赢</li>
 </ol>
-<p>希望新的一年快快乐乐，小花要努力变强</p></div></div></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link"><p><a href="mailto:xzy1476569428@163.com" title="mailto:xzy1476569428@163.com">xzy1476569428@163.com</a></p></a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link"><p>GitHub</p></a></div><div class="footer-row footer-meta"><span><p>本站基于
-<a href="https://github.com/unvariant/blog">unvariant/blog</a>
-改造，除特别说明外内容以 CC BY 4.0 协议共享。</p></span></div></footer></body></html>
+<p>希望新的一年快快乐乐，小花要努力变强</p></article><nav aria-label="文章目录" id="article-toc" class="toc"><div class="toc-title">目录</div><ul class="toc-list"><li class="toc-item toc-l2"><a href="#ctf">CTF</a></li><li class="toc-item toc-l2"><a href="#朋友们">朋友们</a></li><li class="toc-item toc-l2"><a href="#一些乱七八糟有意思的事情">一些乱七八糟有意思的事情</a></li><li class="toc-item toc-l2"><a href="#今年的-flag">今年的 flag</a></li></ul></nav></main></div><footer class="footer"><div class="footer-row footer-links"><span class="footer-label">保持联系</span><a href="mailto:xzy1476569428@163.com" class="footer-link">xzy1476569428@163.com</a><span aria-hidden="true" class="footer-separator">·</span><a href="/rss.xml" class="footer-link">RSS</a><span aria-hidden="true" class="footer-separator">·</span><a href="https://github.com/LittFlower/my_blog" class="footer-link">GitHub</a></div><div class="footer-row footer-meta"><span>本站基于 <a href="https://github.com/unvariant/blog">unvariant/blog</a> 改造，除特别说明外内容以 CC BY 4.0 协议共享。</span></div></footer></body></html>

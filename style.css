@@ -158,6 +158,12 @@ hr {
   gap: 1.5rem;
 }
 
+.home-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
 .page-files {
   display: flex;
   flex-direction: column;
@@ -179,6 +185,42 @@ hr {
   width: var(--content-max-width);
   max-width: var(--max-file-width);
   margin: 0 auto;
+}
+
+.home-featured-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--toc-gap);
+  align-items: flex-start;
+}
+
+.home-featured-layout--toc {
+  grid-template-columns:
+    minmax(0, var(--max-file-width))
+    minmax(0, var(--toc-width));
+  width: min(
+    calc(100vw - var(--left-padding) - var(--right-padding)),
+    calc(var(--max-file-width) + var(--toc-width) + var(--toc-gap))
+  );
+  max-width: calc(var(--max-file-width) + var(--toc-width) + var(--toc-gap));
+  margin: 0 auto;
+}
+
+.home-featured-post {
+  min-width: 0;
+}
+
+.home-featured-post .blogwidth {
+  max-width: 100%;
+  width: 100%;
+}
+
+.home-featured-toc .toc-item a {
+  color: var(--color-accent-hover);
+}
+
+.home-featured-toc .toc-item a:hover {
+  color: var(--color-text);
 }
 
 .page-main--toc {
@@ -241,7 +283,7 @@ hr {
 }
 
 .toc-item a {
-  color: var(--color-accent);
+  color: var(--color-accent-hover);
   text-decoration: none;
   transition:
     color 0.15s ease,
@@ -264,7 +306,7 @@ hr {
 }
 
 .toc-item a:hover {
-  color: var(--color-accent-hover);
+  color: var(--color-text);
 }
 
 .toc-item a:hover::before {
@@ -286,6 +328,12 @@ hr {
 
 @media screen and (max-width: 1024px) {
   .page-main--toc {
+    grid-template-columns: 1fr;
+    width: var(--content-max-width);
+    max-width: var(--max-file-width);
+  }
+
+  .home-featured-layout--toc {
     grid-template-columns: 1fr;
     width: var(--content-max-width);
     max-width: var(--max-file-width);
@@ -366,7 +414,7 @@ hr {
   gap: 0.35rem;
 }
 
-#posts h4 {
+#posts h2 {
   margin: 0 0 0.5rem;
   font-size: 1rem;
 }
@@ -405,18 +453,30 @@ hr {
   align-items: center;
 }
 
-.top-bar-group h3 {
-  margin: 0;
+.top-bar .file-link {
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.top-bar .file-link img,
+.top-bar .file-link svg {
+  width: 26px;
+  height: 28px;
+  padding-right: 0.25rem;
+}
+
+.top-bar-link {
   font-size: 0.95rem;
   font-weight: 500;
   display: inline-flex;
   align-items: center;
+  gap: 0.25rem;
+  color: var(--color-text);
+  text-decoration: none;
 }
 
-.top-bar-group h3 a {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
+.top-bar-link:hover {
+  color: var(--color-accent-hover);
 }
 
 .theme-toggle {
@@ -479,7 +539,7 @@ hr {
     row-gap: 0.35rem;
   }
 
-  .top-bar-group h3 {
+  .top-bar-link {
     font-size: 0.9rem;
   }
 
@@ -489,10 +549,17 @@ hr {
     border-color: var(--color-border);
     background-color: var(--color-surface);
   }
+
+  .top-bar .file-link img,
+  .top-bar .file-link svg {
+    width: 24px;
+    height: 26px;
+    padding-right: 0.2rem;
+  }
 }
 
 @media screen and (max-width: 480px) {
-  .top-bar-group h3 {
+  .top-bar-link {
     font-size: 0.85rem;
   }
 
@@ -685,11 +752,18 @@ h6 > a .hash {
   word-break: break-word;
 }
 
-.file-link img {
+.file-link img,
+.file-link svg {
   padding-right: 1rem;
   height: 22px;
-  width: auto;
+  width: 20px;
   display: inline-block;
+  flex: 0 0 auto;
+}
+
+.file-link img {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .file-meta {
@@ -753,21 +827,22 @@ h6 > a .hash {
   background: transparent;
 }
 
-.code-snippet__pre[data-theme="dark"] {
-  display: none;
-}
-
-html[data-theme="dark"] .code-snippet__pre[data-theme="light"] {
-  display: none;
-}
-
-html[data-theme="dark"] .code-snippet__pre[data-theme="dark"] {
-  display: block;
-}
-
 .code-snippet__pre code {
   display: block;
   white-space: pre;
+  color: var(--shiki-light, var(--codeblock-line-text));
+}
+
+.code-snippet__pre code span {
+  color: var(--shiki-light, inherit);
+}
+
+html[data-theme="dark"] .code-snippet__pre code {
+  color: var(--shiki-dark, var(--codeblock-line-text));
+}
+
+html[data-theme="dark"] .code-snippet__pre code span {
+  color: var(--shiki-dark, inherit);
 }
 
 /* code block stuff end */

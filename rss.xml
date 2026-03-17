@@ -4,7 +4,7 @@
         <title>花盆</title>
         <link>https://blog.littflower.top</link>
         <description>记录安全研究、开发工具和生活观察的中文博客</description>
-        <lastBuildDate>Thu, 29 Jan 2026 17:15:50 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 17 Mar 2026 03:47:47 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>zh-CN</language>
@@ -45,24 +45,9 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[2022 新年致辞]]></title>
-            <link>https://blog.littflower.top/life/2022-new-year-speech</link>
-            <guid>https://blog.littflower.top/life/2022-new-year-speech</guid>
-            <pubDate>Sat, 01 Jan 2022 00:00:00 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[2024年度小结]]></title>
-            <link>https://blog.littflower.top/life/2024-annual-summary</link>
-            <guid>https://blog.littflower.top/life/2024-annual-summary</guid>
-            <pubDate>Mon, 13 Jan 2025 10:29:39 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[2025 年度小结]]></title>
-            <link>https://blog.littflower.top/life/2025-annual-summary</link>
-            <guid>https://blog.littflower.top/life/2025-annual-summary</guid>
-            <pubDate>Wed, 28 Jan 2026 09:57:11 GMT</pubDate>
+            <title><![CDATA[/writeups/dicectf2026-writeup]]></title>
+            <link>https://blog.littflower.top/writeups/dicectf2026-writeup</link>
+            <guid>https://blog.littflower.top/writeups/dicectf2026-writeup</guid>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
@@ -70,28 +55,6 @@
             <link>https://blog.littflower.top/life</link>
             <guid>https://blog.littflower.top/life</guid>
             <description><![CDATA[把反思、感悟与旅途见闻收纳在一起，让记忆更有温度。]]></description>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[写在入校前]]></title>
-            <link>https://blog.littflower.top/life/Written-before-enrollment</link>
-            <guid>https://blog.littflower.top/life/Written-before-enrollment</guid>
-            <pubDate>Fri, 22 Sep 2023 00:00:00 GMT</pubDate>
-            <description><![CDATA[写在小花大一开学前]]></description>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[观《孔子》有感]]></title>
-            <link>https://blog.littflower.top/life/film-review-of-confucius</link>
-            <guid>https://blog.littflower.top/life/film-review-of-confucius</guid>
-            <pubDate>Sun, 27 Feb 2022 08:32:44 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[【书感】向儿童学习]]></title>
-            <link>https://blog.littflower.top/life/learn-something-from-children</link>
-            <guid>https://blog.littflower.top/life/learn-something-from-children</guid>
-            <pubDate>Sun, 27 Feb 2022 00:00:00 GMT</pubDate>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
@@ -111,19 +74,19 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
+            <title><![CDATA[写在入校前]]></title>
+            <link>https://blog.littflower.top/life/Written-before-enrollment</link>
+            <guid>https://blog.littflower.top/life/Written-before-enrollment</guid>
+            <pubDate>Fri, 22 Sep 2023 00:00:00 GMT</pubDate>
+            <description><![CDATA[写在小花大一开学前]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
             <title><![CDATA[论文笔记《AddressSanitizer: A Fast Address Sanity Checker》]]></title>
             <link>https://blog.littflower.top/notes/Paper-Notes-of-AddressSanitizer-A-Fast-Address-Sanity-Checker</link>
             <guid>https://blog.littflower.top/notes/Paper-Notes-of-AddressSanitizer-A-Fast-Address-Sanity-Checker</guid>
             <pubDate>Mon, 21 Oct 2024 11:14:44 GMT</pubDate>
             <description><![CDATA[论文笔记《AddressSanitizer: A Fast Address Sanity Checker》]]></description>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[Pwn 随机数攻击]]></title>
-            <link>https://blog.littflower.top/notes/Pwn-Random-Attack</link>
-            <guid>https://blog.littflower.top/notes/Pwn-Random-Attack</guid>
-            <pubDate>Sat, 14 Dec 2024 10:09:23 GMT</pubDate>
-            <description><![CDATA[Pwn 随机数攻击]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
@@ -135,87 +98,18 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
+            <title><![CDATA[Pwn 随机数攻击]]></title>
+            <link>https://blog.littflower.top/notes/Pwn-Random-Attack</link>
+            <guid>https://blog.littflower.top/notes/Pwn-Random-Attack</guid>
+            <pubDate>Sat, 14 Dec 2024 10:09:23 GMT</pubDate>
+            <description><![CDATA[Pwn 随机数攻击]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
             <title><![CDATA[notes]]></title>
             <link>https://blog.littflower.top/notes</link>
             <guid>https://blog.littflower.top/notes</guid>
             <description><![CDATA[把零散的知识、课程记录与做题感想集中在这里，方便快速翻阅。]]></description>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[AsisCTF2016 b00ks 复现笔记]]></title>
-            <link>https://blog.littflower.top/notes/asisctf2016-b00ks</link>
-            <guid>https://blog.littflower.top/notes/asisctf2016-b00ks</guid>
-            <pubDate>Mon, 22 Jan 2024 16:25:35 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[awesome pwn reading lists]]></title>
-            <link>https://blog.littflower.top/notes/awesome-pwn-reading-lists</link>
-            <guid>https://blog.littflower.top/notes/awesome-pwn-reading-lists</guid>
-            <pubDate>Mon, 08 Dec 2025 11:17:51 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[分块思想]]></title>
-            <link>https://blog.littflower.top/notes/blocking-algorithm</link>
-            <guid>https://blog.littflower.top/notes/blocking-algorithm</guid>
-            <pubDate>Fri, 19 Nov 2021 00:00:00 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[Chrome V8 Pwn 学习（一）]]></title>
-            <link>https://blog.littflower.top/notes/chrome-v8-pwn-learning1</link>
-            <guid>https://blog.littflower.top/notes/chrome-v8-pwn-learning1</guid>
-            <pubDate>Tue, 12 Aug 2025 16:27:46 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[Chrome V8 Pwn 学习（二）]]></title>
-            <link>https://blog.littflower.top/notes/chrome-v8-pwn-learning2</link>
-            <guid>https://blog.littflower.top/notes/chrome-v8-pwn-learning2</guid>
-            <pubDate>Thu, 14 Aug 2025 17:28:58 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[区间线段类问题合集]]></title>
-            <link>https://blog.littflower.top/notes/collection-of-interval-segment-problems</link>
-            <guid>https://blog.littflower.top/notes/collection-of-interval-segment-problems</guid>
-            <pubDate>Fri, 12 Nov 2021 00:00:00 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[ELF 文件结构详解]]></title>
-            <link>https://blog.littflower.top/notes/elf-structure</link>
-            <guid>https://blog.littflower.top/notes/elf-structure</guid>
-            <pubDate>Wed, 21 May 2025 07:17:45 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[Glibc Exit 函数分析与利用]]></title>
-            <link>https://blog.littflower.top/notes/glibc-exit-function-analyze-and-attack</link>
-            <guid>https://blog.littflower.top/notes/glibc-exit-function-analyze-and-attack</guid>
-            <pubDate>Mon, 31 Mar 2025 16:59:36 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[如何计算结构体字节数]]></title>
-            <link>https://blog.littflower.top/notes/how-to-calc-the-bytes-of-struct</link>
-            <guid>https://blog.littflower.top/notes/how-to-calc-the-bytes-of-struct</guid>
-            <pubDate>Wed, 15 May 2024 06:35:41 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[_IO_FILE 任意地址读写攻击面分析]]></title>
-            <link>https://blog.littflower.top/notes/iofile-arbitrary-memory-write-and-read</link>
-            <guid>https://blog.littflower.top/notes/iofile-arbitrary-memory-write-and-read</guid>
-            <pubDate>Wed, 07 May 2025 16:31:27 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[CTF Pwn Protobuf 学习笔记]]></title>
-            <link>https://blog.littflower.top/notes/learning-protobuf-in-ctf</link>
-            <guid>https://blog.littflower.top/notes/learning-protobuf-in-ctf</guid>
-            <pubDate>Fri, 24 Oct 2025 13:53:16 GMT</pubDate>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
@@ -243,74 +137,11 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[2022强网杯青少赛题解]]></title>
-            <link>https://blog.littflower.top/writeups/2022-qwbqs-writeup</link>
-            <guid>https://blog.littflower.top/writeups/2022-qwbqs-writeup</guid>
-            <pubDate>Fri, 03 Feb 2023 13:27:43 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[2024 强网杯青少赛线下游记]]></title>
-            <link>https://blog.littflower.top/writeups/2024-qwbqs-final-travels</link>
-            <guid>https://blog.littflower.top/writeups/2024-qwbqs-final-travels</guid>
-            <pubDate>Mon, 09 Dec 2024 08:23:39 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[2024 强网杯青少赛线上赛题解]]></title>
-            <link>https://blog.littflower.top/writeups/2024-qwbqs-writeup</link>
-            <guid>https://blog.littflower.top/writeups/2024-qwbqs-writeup</guid>
-            <pubDate>Mon, 25 Nov 2024 08:55:35 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[InfobahnCTF2025 Writeup]]></title>
-            <link>https://blog.littflower.top/writeups/InfobahnCTF-2025-Writeup</link>
-            <guid>https://blog.littflower.top/writeups/InfobahnCTF-2025-Writeup</guid>
-            <pubDate>Mon, 10 Nov 2025 06:30:29 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[MoeCTF 2023 Pwn 题目复现]]></title>
-            <link>https://blog.littflower.top/writeups/MoeCTF-2023-Pwn-Writeup</link>
-            <guid>https://blog.littflower.top/writeups/MoeCTF-2023-Pwn-Writeup</guid>
-            <pubDate>Sun, 12 Nov 2023 10:08:44 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[Windows x86 SEH 机制]]></title>
-            <link>https://blog.littflower.top/writeups/MoeCTF2023-Unwind-and-a-little-windows-SEH</link>
-            <guid>https://blog.littflower.top/writeups/MoeCTF2023-Unwind-and-a-little-windows-SEH</guid>
-            <pubDate>Fri, 13 Oct 2023 12:23:13 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[N1CTF2025 Writeup]]></title>
-            <link>https://blog.littflower.top/writeups/N1CTF-2025-Pwn-Writeup</link>
-            <guid>https://blog.littflower.top/writeups/N1CTF-2025-Pwn-Writeup</guid>
-            <pubDate>Wed, 05 Nov 2025 07:29:18 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
             <title><![CDATA[NCTF2025 Writeup]]></title>
             <link>https://blog.littflower.top/writeups/NCTF2025-Writeup</link>
             <guid>https://blog.littflower.top/writeups/NCTF2025-Writeup</guid>
             <pubDate>Wed, 26 Mar 2025 12:00:58 GMT</pubDate>
             <description><![CDATA[xxxxx]]></description>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[Qwb2025 final Writeup]]></title>
-            <link>https://blog.littflower.top/writeups/Qwb-2025-final-Writeup</link>
-            <guid>https://blog.littflower.top/writeups/Qwb-2025-final-Writeup</guid>
-            <pubDate>Thu, 27 Nov 2025 10:09:20 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[RCTF2025 Pwn 部分题 Writeup]]></title>
-            <link>https://blog.littflower.top/writeups/RCTF-2025-Pwn-Writeup</link>
-            <guid>https://blog.littflower.top/writeups/RCTF-2025-Pwn-Writeup</guid>
-            <pubDate>Wed, 19 Nov 2025 14:03:54 GMT</pubDate>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
@@ -327,13 +158,6 @@
             <guid>https://blog.littflower.top/writeups/RitsecCTF2025-Writeup</guid>
             <pubDate>Tue, 08 Apr 2025 02:28:47 GMT</pubDate>
             <description><![CDATA[2025 RitsecCTF Pwn 题解]]></description>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[SECCONCTF Quals2025 Pwn 部分题题解]]></title>
-            <link>https://blog.littflower.top/writeups/SECCONCTF%20Quals2025%20Pwn%20Writeup</link>
-            <guid>https://blog.littflower.top/writeups/SECCONCTF%20Quals2025%20Pwn%20Writeup</guid>
-            <pubDate>Mon, 15 Dec 2025 07:05:43 GMT</pubDate>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
@@ -393,14 +217,6 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[UnbreakableCTF 2025 Writeup]]></title>
-            <link>https://blog.littflower.top/writeups/UnbreakableCTF2025-Writeup</link>
-            <guid>https://blog.littflower.top/writeups/UnbreakableCTF2025-Writeup</guid>
-            <pubDate>Tue, 09 Apr 2024 00:00:00 GMT</pubDate>
-            <description><![CDATA[2024 UnbreakableCTF Pwn 题解]]></description>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
             <title><![CDATA[WinjaCTF 2025 Writeup]]></title>
             <link>https://blog.littflower.top/writeups/WinjaCTF2025-Writeup</link>
             <guid>https://blog.littflower.top/writeups/WinjaCTF2025-Writeup</guid>
@@ -417,39 +233,11 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[ACTF2025 WriteUps]]></title>
-            <link>https://blog.littflower.top/writeups/actf2025-writeups</link>
-            <guid>https://blog.littflower.top/writeups/actf2025-writeups</guid>
-            <pubDate>Sun, 27 Apr 2025 07:50:55 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[CykorCTF 2025 Writeup]]></title>
-            <link>https://blog.littflower.top/writeups/cykorctf-2025-writeup</link>
-            <guid>https://blog.littflower.top/writeups/cykorctf-2025-writeup</guid>
-            <pubDate>Mon, 08 Dec 2025 07:31:31 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[DAMCTF2025 Writeup]]></title>
-            <link>https://blog.littflower.top/writeups/damctf2025-writeup</link>
-            <guid>https://blog.littflower.top/writeups/damctf2025-writeup</guid>
-            <pubDate>Mon, 12 May 2025 02:37:16 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[京麒CTF 2025 热身赛 WriteUp]]></title>
-            <link>https://blog.littflower.top/writeups/jinglinctf2025-writeup</link>
-            <guid>https://blog.littflower.top/writeups/jinglinctf2025-writeup</guid>
-            <pubDate>Thu, 15 May 2025 01:24:03 GMT</pubDate>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[2025 强网杯初赛 Writeup]]></title>
-            <link>https://blog.littflower.top/writeups/qwb2025-qual-Writeup</link>
-            <guid>https://blog.littflower.top/writeups/qwb2025-qual-Writeup</guid>
-            <pubDate>Tue, 21 Oct 2025 05:02:37 GMT</pubDate>
-            <description><![CDATA[2025 强网杯初赛 Pwn 题解]]></description>
+            <title><![CDATA[UnbreakableCTF 2025 Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/UnbreakableCTF2025-Writeup</link>
+            <guid>https://blog.littflower.top/writeups/UnbreakableCTF2025-Writeup</guid>
+            <pubDate>Tue, 09 Apr 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[2024 UnbreakableCTF Pwn 题解]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
@@ -461,321 +249,637 @@
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/life]]></title>
-            <link>https://blog.littflower.top/life</link>
-            <guid>https://blog.littflower.top/life</guid>
+            <title><![CDATA[2025 强网杯初赛 Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/qwb2025-qual-Writeup</link>
+            <guid>https://blog.littflower.top/writeups/qwb2025-qual-Writeup</guid>
+            <pubDate>Tue, 21 Oct 2025 05:02:37 GMT</pubDate>
+            <description><![CDATA[2025 强网杯初赛 Pwn 题解]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[2022 新年致辞]]></title>
+            <link>https://blog.littflower.top/life/2022-new-year-speech</link>
+            <guid>https://blog.littflower.top/life/2022-new-year-speech</guid>
+            <pubDate>Sat, 01 Jan 2022 00:00:00 GMT</pubDate>
+            <description><![CDATA[撕下2021年日历的最后一页，今天是2022年的第一天。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[2024年度小结]]></title>
+            <link>https://blog.littflower.top/life/2024-annual-summary</link>
+            <guid>https://blog.littflower.top/life/2024-annual-summary</guid>
+            <pubDate>Mon, 13 Jan 2025 10:29:39 GMT</pubDate>
+            <description><![CDATA[一转眼今年又结束了，今天坐在回家的高铁上，掀开笔记本开始写这个文档。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[2025 年度小结]]></title>
+            <link>https://blog.littflower.top/life/2025-annual-summary</link>
+            <guid>https://blog.littflower.top/life/2025-annual-summary</guid>
+            <pubDate>Wed, 28 Jan 2026 09:57:11 GMT</pubDate>
+            <description><![CDATA[按理来说年终总结应该在年底都写好，但是我每年都能拖到放寒假才开始写，属实是绷不住了。。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[观《孔子》有感]]></title>
+            <link>https://blog.littflower.top/life/film-review-of-confucius</link>
+            <guid>https://blog.littflower.top/life/film-review-of-confucius</guid>
+            <pubDate>Sun, 27 Feb 2022 08:32:44 GMT</pubDate>
+            <description><![CDATA[今天中午看完了《孔子》这部电影，讲道理感觉一般，总的来说这部电影并没有体现出孔子的独特的精神以及特有的人格魅力，并且导演和编剧的历史学、物理学知识实在是让人不敢恭维，]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[【书感】向儿童学习]]></title>
+            <link>https://blog.littflower.top/life/learn-something-from-children</link>
+            <guid>https://blog.littflower.top/life/learn-something-from-children</guid>
+            <pubDate>Sun, 27 Feb 2022 00:00:00 GMT</pubDate>
+            <description><![CDATA[今天早上读了王开岭《精神明亮的人》中的《向儿童学习》一篇，有感，故作此篇。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[AsisCTF2016 b00ks 复现笔记]]></title>
+            <link>https://blog.littflower.top/notes/asisctf2016-b00ks</link>
+            <guid>https://blog.littflower.top/notes/asisctf2016-b00ks</guid>
+            <pubDate>Mon, 22 Jan 2024 16:25:35 GMT</pubDate>
+            <description><![CDATA[记一道 offbyone 堆题的复现、反思与总结]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[awesome pwn reading lists]]></title>
+            <link>https://blog.littflower.top/notes/awesome-pwn-reading-lists</link>
+            <guid>https://blog.littflower.top/notes/awesome-pwn-reading-lists</guid>
+            <pubDate>Mon, 08 Dec 2025 11:17:51 GMT</pubDate>
+            <description><![CDATA[主要是一些环境搭建相关的资源 因为有一些学弟偶尔会私信我 vmware 坏了（ 一步一步配置wsl2 for pwn 使用 docker 调试和部署 pwn 题 pwn-env-docker...]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[分块思想]]></title>
+            <link>https://blog.littflower.top/notes/blocking-algorithm</link>
+            <guid>https://blog.littflower.top/notes/blocking-algorithm</guid>
+            <pubDate>Fri, 19 Nov 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[**分块**，故名思意，是将一个区间分成几个块，然后对于每个询问，整合一个或多个（甚至全部区间）的信息，但这种分块和整合是有技巧性de，否则很难有效的降低时间复杂度。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[Chrome V8 Pwn 学习（一）]]></title>
+            <link>https://blog.littflower.top/notes/chrome-v8-pwn-learning1</link>
+            <guid>https://blog.littflower.top/notes/chrome-v8-pwn-learning1</guid>
+            <pubDate>Tue, 12 Aug 2025 16:27:46 GMT</pubDate>
+            <description><![CDATA[V8 是一个由 Google 开发的开源 JavaScript 引擎，用于 Google Chrome 及 Chromium 中，项目以V8发动机其命名。此项目由Lars Bak主导开发。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[Chrome V8 Pwn 学习（二）]]></title>
+            <link>https://blog.littflower.top/notes/chrome-v8-pwn-learning2</link>
+            <guid>https://blog.littflower.top/notes/chrome-v8-pwn-learning2</guid>
+            <pubDate>Thu, 14 Aug 2025 17:28:58 GMT</pubDate>
+            <description><![CDATA[首先打开浏览器开发者工具，在控制台中运行一段 js 代码：]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[区间线段类问题合集]]></title>
+            <link>https://blog.littflower.top/notes/collection-of-interval-segment-problems</link>
+            <guid>https://blog.littflower.top/notes/collection-of-interval-segment-problems</guid>
+            <pubDate>Fri, 12 Nov 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[近一个月以来，不管是在模拟赛中，还是在日常做题中，甚至是在CSP考试中，都遇到了各种各样的区间问题，其题目形式、背景多种多样，但其根本都可以归纳为一种区间线段模型，遂加以整理。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[ELF 文件结构详解]]></title>
+            <link>https://blog.littflower.top/notes/elf-structure</link>
+            <guid>https://blog.littflower.top/notes/elf-structure</guid>
+            <pubDate>Wed, 21 May 2025 07:17:45 GMT</pubDate>
+            <description><![CDATA[**本文在不特殊声明的情况下，默认架构为 x86-64，操作系统内核为 linux**]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[Glibc Exit 函数分析与利用]]></title>
+            <link>https://blog.littflower.top/notes/glibc-exit-function-analyze-and-attack</link>
+            <guid>https://blog.littflower.top/notes/glibc-exit-function-analyze-and-attack</guid>
+            <pubDate>Mon, 31 Mar 2025 16:59:36 GMT</pubDate>
+            <description><![CDATA[用的源码是 glibc 2.35 的，具体版本是 Ubuntu GLIBC 2.35-0ubuntu3.9，在 glibc all in one 里可以下载到。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[如何计算结构体字节数]]></title>
+            <link>https://blog.littflower.top/notes/how-to-calc-the-bytes-of-struct</link>
+            <guid>https://blog.littflower.top/notes/how-to-calc-the-bytes-of-struct</guid>
+            <pubDate>Wed, 15 May 2024 06:35:41 GMT</pubDate>
+            <description><![CDATA[计算结构体字节数的关键是搞明白字节对齐。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[_IO_FILE 任意地址读写攻击面分析]]></title>
+            <link>https://blog.littflower.top/notes/iofile-arbitrary-memory-write-and-read</link>
+            <guid>https://blog.littflower.top/notes/iofile-arbitrary-memory-write-and-read</guid>
+            <pubDate>Wed, 07 May 2025 16:31:27 GMT</pubDate>
+            <description><![CDATA[_IO_FILE 任意地址读写攻击面分析]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[CTF Pwn Protobuf 学习笔记]]></title>
+            <link>https://blog.littflower.top/notes/learning-protobuf-in-ctf</link>
+            <guid>https://blog.littflower.top/notes/learning-protobuf-in-ctf</guid>
+            <pubDate>Fri, 24 Oct 2025 13:53:16 GMT</pubDate>
+            <description><![CDATA[近两年国内的比赛里，Protobuf 和 pwn 结合的题目越来越多，这里记录一下一些基本的逆向方法和注意事项。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[2022强网杯青少赛题解]]></title>
+            <link>https://blog.littflower.top/writeups/2022-qwbqs-writeup</link>
+            <guid>https://blog.littflower.top/writeups/2022-qwbqs-writeup</guid>
+            <pubDate>Fri, 03 Feb 2023 13:27:43 GMT</pubDate>
+            <description><![CDATA[蒟蒻来写 WP 了...... 本来应该是可以进线下的...奈何工具太老旧...明年再努力吧.]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[2024 强网杯青少赛线下游记]]></title>
+            <link>https://blog.littflower.top/writeups/2024-qwbqs-final-travels</link>
+            <guid>https://blog.littflower.top/writeups/2024-qwbqs-final-travels</guid>
+            <pubDate>Mon, 09 Dec 2024 08:23:39 GMT</pubDate>
+            <description><![CDATA[本来都不记得这个事情了，但是 Aura 上离散数学课的时候突然问我来着，于是跟 Aura 和树木一起组队打了线上赛。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
+            <title><![CDATA[2024 强网杯青少赛线上赛题解]]></title>
+            <link>https://blog.littflower.top/writeups/2024-qwbqs-writeup</link>
+            <guid>https://blog.littflower.top/writeups/2024-qwbqs-writeup</guid>
+            <pubDate>Mon, 25 Nov 2024 08:55:35 GMT</pubDate>
+            <description><![CDATA[战队整体答题情况：除 web 方向 cyberboard mysqlprobe 外均解出。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[InfobahnCTF2025 Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/InfobahnCTF-2025-Writeup</link>
+            <guid>https://blog.littflower.top/writeups/InfobahnCTF-2025-Writeup</guid>
+            <pubDate>Mon, 10 Nov 2025 06:30:29 GMT</pubDate>
+            <description><![CDATA[InfobahnCTF2025 Pwn Writeup]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[MoeCTF 2023 Pwn 题目复现]]></title>
+            <link>https://blog.littflower.top/writeups/MoeCTF-2023-Pwn-Writeup</link>
+            <guid>https://blog.littflower.top/writeups/MoeCTF-2023-Pwn-Writeup</guid>
+            <pubDate>Sun, 12 Nov 2023 10:08:44 GMT</pubDate>
+            <description><![CDATA[MoeCTF2023 Pwn WriteUp]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[Windows x86 SEH 机制]]></title>
+            <link>https://blog.littflower.top/writeups/MoeCTF2023-Unwind-and-a-little-windows-SEH</link>
+            <guid>https://blog.littflower.top/writeups/MoeCTF2023-Unwind-and-a-little-windows-SEH</guid>
+            <pubDate>Fri, 13 Oct 2023 12:23:13 GMT</pubDate>
+            <description><![CDATA[Windows x86 SEH 机制暨 MoeCTF2023 Unwind 解题报告]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[N1CTF2025 Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/N1CTF-2025-Pwn-Writeup</link>
+            <guid>https://blog.littflower.top/writeups/N1CTF-2025-Pwn-Writeup</guid>
+            <pubDate>Wed, 05 Nov 2025 07:29:18 GMT</pubDate>
+            <description><![CDATA[N1CTF2025 Pwn Writeup]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[Qwb2025 final Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/Qwb-2025-final-Writeup</link>
+            <guid>https://blog.littflower.top/writeups/Qwb-2025-final-Writeup</guid>
+            <pubDate>Thu, 27 Nov 2025 10:09:20 GMT</pubDate>
+            <description><![CDATA[周五下午坐飞机到郑州，然后转出租车。落地都下午 6 点了。然后去酒店。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[RCTF2025 Pwn 部分题 Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/RCTF-2025-Pwn-Writeup</link>
+            <guid>https://blog.littflower.top/writeups/RCTF-2025-Pwn-Writeup</guid>
+            <pubDate>Wed, 19 Nov 2025 14:03:54 GMT</pubDate>
+            <description><![CDATA[这周末被半期硬控了，众所周知 ctfer 平常都是不听课的，所以我用了两天半速成了大物，这场比赛也没什么输出，赛后复现一下题目。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[SECCONCTF Quals2025 Pwn 部分题题解]]></title>
+            <link>https://blog.littflower.top/writeups/SECCONCTF%20Quals2025%20Pwn%20Writeup</link>
+            <guid>https://blog.littflower.top/writeups/SECCONCTF%20Quals2025%20Pwn%20Writeup</guid>
+            <pubDate>Mon, 15 Dec 2025 07:05:43 GMT</pubDate>
+            <description><![CDATA[SECCONCTF Quals2025 Pwn Writeup]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[ACTF2025 WriteUps]]></title>
+            <link>https://blog.littflower.top/writeups/actf2025-writeups</link>
+            <guid>https://blog.littflower.top/writeups/actf2025-writeups</guid>
+            <pubDate>Sun, 27 Apr 2025 07:50:55 GMT</pubDate>
+            <description><![CDATA[ACTF2025 Pwn Writeup]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[CykorCTF 2025 Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/cykorctf-2025-writeup</link>
+            <guid>https://blog.littflower.top/writeups/cykorctf-2025-writeup</guid>
+            <pubDate>Mon, 08 Dec 2025 07:31:31 GMT</pubDate>
+            <description><![CDATA[CykorCTF2025 Pwn 部分题解]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[DAMCTF2025 Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/damctf2025-writeup</link>
+            <guid>https://blog.littflower.top/writeups/damctf2025-writeup</guid>
+            <pubDate>Mon, 12 May 2025 02:37:16 GMT</pubDate>
+            <description><![CDATA[DAMCTF2025 Pwn WriteUp]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[DiceCTF Quals 2026 Writeup]]></title>
+            <link>https://blog.littflower.top/writeups/dicectf2026-writeup</link>
+            <guid>https://blog.littflower.top/writeups/dicectf2026-writeup</guid>
+            <pubDate>Thu, 12 Mar 2026 16:38:35 GMT</pubDate>
+            <description><![CDATA[DiceCTF Quals 2026 Pwn 题解]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/notes]]></title>
-            <link>https://blog.littflower.top/notes</link>
-            <guid>https://blog.littflower.top/notes</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
-            <author>xzy1476569428@163.com (LittFlower)</author>
-        </item>
-        <item>
-            <title><![CDATA[/writeups]]></title>
-            <link>https://blog.littflower.top/writeups</link>
-            <guid>https://blog.littflower.top/writeups</guid>
+            <title><![CDATA[京麒CTF 2025 热身赛 WriteUp]]></title>
+            <link>https://blog.littflower.top/writeups/jinglinctf2025-writeup</link>
+            <guid>https://blog.littflower.top/writeups/jinglinctf2025-writeup</guid>
+            <pubDate>Thu, 15 May 2025 01:24:03 GMT</pubDate>
+            <description><![CDATA[京麒CTF 2025 热身赛 WriteUp]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
             <title><![CDATA[/life]]></title>
             <link>https://blog.littflower.top/life</link>
             <guid>https://blog.littflower.top/life</guid>
+            <description><![CDATA[高考前几个月和 Rx 聊天的时候，他给我摆拍了一张当时他使用的操作系统 / 生产环境，简洁、优雅的桌面深深吸引了我，自那时起，]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
             <title><![CDATA[/life]]></title>
             <link>https://blog.littflower.top/life</link>
             <guid>https://blog.littflower.top/life</guid>
+            <description><![CDATA[三个月的暑假瞬间就过去了… 让人不禁感慨自己即将步入大学的校门。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
             <title><![CDATA[/life]]></title>
             <link>https://blog.littflower.top/life</link>
             <guid>https://blog.littflower.top/life</guid>
+            <description><![CDATA[说起来有些僵硬，我一度深陷于一个困境，一个难以破开的墙壁。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[对于 C 和 C++ 等编程语言来说，内存访问错误（包括缓冲区溢出和 use after free）仍然是一个严重问题。存在许多内存错误检测器，但大多数检测器要么速度慢，]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[MMIO 和 PMIO 是 CPU 和外部设备之间两种互为补充的 I/O 方法。 MMIO (Memory-mapped I/O) PMIO (Port-mapped I/O)]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[为什么叫”重读“呢......其实在这次读之前已经读过两三遍了......但是还是会在提问的时候被学长批评提的问题不好（]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[主要阅读了 glibc rand 相关的源代码，总结一下 CTF 中常见随机数攻击手法，主要还是打伪随机数预测。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[本文环境为 x86-64，32 位太老了就不学了。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[2.39 的菜单堆题，外面套了一层网络服务。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[SunShineCTF 2025 Writeup]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[主要说一下怎么逆向 Pwn 题里常见的各种数据结构。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[T1d_foolCTF 2024 Writeup]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[RitsecCTF 2025 Writeup]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[[easy] Repeater As is well known, CTFers are all repeaters!]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[四川省赛一般都是打两天，线下断网比赛，第一天 CTF jp 赛制，第二天就是 awdp，最终把两天归一化得分排名。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[国赛前一天的一个国际赛，跟 N1 junior 的师傅们一起打一下。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[和 n1 的师傅一起打了这场比赛，由于不会 web pwn 和 iot，这场基本上只能打签到堆题wwww]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[WinjaCTF 2025 Writeup]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[WolvCTF 2025 Writeup]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[Unbreakable CTF 2024 Pwn WriteUps]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[人生第一次打西湖论剑，虽然是跟着 401 的师傅只看了看题，但是感觉还是有一点收获的。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[乍一看是菜单堆，但是 create 只允许同时存在一个 note，edit 和 view 都是假的（只读 index），]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[比赛时间和 ACTF2025 基本上冲突了，所以没时间打，赛时只来得及看了两道签到题就遗憾离场，赛后补了所有的用户态题目，剩了几道 v8 暂时摸了（（]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
             <title><![CDATA[/life]]></title>
             <link>https://blog.littflower.top/life</link>
             <guid>https://blog.littflower.top/life</guid>
+            <description><![CDATA[撕下2021年日历的最后一页，今天是2022年的第一天。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
             <title><![CDATA[/life]]></title>
             <link>https://blog.littflower.top/life</link>
             <guid>https://blog.littflower.top/life</guid>
+            <description><![CDATA[一转眼今年又结束了，今天坐在回家的高铁上，掀开笔记本开始写这个文档。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
             <title><![CDATA[/life]]></title>
             <link>https://blog.littflower.top/life</link>
             <guid>https://blog.littflower.top/life</guid>
+            <description><![CDATA[按理来说年终总结应该在年底都写好，但是我每年都能拖到放寒假才开始写，属实是绷不住了。。]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
         <item>
             <title><![CDATA[/life]]></title>
             <link>https://blog.littflower.top/life</link>
             <guid>https://blog.littflower.top/life</guid>
+            <description><![CDATA[今天中午看完了《孔子》这部电影，讲道理感觉一般，总的来说这部电影并没有体现出孔子的独特的精神以及特有的人格魅力，并且导演和编剧的历史学、物理学知识实在是让人不敢恭维，]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/life]]></title>
+            <link>https://blog.littflower.top/life</link>
+            <guid>https://blog.littflower.top/life</guid>
+            <description><![CDATA[今天早上读了王开岭《精神明亮的人》中的《向儿童学习》一篇，有感，故作此篇。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[记一道 offbyone 堆题的复现、反思与总结]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[主要是一些环境搭建相关的资源 因为有一些学弟偶尔会私信我 vmware 坏了（ 一步一步配置wsl2 for pwn 使用 docker 调试和部署 pwn 题 pwn-env-docker...]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[**分块**，故名思意，是将一个区间分成几个块，然后对于每个询问，整合一个或多个（甚至全部区间）的信息，但这种分块和整合是有技巧性de，否则很难有效的降低时间复杂度。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[V8 是一个由 Google 开发的开源 JavaScript 引擎，用于 Google Chrome 及 Chromium 中，项目以V8发动机其命名。此项目由Lars Bak主导开发。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[首先打开浏览器开发者工具，在控制台中运行一段 js 代码：]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[近一个月以来，不管是在模拟赛中，还是在日常做题中，甚至是在CSP考试中，都遇到了各种各样的区间问题，其题目形式、背景多种多样，但其根本都可以归纳为一种区间线段模型，遂加以整理。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[**本文在不特殊声明的情况下，默认架构为 x86-64，操作系统内核为 linux**]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[用的源码是 glibc 2.35 的，具体版本是 Ubuntu GLIBC 2.35-0ubuntu3.9，在 glibc all in one 里可以下载到。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[计算结构体字节数的关键是搞明白字节对齐。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[_IO_FILE 任意地址读写攻击面分析]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/notes]]></title>
+            <link>https://blog.littflower.top/notes</link>
+            <guid>https://blog.littflower.top/notes</guid>
+            <description><![CDATA[近两年国内的比赛里，Protobuf 和 pwn 结合的题目越来越多，这里记录一下一些基本的逆向方法和注意事项。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[蒟蒻来写 WP 了...... 本来应该是可以进线下的...奈何工具太老旧...明年再努力吧.]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[本来都不记得这个事情了，但是 Aura 上离散数学课的时候突然问我来着，于是跟 Aura 和树木一起组队打了线上赛。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[战队整体答题情况：除 web 方向 cyberboard mysqlprobe 外均解出。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[InfobahnCTF2025 Pwn Writeup]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[MoeCTF2023 Pwn WriteUp]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[Windows x86 SEH 机制暨 MoeCTF2023 Unwind 解题报告]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[N1CTF2025 Pwn Writeup]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[周五下午坐飞机到郑州，然后转出租车。落地都下午 6 点了。然后去酒店。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[这周末被半期硬控了，众所周知 ctfer 平常都是不听课的，所以我用了两天半速成了大物，这场比赛也没什么输出，赛后复现一下题目。]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[SECCONCTF Quals2025 Pwn Writeup]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[ACTF2025 Pwn Writeup]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[CykorCTF2025 Pwn 部分题解]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[DAMCTF2025 Pwn WriteUp]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[DiceCTF Quals 2026 Pwn 题解]]></description>
+            <author>xzy1476569428@163.com (LittFlower)</author>
+        </item>
+        <item>
+            <title><![CDATA[/writeups]]></title>
+            <link>https://blog.littflower.top/writeups</link>
+            <guid>https://blog.littflower.top/writeups</guid>
+            <description><![CDATA[京麒CTF 2025 热身赛 WriteUp]]></description>
             <author>xzy1476569428@163.com (LittFlower)</author>
         </item>
     </channel>
