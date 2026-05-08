@@ -80,8 +80,8 @@ operator new (std::size_t sz) _GLIBCXX_THROW (std::bad_alloc)
 std::get_new_handler () noexcept
 {
   new_handler handler;
-#if ATOMIC_POINTER_LOCK_FREE > 1
-  __atomic_load (&__new_handler, &handler, __ATOMIC_ACQUIRE);
+#if ATOMIC_POINTER_LOCK_FREE &gt; 1
+  __atomic_load (&amp;__new_handler, &amp;handler, __ATOMIC_ACQUIRE);
 #else
   __gnu_cxx::__scoped_lock l(mx);
   handler = __new_handler;
@@ -117,19 +117,19 @@ namespace
 <p><code class="inline-code">bl</code> 是 <code class="inline-code">rbx</code> 的低 8 位寄存器，<code class="inline-code">dh</code> 是 <code class="inline-code">rdx</code> 的低 8 位寄存器。</p>
 <p>调试一下发现 <code class="inline-code">dh</code> 是 0x20，也就是说配合 <code class="inline-code">gadget1</code> 可以做到任意地址 + 0x20.... 有什么用呢.jpg</p>
 <p>我们调一下 <code class="inline-code">fgets</code> 的汇编，发现：</p>
-<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">0x70330887f4a0 <_IO_fgets+288>:      mov    BYTE PTR [rdi],0x0
-0x70330887f4a3 <_IO_fgets+291>:      mov    r14,rdi
-0x70330887f4a6 <_IO_fgets+294>:      jmp    0x70330887f44c <_IO_fgets+204>
-0x70330887f4a8 <_IO_fgets+296>:      nop    DWORD PTR [rax+rax*1+0x0]
-0x70330887f4b0 <_IO_fgets+304>:      call   0x703308891300 <__GI___lll_lock_wake_private>
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">0x70330887f4a0 &lt;_IO_fgets+288&gt;:      mov    BYTE PTR [rdi],0x0
+0x70330887f4a3 &lt;_IO_fgets+291&gt;:      mov    r14,rdi
+0x70330887f4a6 &lt;_IO_fgets+294&gt;:      jmp    0x70330887f44c &lt;_IO_fgets+204&gt;
+0x70330887f4a8 &lt;_IO_fgets+296&gt;:      nop    DWORD PTR [rax+rax*1+0x0]
+0x70330887f4b0 &lt;_IO_fgets+304&gt;:      call   0x703308891300 &lt;__GI___lll_lock_wake_private&gt;
 ...
-0x70330887f44c <_IO_fgets+204>:      pop    rbx
-0x70330887f44d <_IO_fgets+205>:      mov    rax,r14
-0x70330887f450 <_IO_fgets+208>:      pop    rbp
-0x70330887f451 <_IO_fgets+209>:      pop    r12
-0x70330887f453 <_IO_fgets+211>:      pop    r13
-0x70330887f455 <_IO_fgets+213>:      pop    r14
-0x70330887f457 <_IO_fgets+215>:      ret
+0x70330887f44c &lt;_IO_fgets+204&gt;:      pop    rbx
+0x70330887f44d &lt;_IO_fgets+205&gt;:      mov    rax,r14
+0x70330887f450 &lt;_IO_fgets+208&gt;:      pop    rbp
+0x70330887f451 &lt;_IO_fgets+209&gt;:      pop    r12
+0x70330887f453 &lt;_IO_fgets+211&gt;:      pop    r13
+0x70330887f455 &lt;_IO_fgets+213&gt;:      pop    r14
+0x70330887f457 &lt;_IO_fgets+215&gt;:      ret
 </code></pre></div>
 <p>。。。这样我们就能控制 rbx 了... 然后就有任意地址写原语了....</p>
 <p>小时候做这题吓哭了。。</p>

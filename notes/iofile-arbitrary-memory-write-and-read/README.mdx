@@ -53,13 +53,13 @@
 <p>这个 <code class="inline-code">_IO_SYSREAD</code> 会调用虚表里的 <code class="inline-code">__read</code> 也就是 <code class="inline-code">__GI__IO_file_read</code>，这个函数会 <code class="inline-code">jmp</code> 到 <code class="inline-code">__GI___libc_read</code>。</p>
 <p>总结下来调用链就是：</p>
 <div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">scanf
-  -> vfscanf
-	-> _IO_vfscanf_internal
-	  -> _IO_getc_unlocked
-		-> __uflow
-		  -> _IO_new_file_underflow
-			-> _IO_SYSREAD
-			  -> __read = __GI___libc_read
+  -&gt; vfscanf
+	-&gt; _IO_vfscanf_internal
+	  -&gt; _IO_getc_unlocked
+		-&gt; __uflow
+		  -&gt; _IO_new_file_underflow
+			-&gt; _IO_SYSREAD
+			  -&gt; __read = __GI___libc_read
 </code></pre></div>
 <p>为了绕过保护，需要构造有：</p>
 <ul>

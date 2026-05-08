@@ -23,7 +23,7 @@
 <p>格式化字符串，不完全是堆上的格式化字符串，因为题目先用一个栈变量存了输入的格式化字符串，再加上程序栈上找不出来两条链子，所以就还是用栈上的格式化字符串打法打。</p>
 <p>这里没用 pwntools 生成，毕竟还是有长度限制的，自己手写方便点。</p>
 <p>one_gadget 挑的是这个，因为注意到 <code class="inline-code">r15</code> 和 <code class="inline-code">rdx</code> 寄存器刚好是 0：</p>
-<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">0xe3b01 execve("/bin/sh", r15, rdx)
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">0xe3b01 execve(&quot;/bin/sh&quot;, r15, rdx)
 constraints:
 [r15] == NULL || r15 == NULL || r15 is a valid argv
 [rdx] == NULL || rdx == NULL || rdx is a valid envp

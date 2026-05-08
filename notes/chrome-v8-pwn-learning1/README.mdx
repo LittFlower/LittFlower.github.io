@@ -41,11 +41,11 @@
 <h3 id="报错修复" class="scroll-target"><a href="#%E6%8A%A5%E9%94%99%E4%BF%AE%E5%A4%8D"><code class="hash inline-code">#</code>报错修复</a></h3>
 <p>2025 年了，大部分的软件包依赖的都是 python3，不过 v8 这块一些比较老的 commit 可能依赖的还是 python2.7，而且哪怕你的发行版上安装了 python2，你的默认全局 python 依然是 python3，这就很难受了，这里提供一些解决措施。</p>
 <p>首先，在 <code class="inline-code">gclient sync</code> 这一步时，由于系统 python 指向的是 python3，所以可能会报错类似下面这样：</p>
-<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">Error: Command 'python v8/build/linux/sysroot_scripts/install-sysroot.py --arch=x86' returned non-zero exit status 1 in /home/flower/CTFhub/Tools/Pwn
-File "/home/flower/CTFhub/Tools/Pwn/v8/build/linux/sysroot_scripts/install-sysroot.py", line 79
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">Error: Command &#39;python v8/build/linux/sysroot_scripts/install-sysroot.py --arch=x86&#39; returned non-zero exit status 1 in /home/flower/CTFhub/Tools/Pwn
+File &quot;/home/flower/CTFhub/Tools/Pwn/v8/build/linux/sysroot_scripts/install-sysroot.py&quot;, line 79
 print GetSysrootDict(DEFAULT_TARGET_PLATFORM,
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-SyntaxError: Missing parentheses in call to 'print'. Did you mean print(...)?
+SyntaxError: Missing parentheses in call to &#39;print&#39;. Did you mean print(...)?
 </code></pre></div>
 <p>我自己使用的解决方法有两个，一个是使用 pyenv 切换到 Python2.7，另一个办法是临时在当前 shell 中 <code class="inline-code">export PYTHON=python2</code>。</p>
 <p>其次在 <code class="inline-code">tools/dev/v8gen.py x64.debug</code> 这里，第一次跑可能能需要安装 sysroot，这个报错信息里有：</p>
@@ -53,18 +53,18 @@ SyntaxError: Missing parentheses in call to 'print'. Did you mean print(...)?
 ################################################################################
 /usr/bin/python2 -u tools/mb/mb.py gen -f infra/mb/mb_config.pyl -m developer_default -b x64.debug out.gn/x64.debug
 
-Writing """\
+Writing &quot;&quot;&quot;\
 is_debug = true
-target_cpu = "x64"
+target_cpu = &quot;x64&quot;
 v8_enable_backtrace = true
 v8_enable_slow_dchecks = true
 v8_optimized_debug = false
-""" to /home/flower/CTFhub/Tools/Pwn/v8/out.gn/x64.debug/args.gn.
+&quot;&quot;&quot; to /home/flower/CTFhub/Tools/Pwn/v8/out.gn/x64.debug/args.gn.
 
 /home/flower/CTFhub/Tools/Pwn/v8/buildtools/linux64/gn gen out.gn/x64.debug --check
--> returned 1
+-&gt; returned 1
 ERROR at //build/config/compiler/BUILD.gn:1138:22: Script returned non-zero exit code.
-clang_revision = exec_script("//tools/clang/scripts/update.py",
+clang_revision = exec_script(&quot;//tools/clang/scripts/update.py&quot;,
 ^----------
 Current dir: /home/flower/CTFhub/Tools/Pwn/v8/out.gn/x64.debug/
 Command: python /home/flower/CTFhub/Tools/Pwn/v8/tools/clang/scripts/update.py --print-revision --verify-version=9.0.0
@@ -72,37 +72,37 @@ Returned 1.
 stderr:
 
 Traceback (most recent call last):
-File "/home/flower/CTFhub/Tools/Pwn/v8/tools/clang/scripts/update.py", line 16, in <module>
+File &quot;/home/flower/CTFhub/Tools/Pwn/v8/tools/clang/scripts/update.py&quot;, line 16, in &lt;module&gt;
 import pipes
-ModuleNotFoundError: No module named 'pipes'
+ModuleNotFoundError: No module named &#39;pipes&#39;
 
 See //BUILD.gn:260:5: which caused the file to be included.
-"//build/config/compiler:wexit_time_destructors",
+&quot;//build/config/compiler:wexit_time_destructors&quot;,
 ^-----------------------------------------------
 GN gen failed: 1
 Traceback (most recent call last):
-File "tools/dev/v8gen.py", line 307, in <module>
+File &quot;tools/dev/v8gen.py&quot;, line 307, in &lt;module&gt;
 sys.exit(gen.main())
-File "tools/dev/v8gen.py", line 301, in main
+File &quot;tools/dev/v8gen.py&quot;, line 301, in main
 return self._options.func()
-File "tools/dev/v8gen.py", line 169, in cmd_gen
+File &quot;tools/dev/v8gen.py&quot;, line 169, in cmd_gen
 gn_outdir,
-File "tools/dev/v8gen.py", line 211, in _call_cmd
+File &quot;tools/dev/v8gen.py&quot;, line 211, in _call_cmd
 stderr=subprocess.STDOUT,
-File "/usr/lib/python2.7/subprocess.py", line 223, in check_output
+File &quot;/usr/lib/python2.7/subprocess.py&quot;, line 223, in check_output
 raise CalledProcessError(retcode, cmd, output=output)
-subprocess.CalledProcessError: Command '['/usr/bin/python2', '-u', 'tools/mb/mb.py', 'gen', '-f', 'infra/mb/mb_config.pyl', '-m', 'developer_default', '-b', 'x64.debug', 'out.gn/x64.debug']' returned non-zero exit status 1
+subprocess.CalledProcessError: Command &#39;[&#39;/usr/bin/python2&#39;, &#39;-u&#39;, &#39;tools/mb/mb.py&#39;, &#39;gen&#39;, &#39;-f&#39;, &#39;infra/mb/mb_config.pyl&#39;, &#39;-m&#39;, &#39;developer_default&#39;, &#39;-b&#39;, &#39;x64.debug&#39;, &#39;out.gn/x64.debug&#39;]&#39; returned non-zero exit status 1
 </code></pre></div>
 <p>然后对于找不到 <code class="inline-code">pipes</code> 这个模块，显然是因为系统使用了 python3 运行这个脚本，所以这里修改脚本的 bang 为 <code class="inline-code">#!/usr/bin/env python2</code> 就可以了，也可以 <code class="inline-code">export PYTHON=python2</code></p>
 <p>最后，<code class="inline-code">ninja -C out.gn/x64.debug</code> 编译时，可能会遇到</p>
 <div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">../../src/base/macros.h:246:7: error: builtin __has_trivial_copy is deprecated; use __is_trivially_copyable instead [-Werror,-Wdeprecated-builtins]
-246 |       __has_trivial_copy(T) && __has_trivial_destructor(T);
+246 |       __has_trivial_copy(T) &amp;&amp; __has_trivial_destructor(T);
 |       ^
 ../../src/base/macros.h:246:32: error: builtin __has_trivial_destructor is deprecated; use __is_trivially_destructible instead [-Werror,-Wdeprecated-builtins]
-246 |       __has_trivial_copy(T) && __has_trivial_destructor(T);
+246 |       __has_trivial_copy(T) &amp;&amp; __has_trivial_destructor(T);
 </code></pre></div>
 <p>这种报错，也很简单，修改一下 <code class="inline-code">out.gn/x64.debug/args.gn</code> 的配置即可：</p>
-<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-gn language-gn">extra_cflags = [ "-Wno-deprecated-builtins" ]
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-gn language-gn">extra_cflags = [ &quot;-Wno-deprecated-builtins&quot; ]
 treat_warnings_as_errors = false
 </code></pre></div>
 <p>这样就不会把 warnings 当成 errors 导致编译失败啦。</p>

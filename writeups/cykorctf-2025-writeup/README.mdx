@@ -23,16 +23,16 @@
     storage.current_loan = amount;
     transfer(callback, amount);
     ...
-    sync_call(callback, "on_flash_loan", amount, repay_amount);
+    sync_call(callback, &quot;on_flash_loan&quot;, amount, repay_amount);
     let remaining: u64 = storage.current_loan;
-    require(remaining == 0, "flash loan not repaid");
+    require(remaining == 0, &quot;flash loan not repaid&quot;);
 }
 pub fn repay() {
     let received: u64 = msg.value;
     let loan: u64 = storage.current_loan;
     let fee: u64 = loan * fee_pct / 100;
     let required: u64 = loan + fee;
-    require(received >= required, "insufficient repayment");
+    require(received &gt;= required, &quot;insufficient repayment&quot;);
     storage.current_loan = 0;
 }
 </code></pre></div>

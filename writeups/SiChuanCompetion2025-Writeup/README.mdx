@@ -47,7 +47,7 @@
 .text:00000000000015E7                 movzx   eax, byte ptr [rdx+rax+404h]
 .text:00000000000015EF                 movzx   eax, al
 .text:00000000000015F2                 mov     esi, eax
-.text:00000000000015F4                 lea     rdi, aD         ; "%d\n"
+.text:00000000000015F4                 lea     rdi, aD         ; &quot;%d\n&quot;
 .text:00000000000015FB                 mov     eax, 0
 .text:0000000000001600                 call    _printf
 </code></pre></div>

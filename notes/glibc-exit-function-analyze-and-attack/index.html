@@ -56,8 +56,8 @@
 <h3 id="打-exit-hook" class="scroll-target"><a href="#%E6%89%93-exit-hook"><code class="hash inline-code">#</code>打 exit hook</a></h3>
 <p>其实就是打原理部分提到的 <code class="inline-code">_dl_fini</code> 里的 <code class="inline-code">__rtld_lock_lock_recursive</code> 和 <code class="inline-code">__rtld_lock_unlock_recursive</code>，这两个函数在低版本（大致为 2.31 前）被实现成函数指针的形式，也就是存放在 ld 里，并且是存放的地方是可写的，这是常说的 exit hook。</p>
 <p>也就是</p>
-<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">_rtld_global._dl_rtld_lock_recursive(&(_rtld_global._dl_load_lock).mutex)
-_rtld_global._dl_rtld_unlock_recursive(&(_rtld_global._dl_load_lock).mutex)
+<div class="code-snippet"><pre class="code-snippet__pre"><code class="language-text">_rtld_global._dl_rtld_lock_recursive(&amp;(_rtld_global._dl_load_lock).mutex)
+_rtld_global._dl_rtld_unlock_recursive(&amp;(_rtld_global._dl_load_lock).mutex)
 </code></pre></div>
 <p>这两个指针可以调试得出，可以把函数指针改为 <code class="inline-code">system</code>，参数改为 <code class="inline-code">binsh</code> 实现 getshell。</p>
 <p>高版本把这个地方设置为了不可写，如下图</p>
